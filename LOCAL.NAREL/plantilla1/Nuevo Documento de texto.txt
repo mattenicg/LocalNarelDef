@@ -1,0 +1,343 @@
+Quiero que desarrolles un sistema completo de autenticación y administración de productos utilizando **Supabase como backend**, incluyendo Supabase Auth, PostgreSQL y Storage.
+
+No quiero únicamente una interfaz visual: quiero que implementes toda la lógica funcional, conexión con Supabase, base de datos, seguridad y manejo de errores.
+
+## 1. Sistema de registro e inicio de sesión
+
+Crear un sistema de autenticación con:
+
+* Nombre
+* Apellido
+* Email
+* Contraseña
+
+Al registrarse, debe crearse un usuario mediante **Supabase Auth** y además un registro asociado en una tabla `profiles` o equivalente.
+
+Cada usuario debe tener:
+
+* `id` único mediante UUID
+* `first_name`
+* `last_name`
+* `email`
+* `role`
+* `created_at`
+
+El UUID del usuario debe ser el mismo `auth.users.id` de Supabase.
+
+El rol debe poder ser, como mínimo:
+
+* `user`
+* `admin`
+
+Por defecto, todos los usuarios nuevos deben ser `user`.
+
+## 2. Inicio de sesión
+
+Implementar login mediante email y contraseña.
+
+Debe existir:
+
+* Validación de campos
+* Mensajes de error claros
+* Persistencia segura de sesión
+* Logout
+* Protección de rutas privadas
+
+Si un usuario ya tiene una sesión activa, no debería poder crear otra sesión simultánea desde otro dispositivo/navegador.
+
+Quiero implementar una política de **una sola sesión activa por usuario**.
+
+Para esto, diseñá una solución segura utilizando Supabase. Si Supabase Auth no permite bloquear directamente múltiples sesiones, implementá un sistema complementario de control de sesiones en PostgreSQL, por ejemplo mediante una tabla `user_sessions` o un mecanismo equivalente.
+
+La solución debe contemplar:
+
+* Identificador único de sesión
+* Creación de sesión al iniciar sesión
+* Invalidación de la sesión anterior
+* Verificación de que la sesión actual siga siendo válida
+* Logout
+* Expiración de sesión
+* Protección contra sesiones inválidas
+
+No guardes contraseñas manualmente en la base de datos. Las contraseñas deben ser manejadas exclusivamente por **Supabase Auth**.
+
+## 3. Restablecimiento de contraseña
+
+Crear una opción:
+
+**"¿Olvidaste tu contraseña?"**
+
+El usuario debe ingresar su email y recibir el email de recuperación mediante Supabase Auth.
+
+Crear también la página para establecer una nueva contraseña.
+
+Debe contemplar:
+
+* Solicitud de recuperación
+* Envío del email
+* Validación del token
+* Nueva contraseña
+* Confirmación de contraseña
+* Mensajes de éxito/error
+
+## 4. Panel de administración
+
+Crear un panel `/admin` separado del área normal de usuarios.
+
+Solamente los usuarios cuyo `role = 'admin'` en Supabase deben poder acceder.
+
+IMPORTANTE:
+
+La protección del panel **no debe depender únicamente del frontend**.
+
+Implementar las políticas de seguridad correspondientes mediante **Supabase Row Level Security (RLS)** para que un usuario normal no pueda:
+
+* Crear productos
+* Modificar productos
+* Eliminar productos
+* Modificar roles
+* Acceder a información administrativa
+
+Aunque intente hacer requests directamente contra Supabase.
+
+## 5. Gestión de administradores
+
+Quiero poder convertir usuarios en administradores directamente desde la base de datos de Supabase.
+
+Si el campo:
+
+`profiles.role = 'admin'`
+
+el usuario tendrá acceso al panel administrativo.
+
+No crear un sistema inseguro donde el frontend pueda modificar su propio rol.
+
+El cambio de `user` a `admin` debe realizarse exclusivamente desde una operación protegida de base de datos/Supabase.
+
+## 6. Gestión de productos
+
+Desde el panel de administración quiero poder:
+
+### Crear productos
+
+Cada producto debe tener:
+
+* `id` UUID único
+* `name`
+* `description`
+* `price`
+* `sizes`
+* `stock`
+* `image_url`
+* `created_at`
+* `updated_at`
+
+El administrador debe poder ingresar:
+
+* Nombre del producto
+* Precio
+* Descripción
+* Talles disponibles
+* Cantidad/stock
+* Imagen
+
+### Imagen
+
+Utilizar **Supabase Storage** para almacenar las imágenes.
+
+Crear un bucket específico para los productos.
+
+Cuando el administrador suba una imagen:
+
+1. Validar el archivo.
+2. Subirlo a Supabase Storage.
+3. Obtener su URL.
+4. Guardar la referencia/URL en la tabla `products`.
+
+Permitir formatos de imagen comunes como JPG, JPEG, PNG y WEBP.
+
+Agregar límites razonables de tamaño de archivo.
+
+## 7. CRUD de productos
+
+El administrador debe poder:
+
+* Crear productos
+* Ver productos
+* Editar productos
+* Eliminar productos
+* Cambiar precio
+* Cambiar descripción
+* Cambiar talles
+* Cambiar stock
+* Cambiar imagen
+
+Mostrar los productos en una tabla/listado dentro del panel.
+
+Agregar botones:
+
+* Editar
+* Eliminar
+
+Antes de eliminar un producto, mostrar una confirmación.
+
+## 8. Base de datos Supabase
+
+Generá el SQL necesario para crear las tablas, relaciones, índices y políticas RLS.
+
+Como mínimo quiero:
+
+### `profiles`
+
+* `id UUID PRIMARY KEY REFERENCES auth.users(id)`
+* `first_name`
+* `last_name`
+* `email`
+* `role`
+* `created_at`
+
+### `products`
+
+* `id UUID PRIMARY KEY`
+* `name`
+* `description`
+* `price`
+* `sizes`
+* `stock`
+* `image_url`
+* `created_at`
+* `updated_at`
+
+### Sistema de sesiones
+
+Crear las tablas/campos adicionales necesarios para implementar correctamente la política de una única sesión activa.
+
+Usar UUIDs generados automáticamente y timestamps.
+
+Crear los índices necesarios.
+
+## 9. Seguridad
+
+Implementar correctamente:
+
+* Supabase Row Level Security
+* Políticas para usuarios autenticados
+* Políticas específicas para administradores
+* Protección de rutas
+* Validación de datos
+* Validación de archivos
+* Manejo seguro de sesiones
+* No exponer secretos en el frontend
+* No utilizar `service_role key` en el cliente
+* Utilizar únicamente la `anon/public key` en el frontend
+* Variables de entorno para las credenciales
+* No guardar contraseñas en tablas propias
+
+Quiero que revises posibles vulnerabilidades comunes antes de terminar.
+
+## 10. Interfaz
+
+La interfaz debe ser moderna, limpia y responsive.
+
+Crear:
+
+* `/login`
+* `/register`
+* `/forgot-password`
+* `/reset-password`
+* `/dashboard` o página principal para usuarios
+* `/admin`
+* `/admin/products`
+* `/admin/products/new`
+* `/admin/products/[id]/edit`
+
+El panel admin debe mostrar claramente:
+
+* Cantidad de productos
+* Productos disponibles
+* Stock
+* Acciones de administración
+
+## 11. Manejo de errores
+
+Todos los errores de Supabase deben manejarse correctamente.
+
+No mostrar errores técnicos innecesarios al usuario.
+
+Mostrar mensajes claros como:
+
+* "Email o contraseña incorrectos"
+* "El email ya está registrado"
+* "Las contraseñas no coinciden"
+* "No tenés permisos para acceder"
+* "Producto creado correctamente"
+* "Error al subir la imagen"
+
+## 12. Código
+
+Antes de modificar el proyecto, analizá la estructura existente y reutilizá lo que ya esté implementado.
+
+No rompas funcionalidades existentes.
+
+Usá componentes reutilizables y mantené una arquitectura ordenada.
+
+Separá correctamente:
+
+* componentes
+* páginas
+* lógica de autenticación
+* servicios de Supabase
+* tipos
+* utilidades
+
+## 13. Configuración de Supabase
+
+Indicame exactamente qué tengo que configurar en mi proyecto de Supabase:
+
+* Tablas
+* SQL
+* RLS
+* Storage
+* Bucket
+* Políticas de Storage
+* Authentication
+* Redirect URLs
+* Variables de entorno
+
+Si necesitás que yo ejecute SQL en Supabase, generá el SQL completo y explicame exactamente dónde ejecutarlo.
+
+## 14. Importante
+
+No simules autenticación con localStorage.
+
+No hagas un login falso.
+
+No guardes contraseñas en PostgreSQL.
+
+No confíes solamente en el frontend para determinar si alguien es administrador.
+
+Todo debe estar realmente conectado a Supabase y funcionar de extremo a extremo.
+
+Antes de finalizar:
+
+1. Revisá que el registro funcione.
+2. Revisá login/logout.
+3. Revisá recuperación de contraseña.
+4. Revisá protección de rutas.
+5. Revisá el sistema de roles.
+6. Revisá RLS.
+7. Revisá Storage.
+8. Revisá creación/edición/eliminación de productos.
+9. Revisá que un usuario normal no pueda ejecutar operaciones de administrador directamente contra Supabase.
+10. Revisá especialmente la implementación de una única sesión activa.
+
+Si encontrás una decisión técnica que pueda generar un problema de seguridad o inconsistencia con Supabase, no la implementes de forma simplificada: explicá el problema y utilizá la alternativa técnicamente correcta.
+
+Al terminar, dame un resumen de:
+
+* archivos creados/modificados
+* SQL que debo ejecutar
+* configuración necesaria en Supabase
+* variables de entorno necesarias
+* cómo crear el primer administrador
+* cómo probar todo el sistema

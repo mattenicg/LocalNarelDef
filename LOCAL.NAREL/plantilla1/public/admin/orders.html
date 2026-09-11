@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Pedidos — Panel Admin | NAREL LOCAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/auth-shared.css">
+  <style>
+    .orders-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .orders-toolbar .form-control{min-width:220px}
+    .orders-table{min-width:980px}
+    .order-number{font:700 15px 'Bebas Neue',sans-serif;letter-spacing:.1em;color:var(--white)}
+    .order-meta{display:block;margin-top:4px;color:var(--grey);font:400 10px 'DM Mono',monospace}
+    .order-status{display:inline-flex;padding:5px 9px;border:1px solid var(--border);font:700 10px 'Oswald',sans-serif;letter-spacing:.12em;text-transform:uppercase}
+    .order-status.cancelado{color:#ddd;border-color:#888}
+    .order-status.entregado,.order-status.pagado{color:#fff;border-color:#fff}
+    .order-status.pendiente,.order-status.comprobante_enviado{color:#ddd;border-color:#aaa}
+    .order-status.preparando,.order-status.enviado,.order-status.confirmado{color:#fff;border-color:#c8c8c8}
+    .order-total{font:700 22px 'Bebas Neue',sans-serif;color:var(--white);white-space:nowrap}
+    .order-detail{display:grid;gap:22px}
+    .order-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .order-detail-block{padding:14px;border:1px solid var(--border);background:var(--black)}
+    .order-detail-block h3{font:700 12px 'Oswald',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--grey);margin-bottom:10px}
+    .order-detail-block p{font:400 12px 'DM Mono',monospace;line-height:1.65;color:var(--white);white-space:pre-wrap;word-break:break-word}
+    .order-items-list{display:grid;gap:8px}
+    .order-item-row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px dashed var(--border);font:400 11px 'DM Mono',monospace}
+    .order-item-row:last-child{border-bottom:0}
+    .order-item-row strong{font-family:'Oswald',sans-serif;font-size:13px}
+    .order-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+    .order-controls .form-group{margin:0;min-width:190px}
+    @media(max-width:700px){.order-detail-grid{grid-template-columns:1fr}.orders-toolbar .form-control{min-width:100%;}}
+  </style>
+</head>
+<body>
+  <div class="topbar"><span>CREW N.L.</span><span>·</span><span>GESTIÓN DE PEDIDOS</span><span>·</span><span>UNA NUEVA VISIÓN</span></div>
+  <header>
+    <a class="logo" href="/">
+      <div class="logo-circle"><img src="/assets/img/logo-ngl-diamond.jpeg" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;background:#000;" onerror="this.onerror=null;this.src='/logo_1.jpeg';var s2=function(){this.onerror=null;this.src='/logo%20solo.jpeg';this.addEventListener('error',function(){this.style.display='none';});}.bind(this);this.addEventListener('error',s2,{once:true});" /></div>
+      <div class="logo-text"><span class="brand">NAREL LOCAL</span><span class="tag">@narel_local</span></div>
+    </a>
+    <nav class="nav-links">
+      <a href="/admin/dashboard.html">DASHBOARD</a>
+      <a href="/admin/products.html">PRODUCTOS</a>
+      <a href="/admin/promos.html">PROMOCIONES</a>
+      <a href="/admin/orders.html" class="active">PEDIDOS</a>
+      <a href="/admin/banners.html">BANNERS</a>
+      <a href="/admin/product-new.html">NUEVO</a>
+      <a href="#" onclick="logout(); return false;">SALIR</a>
+    </nav>
+  </header>
+
+  <main class="page-wrapper">
+    <p class="page-kicker">[ ADMIN — VENTAS ]</p>
+    <h1 class="page-title">Gestión de Pedidos</h1>
+    <div id="pageMessage" aria-live="polite"></div>
+    <section class="admin-panel">
+      <div class="admin-toolbar">
+        <div class="orders-toolbar" style="width:100%;">
+          <input type="search" id="searchInput" class="form-control" placeholder="Buscar por orden, nombre o email" aria-label="Buscar pedidos">
+          <select id="orderStatusFilter" class="form-control" aria-label="Filtrar pedidos por estado">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="preparando">Preparando</option>
+            <option value="enviado">Enviado</option>
+            <option value="entregado">Entregado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+          <button type="button" class="button secondary" id="refreshOrders" style="width:auto;padding:12px 18px;">ACTUALIZAR</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table orders-table" id="ordersTable">
+          <thead><tr><th>Orden</th><th>Comprador</th><th>Total</th><th>Pago</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody id="ordersTbody"><tr><td colspan="7" style="text-align:center;padding:40px;color:var(--grey);font-family:'DM Mono',monospace;">Cargando pedidos...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="orderDetailModal" role="dialog" aria-modal="true" aria-labelledby="orderDetailTitle" aria-hidden="true">
+    <div class="modal-dialog" style="max-width:760px;max-height:90vh;overflow:auto;">
+      <h2 class="modal-title" id="orderDetailTitle">Detalle del pedido</h2>
+      <div id="orderDetailBody"></div>
+      <div class="modal-actions" style="margin-top:24px;"><button type="button" class="button secondary" id="closeOrderDetail" style="width:auto;padding:12px 20px;">CERRAR</button></div>
+    </div>
+  </div>
+
+  <footer class="footer-auth"><strong>NAREL LOCAL</strong> · Panel Administrador · © 2026</footer>
+  <script src="/assets/js/supabaseClientBrowser.js"></script>
+  <script src="/assets/js/authGuard.js"></script>
+  <script src="/admin/assets/js/admin/orders.js"></script>
+</body>
+</html>

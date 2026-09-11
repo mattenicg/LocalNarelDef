@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Banners — Panel Admin | NAREL LOCAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/auth-shared.css">
+  <style>
+    .status-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border:1px solid var(--border);font:700 10px 'Oswald',sans-serif;letter-spacing:.12em;text-transform:uppercase}
+    .status-pill span{width:7px;height:7px;border-radius:50%;background:currentColor}
+    .status-pill.status-on{color:#fff;border-color:#fff}
+    .status-pill.status-off{color:#999;border-color:#555}
+    .btn-mini{padding:8px 10px;border:1px solid var(--border);color:var(--grey);font:700 10px 'Oswald',sans-serif;letter-spacing:.12em;cursor:pointer}
+    .btn-mini:hover{border-color:var(--white);color:var(--white)}
+    .btn-delete:hover{border-color:#fff;color:#fff}
+    .type-pill{display:inline-block;padding:4px 8px;border:1px solid var(--border);font:700 10px 'Oswald',sans-serif;letter-spacing:.14em;text-transform:uppercase}
+    .type-pill.type-combo{border-color:#fff;color:#fff}
+    .promo-picker{max-height:280px;overflow:auto;border:1px solid var(--border);background:var(--dark2)}
+    .promo-pick{display:grid;grid-template-columns:20px 44px 1fr 120px 54px;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border)}
+    .promo-pick:last-child{border-bottom:none}
+    .promo-pick.is-picked{background:rgba(255,255,255,.05)}
+    .promo-pick input[type=checkbox]{width:16px;height:16px;cursor:pointer}
+    .promo-pick-thumb{width:44px;height:34px;display:block;background:#000;border:1px solid var(--border);overflow:hidden}
+    .promo-pick-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .promo-pick-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+    .promo-pick-info b{font:600 12px 'Oswald',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .promo-pick-info small{font:400 10px 'DM Mono',monospace;color:var(--grey)}
+    .promo-pick-price{padding:7px 8px!important;font-size:12px!important;margin:0!important}
+    .promo-pick-off{font:700 11px 'Oswald',sans-serif;letter-spacing:.08em;color:var(--grey);text-align:right}
+    .promo-picker-summary{margin-top:10px;padding:10px 12px;border:1px solid var(--border);font:400 11px 'DM Mono',monospace;color:var(--grey);line-height:1.7}
+    .promo-picker-summary b{color:#fff}
+    .field-hint{display:block;margin-top:6px;font:400 10px 'DM Mono',monospace;color:var(--grey);line-height:1.6}
+    @media(max-width:720px){.form-row{grid-template-columns:1fr!important}.promo-pick{grid-template-columns:20px 1fr 100px}.promo-pick-thumb,.promo-pick-off{display:none}}
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <span>CREW N.L.</span><span>·</span><span>BANNERS PROMOCIONALES</span><span>·</span><span>UNA NUEVA VISIÓN</span>
+  </div>
+
+  <header>
+    <a class="logo" href="/">
+      <div class="logo-circle"><img src="/assets/img/logo-ngl-diamond.jpeg" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;background:#000;" onerror="this.onerror=null;this.src='/logo_1.jpeg';var s2=function(){this.onerror=null;this.src='/logo%20solo.jpeg';this.addEventListener('error',function(){this.style.display='none';});}.bind(this);this.addEventListener('error',s2,{once:true});" /></div>
+      <div class="logo-text">
+        <span class="brand">NAREL LOCAL</span>
+        <span class="tag">@narel_local</span>
+      </div>
+    </a>
+    <nav class="nav-links">
+      <a href="/admin/dashboard.html">DASHBOARD</a>
+      <a href="/admin/products.html">PRODUCTOS</a>
+      <a href="/admin/banners.html" class="active">BANNERS</a>
+      <a href="/admin/orders.html">PEDIDOS</a>
+      <a href="#" onclick="logout(); return false;">SALIR</a>
+    </nav>
+  </header>
+
+  <main class="page-wrapper">
+    <p class="page-kicker">[ ADMIN — PROMOS ]</p>
+    <h1 class="page-title">Gestión de Banners Promocionales</h1>
+    <p class="page-subtitle">Subí, editá y activá banners del tipo "Promos por tiempo limitado" — se mostrarán en la página principal entre categorías y la primera sección.</p>
+
+    <div id="pageMessage"></div>
+
+    <section class="admin-panel">
+      <div class="admin-toolbar">
+        <div class="form-group" style="margin:0;min-width:280px;flex:1;max-width:420px;">
+          <input type="search" id="searchInput" class="form-control" placeholder="Buscar por título, subtítulo...">
+        </div>
+        <div class="admin-toolbar-actions">
+          <button type="button" class="button secondary" id="syncBtn" style="width:auto;padding:10px 16px;">↻ ACTUALIZAR</button>
+          <button type="button" class="button primary" id="newBannerBtn" style="width:auto;padding:10px 16px;">+ NUEVO BANNER</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="admin-table" id="bannersTable">
+          <thead>
+            <tr>
+              <th style="width:80px;">Preview</th>
+              <th>Título</th>
+              <th style="width:150px;">Tipo · Productos</th>
+              <th style="width:180px;">CTA · Link</th>
+              <th style="width:140px;">Vence</th>
+              <th style="width:90px;">Orden</th>
+              <th style="width:100px;">Activo</th>
+              <th style="width:260px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="bannersTbody">
+            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--grey);font-family:'DM Mono',monospace;letter-spacing:.1em;">Cargando banners...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-hidden="true">
+    <div class="modal-dialog">
+      <h2 class="modal-title" id="deleteModalTitle">Eliminar Banner</h2>
+      <p class="modal-text" id="deleteModalText">¿Estás seguro que deseas eliminar este banner? Esta acción no se puede deshacer.</p>
+      <div class="modal-actions">
+        <button type="button" class="button secondary" id="deleteCancelBtn" style="width:auto;padding:12px 20px;">CANCELAR</button>
+        <button type="button" class="button primary" id="deleteConfirmBtn" style="width:auto;padding:12px 20px; background:#c0392b;">ELIMINAR</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="bannerFormModal" role="dialog" aria-modal="true" aria-labelledby="bannerFormTitle" aria-hidden="true">
+    <div class="modal-dialog" style="max-width:700px;max-height:90vh;overflow:auto;">
+      <h2 class="modal-title" id="bannerFormTitle">Nuevo Banner</h2>
+      <div id="bannerFormMessage" class="form-message" style="display:none;"></div>
+      <form id="bannerForm" novalidate>
+        <div class="form-group"><label for="bannerTitle">Título *</label><input class="form-control" id="bannerTitle" name="title" maxlength="120" required placeholder="PROMOS\nEXCLUSIVAS"></div>
+        <div class="form-group"><label for="bannerSubtitle">Subtítulo</label><textarea class="form-control" id="bannerSubtitle" name="subtitle" rows="3" maxlength="280"></textarea></div>
+        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group"><label for="bannerCta">Texto del botón</label><input class="form-control" id="bannerCta" name="cta_text" maxlength="60" value="VER LAS PROMOS"></div>
+          <div class="form-group"><label for="bannerSort">Orden</label><input class="form-control" id="bannerSort" name="sort_order" type="number" min="0" value="0"></div>
+        </div>
+        <div class="form-group"><label for="bannerLink">Link</label><input class="form-control" id="bannerLink" name="link" maxlength="500" value="#pantalones"></div>
+        <div class="form-group">
+          <label for="bannerImage">Imagen del título (opcional)</label>
+          <input class="form-control" id="bannerImage" name="image_url" maxlength="1000" placeholder="/assets/img/promo-title-promos-exclusivas-removebg.png">
+          <span class="field-hint">Si la dejás vacía se muestra el título como texto. Podés usar una ruta del sitio o una URL completa.</span>
+        </div>
+        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label for="bannerType">Tipo de promo</label>
+            <select class="form-control" id="bannerType" name="banner_type">
+              <option value="oferta">OFERTA — se compra cada producto por separado</option>
+              <option value="combo">COMBO — se agregan todos los productos juntos</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="bannerDuration">Duración</label>
+            <select class="form-control" id="bannerDuration">
+              <option value="0.5">12 horas</option>
+              <option value="1">1 día</option>
+              <option value="3">3 días</option>
+              <option value="7" selected>7 días</option>
+              <option value="15">15 días</option>
+              <option value="30">30 días</option>
+              <option value="custom">Fecha y hora exacta…</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group" id="bannerEndDateGroup" style="display:none;"><label for="bannerEndDate">Vence</label><input class="form-control" id="bannerEndDate" name="end_date" type="datetime-local"></div>
+          <label style="display:flex;align-items:center;gap:10px;margin:26px 0 20px;font:600 12px 'Oswald',sans-serif;letter-spacing:.12em;text-transform:uppercase;"><input id="bannerActive" name="active" type="checkbox" checked> Activo</label>
+        </div>
+        <div class="form-group">
+          <label for="bannerProductSearch">Productos de la promo</label>
+          <input class="form-control" id="bannerProductSearch" type="search" placeholder="Buscar producto por nombre..." style="margin-bottom:10px;">
+          <div class="promo-picker" id="bannerProductsList"></div>
+          <div class="promo-picker-summary" id="bannerProductsSummary"></div>
+          <span class="field-hint">Tildá los productos e ingresá el precio promocional. El precio normal se muestra tachado en la tienda.</span>
+        </div>
+        <div class="modal-actions"><button type="button" class="button secondary" id="bannerFormCancel" style="width:auto;padding:12px 20px;">CANCELAR</button><button type="submit" class="button primary" id="bannerFormSave" style="width:auto;padding:12px 20px;">GUARDAR</button></div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer-auth">
+    <strong>NAREL LOCAL</strong> · Panel Administrador · © 2026
+  </footer>
+
+  <script src="/assets/js/supabaseClientBrowser.js"></script>
+  <script src="/assets/js/authGuard.js"></script>
+  <script src="/assets/js/admin/banners.js"></script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Nueva Promoción — Panel Admin | NAREL LOCAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/auth-shared.css">
+  <style>
+    .section-divider{font-family:'Bebas Neue',sans-serif;letter-spacing:.15em;font-size:16px;color:#facc15;margin:28px 0 14px;padding-bottom:8px;border-bottom:1px solid #222;text-transform:uppercase;}
+    .section-divider:first-child{margin-top:0;}
+    .product-selector-wrap{border:1px solid #222;border-radius:8px;background:#0a0a0a;}
+    .product-selector-header{display:flex;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #1a1a1a;flex-wrap:wrap;}
+    .product-selector-header input[type="search"]{flex:1;min-width:220px;}
+    .products-select-list{max-height:360px;overflow-y:auto;}
+    .product-row{display:grid;grid-template-columns:auto 60px 1fr 160px;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid #141414;}
+    .product-row:last-child{border-bottom:none;}
+    .product-row.selected{background:rgba(250,204,21,0.05);}
+    .product-row-img{width:50px;height:50px;border-radius:4px;background:#1a1a1a;overflow:hidden;}
+    .product-row-img img{width:100%;height:100%;object-fit:cover;display:block;}
+    .product-row-name{font-weight:500;font-size:14px;}
+    .product-row-meta{color:#888;font-size:11px;font-family:'DM Mono',monospace;margin-top:2px;}
+    .selected-products-list{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px;}
+    .selected-product-card{border:1px solid #222;border-radius:8px;padding:14px;background:#0d0d0d;}
+    .spc-header{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;margin-bottom:10px;}
+    .spc-img{width:48px;height:48px;border-radius:4px;overflow:hidden;background:#1a1a1a;}
+    .spc-img img{width:100%;height:100%;object-fit:cover;display:block;}
+    .spc-name{font-weight:600;font-size:13px;font-family:'Oswald',sans-serif;letter-spacing:.02em;}
+    .spc-orig{color:#888;font-size:11px;font-family:'DM Mono',monospace;margin-top:2px;}
+    .spc-fields{display:grid;grid-template-columns:repeat(2,1fr) 2fr;gap:10px;}
+    .spc-fields .form-group{margin:0;}
+    .spc-remove{background:transparent;border:1px solid #333;color:#888;width:32px;height:32px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+    .spc-remove:hover{color:#fff;border-color:#ef4444;}
+    .mini-label{font-size:10px;font-family:'DM Mono',monospace;color:#777;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;}
+    .badge-preview{display:inline-block;padding:4px 12px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.08em;margin-top:6px;}
+    .dates-row{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+    .checkbox-row{display:flex;gap:24px;flex-wrap:wrap;align-items:center;padding-top:20px;}
+    @media (max-width:680px){
+      .product-row{grid-template-columns:auto 40px 1fr;}
+      .product-row > :last-child{display:none;}
+      .spc-fields{grid-template-columns:1fr 1fr;}
+      .dates-row{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <span>CREW N.L.</span><span>·</span><span>ENVÍOS A TODO EL PAÍS</span><span>·</span><span>UNA NUEVA VISIÓN</span>
+  </div>
+
+  <header>
+    <a class="logo" href="../plantilla-1.html">
+      <div class="logo-circle"><img src="/assets/img/logo-ngl-diamond.jpeg" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;background:#000;" onerror="this.onerror=null;this.src='/logo_1.jpeg';var s2=function(){this.onerror=null;this.src='/logo%20solo.jpeg';this.addEventListener('error',function(){this.style.display='none';});}.bind(this);this.addEventListener('error',s2,{once:true});" /></div>
+      <div class="logo-text">
+        <span class="brand">NAREL LOCAL</span>
+        <span class="tag">@narel_local</span>
+      </div>
+    </a>
+    <nav class="nav-links">
+      <a href="/admin/dashboard.html">DASHBOARD</a>
+      <a href="/admin/products.html">PRODUCTOS</a>
+      <a href="/admin/promos.html">PROMOCIONES</a>
+      <a href="/admin/promo-new.html" class="active">NUEVA PROMO</a>
+      <a href="#" onclick="logout(); return false;">SALIR</a>
+    </nav>
+  </header>
+
+  <main class="page-wrapper">
+    <p class="page-kicker">[ ADMIN — CREAR OFERTA ]</p>
+    <h1 class="page-title">Nueva Promoción</h1>
+
+    <div class="auth-card" style="max-width:1080px;margin:0 auto 30px;">
+      <div id="formMessage"></div>
+
+      <form id="promoForm" novalidate>
+        <div class="form-grid">
+
+          <h3 class="section-divider">① Datos Generales</h3>
+
+          <div class="form-group full">
+            <label for="title">Título de la Promoción *</label>
+            <input type="text" id="title" name="title" class="form-control" maxlength="200" required placeholder="Ej: BLACK FRIDAY 2x1" autocomplete="off">
+          </div>
+
+          <div class="form-group full">
+            <label for="short_description">Descripción Corta (aparece en tarjeta)</label>
+            <input type="text" id="short_description" name="short_description" class="form-control" maxlength="300" placeholder="Breve explicación de la promo">
+          </div>
+
+          <div class="form-group full">
+            <label for="description">Descripción Completa</label>
+            <textarea id="description" name="description" class="form-control" rows="3" maxlength="8000" placeholder="Detalle completo de la oferta, beneficios, etc."></textarea>
+          </div>
+
+          <div class="form-group full">
+            <label for="terms_and_conditions">Términos y Condiciones</label>
+            <textarea id="terms_and_conditions" name="terms_and_conditions" class="form-control" rows="3" maxlength="5000" placeholder="Reglas, válido hasta stock mínimo, no acumulable, etc."></textarea>
+          </div>
+
+          <h3 class="section-divider">② Descuento</h3>
+
+          <div class="form-group">
+            <label for="discount_type">Tipo de Descuento *</label>
+            <select id="discount_type" name="discount_type" class="form-control" required>
+              <option value="override_products" selected>Precio por Producto (recomendado)</option>
+              <option value="percentage">Porcentaje Global (%)</option>
+              <option value="fixed_amount">Monto Fijo ($ off)</option>
+              <option value="combo_price">Precio Combo / Pack</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="discount_value">Valor del Descuento (según tipo)</label>
+            <input type="number" id="discount_value" name="discount_value" class="form-control" min="0" step="0.01" value="0" placeholder="Ej: 30 (%) o 5000 ($)">
+            <div class="mini-label" id="discountValueHelp">Solo para tipos % / $ fijo / combo</div>
+          </div>
+
+          <h3 class="section-divider">③ Vigencia (Tiempo)</h3>
+
+          <div class="dates-row">
+            <div class="form-group" style="margin:0;">
+              <label for="start_date">Fecha y Hora de Inicio *</label>
+              <input type="datetime-local" id="start_date" name="start_date" class="form-control" required>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label for="end_date">Fecha y Hora de Fin (dejar vacío = sin límite)</label>
+              <input type="datetime-local" id="end_date" name="end_date" class="form-control">
+            </div>
+          </div>
+
+          <h3 class="section-divider">④ Banner y Visual</h3>
+
+          <div class="form-group full">
+            <label for="banner_image">Imagen Banner de la Promo</label>
+            <input type="file" id="banner_image" name="banner_image" class="form-control" accept="image/jpeg,image/png,image/webp">
+            <div class="image-preview" id="imagePreviewWrap" style="display:none;max-height:220px;">
+              <img id="imagePreviewImg" alt="Vista previa banner" style="max-height:220px;object-fit:contain;">
+              <div class="image-info">
+                <span id="imageInfoText">—</span>
+                <button type="button" class="button secondary" id="removeImageBtn" style="width:auto;padding:8px 14px;font-size:10px;">QUITAR</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="badge_label">Etiqueta (badge)</label>
+            <input type="text" id="badge_label" name="badge_label" class="form-control" maxlength="60" value="OFERTA" placeholder="Ej: HOT SALE">
+          </div>
+
+          <div class="form-group">
+            <label for="badge_color">Color del Badge</label>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <input type="color" id="badge_color" name="badge_color" class="form-control" value="#ef4444" style="width:60px;height:44px;padding:4px;min-width:60px;cursor:pointer;">
+              <span class="badge-preview" id="badgePreview" style="background:#ef4444;color:#fff;">OFERTA</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="cta_text">Texto Botón (CTA)</label>
+            <input type="text" id="cta_text" name="cta_text" class="form-control" maxlength="80" value="VER PROMO">
+          </div>
+
+          <div class="form-group">
+            <label for="cta_link">Link del Botón</label>
+            <input type="text" id="cta_link" name="cta_link" class="form-control" maxlength="500" value="#promociones" placeholder="#pantalones o URL externa">
+          </div>
+
+          <h3 class="section-divider">⑤ Estados</h3>
+
+          <div class="form-group">
+            <label for="sort_order">Orden (número, menor = primero)</label>
+            <input type="number" id="sort_order" name="sort_order" class="form-control" step="1" value="0">
+          </div>
+
+          <div class="checkbox-row">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;">
+              <input type="checkbox" id="active" name="active" checked style="width:18px;height:18px;accent-color:#fff;background:#111;border:1px solid #fff;">
+              Activa (se ve en la tienda ahora)
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;">
+              <input type="checkbox" id="featured" name="featured" style="width:18px;height:18px;accent-color:#fff;background:#111;border:1px solid #fff;">
+              Destacada (aparece arriba de todo)
+            </label>
+          </div>
+
+          <h3 class="section-divider">⑥ Productos incluidos en la Promoción</h3>
+
+          <div class="form-group full" style="margin:0;">
+            <div class="product-selector-wrap">
+              <div class="product-selector-header">
+                <input type="search" id="productSearch" class="form-control" placeholder="Buscar producto para agregar...">
+                <span style="color:#777;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.05em;">Click para agregar</span>
+              </div>
+              <div class="products-select-list" id="productsList">
+                <div style="padding:20px;text-align:center;color:#555;font-family:'DM Mono',monospace;font-size:12px;">Cargando productos...</div>
+              </div>
+            </div>
+
+            <div style="margin-top:18px;">
+              <div class="mini-label" style="margin-bottom:8px;">PRODUCTOS SELECCIONADOS — configurá precio y detalle por cada uno</div>
+              <div class="selected-products-list" id="selectedProducts">
+                <div style="padding:30px;border:1px dashed #222;border-radius:8px;text-align:center;color:#555;font-family:'DM Mono',monospace;font-size:12px;">
+                  Todavía no agregaste ningún producto. Buscá y agregalos arriba.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:30px;">
+          <button type="submit" class="button primary" id="submitBtn" style="flex:1;min-width:220px;">GUARDAR PROMOCIÓN</button>
+          <a href="/admin/promos.html" class="button secondary" style="width:auto;padding:16px 28px;">VOLVER A PROMOCIONES</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer-auth">
+    <strong>NAREL LOCAL</strong> · Panel Administrador · © 2026
+  </footer>
+
+  <script src="/assets/js/supabaseClientBrowser.js"></script>
+  <script src="/assets/js/authGuard.js"></script>
+  <script src="/admin/assets/js/admin/promoNew.js"></script>
+</body>
+</html>

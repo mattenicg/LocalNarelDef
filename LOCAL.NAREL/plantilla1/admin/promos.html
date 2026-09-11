@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Promociones — Panel Admin | NAREL LOCAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/auth-shared.css">
+  <style>
+    .badge-chip{display:inline-block;padding:3px 10px;border-radius:999px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;line-height:1.5;}
+    .badge-chip.active{background:#16a34a;color:#fff;}
+    .badge-chip.inactive{background:#555;color:#fff;}
+    .badge-chip.featured{background:#facc15;color:#000;}
+    .badge-chip.expired{background:#dc2626;color:#fff;}
+    .badge-chip.upcoming{background:#2563eb;color:#fff;}
+    .discount-type{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.05em;padding:2px 8px;border:1px solid #444;border-radius:4px;}
+    .promo-title{font-weight:600;font-family:'Oswald',sans-serif;letter-spacing:.02em;}
+    .promo-meta{color:#888;font-size:12px;font-family:'DM Mono',monospace;margin-top:4px;}
+    .admin-promos-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+    .promo-card{background:#0d0d0d;border:1px solid #1f1f1f;border-radius:8px;padding:18px;display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;}
+    .promo-card-img{width:110px;height:80px;border-radius:6px;overflow:hidden;background:#1a1a1a;flex-shrink:0;}
+    .promo-card-img img{width:100%;height:100%;object-fit:cover;display:block;}
+    .promo-card-body{min-width:0;}
+    .promo-card-body .topline{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px;}
+    .promo-card-actions{display:flex;flex-direction:column;gap:8px;align-items:stretch;}
+    .promo-card-actions .button{width:100%;justify-content:center;padding:8px 14px;font-size:11px;}
+    .items-count{font-size:12px;color:#bbb;font-family:'DM Mono',monospace;}
+    .tag-discount{display:inline-block;padding:2px 8px;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.05em;}
+    @media (max-width: 720px){
+      .promo-card{grid-template-columns:1fr;}
+      .promo-card-img{width:100%;height:140px;}
+      .promo-card-actions{flex-direction:row;flex-wrap:wrap;}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <span>CREW N.L.</span><span>·</span><span>ENVÍOS A TODO EL PAÍS</span><span>·</span><span>UNA NUEVA VISIÓN</span>
+  </div>
+
+  <header>
+    <a class="logo" href="../plantilla 1.html">
+      <div class="logo-circle"><img src="/assets/img/logo-ngl-diamond.jpeg" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;background:#000;" onerror="this.onerror=null;this.src='/logo_1.jpeg';var s2=function(){this.onerror=null;this.src='/logo%20solo.jpeg';this.addEventListener('error',function(){this.style.display='none';});}.bind(this);this.addEventListener('error',s2,{once:true});" /></div>
+      <div class="logo-text">
+        <span class="brand">NAREL LOCAL</span>
+        <span class="tag">@narel_local</span>
+      </div>
+    </a>
+    <nav class="nav-links">
+      <a href="/admin/dashboard.html">DASHBOARD</a>
+      <a href="/admin/products.html">PRODUCTOS</a>
+      <a href="/admin/promos.html" class="active">PROMOCIONES</a>
+      <a href="#" onclick="logout(); return false;">SALIR</a>
+    </nav>
+  </header>
+
+  <main class="page-wrapper">
+    <p class="page-kicker">[ ADMIN — OFERTAS ]</p>
+    <h1 class="page-title">Gestión de Promociones</h1>
+
+    <div id="pageMessage"></div>
+
+    <section class="admin-panel">
+      <div class="admin-toolbar">
+        <div class="form-group" style="margin:0;min-width:280px;flex:1;max-width:420px;">
+          <input type="search" id="searchInput" class="form-control" placeholder="Buscar promo por nombre, descripción...">
+        </div>
+        <div class="admin-toolbar-actions">
+          <a href="/admin/promo-new.html" class="button primary">+ NUEVA PROMOCIÓN</a>
+        </div>
+      </div>
+
+      <div class="admin-promos-grid" id="promosGrid">
+        <div style="text-align:center;padding:40px;color:var(--grey);font-family:'DM Mono',monospace;letter-spacing:.1em;">Cargando promociones...</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="modal-dialog">
+      <h2 class="modal-title" id="deleteModalTitle">Eliminar Promoción</h2>
+      <p class="modal-text" id="deleteModalText">¿Estás seguro que deseas eliminar esta promoción? Esta acción no se puede deshacer.</p>
+      <div class="modal-actions">
+        <button type="button" class="button secondary" id="deleteCancelBtn" style="width:auto;padding:12px 20px;">CANCELAR</button>
+        <button type="button" class="button primary" id="deleteConfirmBtn" style="width:auto;padding:12px 20px;">ELIMINAR</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer-auth">
+    <strong>NAREL LOCAL</strong> · Panel Administrador · © 2026
+  </footer>
+
+  <script src="/assets/js/supabaseClientBrowser.js"></script>
+  <script src="/assets/js/authGuard.js"></script>
+  <script src="/admin/assets/js/admin/promos.js"></script>
+</body>
+</html>

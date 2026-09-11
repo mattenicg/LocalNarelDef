@@ -1,0 +1,41 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# Base de datos SQLite
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+
+# Logs
+logs/*.log
+logs/
+!logs/.gitkeep
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Subidas de usuarios
+uploads/
+!uploads/.gitkeep
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Variables de entorno PM2
+ecosystem.config.js
+process.json

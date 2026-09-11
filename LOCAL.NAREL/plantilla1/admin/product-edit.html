@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Editar Producto — Panel Admin | NAREL LOCAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/auth-shared.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <span>CREW N.L.</span><span>·</span><span>ENVÍOS A TODO EL PAÍS</span><span>·</span><span>UNA NUEVA VISIÓN</span>
+  </div>
+
+  <header>
+    <a class="logo" href="../plantilla-1.html">
+      <div class="logo-circle"><img src="/assets/img/logo-ngl-diamond.jpeg" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;background:#000;" onerror="this.onerror=null;this.src='/logo_1.jpeg';var s2=function(){this.onerror=null;this.src='/logo%20solo.jpeg';this.addEventListener('error',function(){this.style.display='none';});}.bind(this);this.addEventListener('error',s2,{once:true});" /></div>
+      <div class="logo-text">
+        <span class="brand">NAREL LOCAL</span>
+        <span class="tag">@narel_local</span>
+      </div>
+    </a>
+    <nav class="nav-links">
+      <a href="/admin/dashboard.html">DASHBOARD</a>
+      <a href="/admin/products.html" class="active">PRODUCTOS</a>
+      <a href="/admin/promos.html">PROMOCIONES</a>
+      <a href="/admin/product-new.html">NUEVO</a>
+      <a href="#" onclick="logout(); return false;">SALIR</a>
+    </nav>
+  </header>
+
+  <main class="page-wrapper">
+    <p class="page-kicker">[ ADMIN — EDITAR ]</p>
+    <h1 class="page-title">Editar Producto</h1>
+
+    <div class="auth-card" style="max-width:880px;margin:0 auto 30px;">
+      <div id="formMessage"></div>
+
+      <form id="productForm" novalidate>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="name">Nombre del Producto</label>
+            <input type="text" id="name" name="name" class="form-control" maxlength="200" required autocomplete="off">
+          </div>
+
+          <div class="form-group full">
+            <label for="description">Descripción</label>
+            <textarea id="description" name="description" class="form-control" rows="4" maxlength="2000"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="price">Precio ($ ARS)</label>
+            <input type="number" id="price" name="price" class="form-control" min="0" step="0.01" value="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="stock">Stock (unidades)</label>
+            <input type="number" id="stock" name="stock" class="form-control" min="0" step="1" value="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="category">Categoría (Sección de la tienda) *</label>
+            <select id="category" name="category" class="form-control" required>
+              <option value="" disabled>Elegí una sección...</option>
+              <option value="pantalones">PANTALONES</option>
+              <option value="camperas">CAMPERAS</option>
+              <option value="buzos">BUZOS</option>
+              <option value="remeras">REMERAS</option>
+              <option value="accesorios">ACCESORIOS</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="display:flex;align-items:flex-start;gap:28px;padding-top:28px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;">
+              <input type="checkbox" id="active" name="active" style="width:18px;height:18px;accent-color:#fff;background:#111;border:1px solid #fff;">
+              Activo (se ve en la tienda)
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;">
+              <input type="checkbox" id="featured" name="featured" style="width:18px;height:18px;accent-color:#fff;background:#111;border:1px solid #fff;">
+              Destacado (aparece primero)
+            </label>
+          </div>
+
+          <div class="form-group full">
+            <label for="sizes">Talles (ej: S, M, L, XL / Único / 38 al 44)</label>
+            <input type="text" id="sizes" name="sizes" class="form-control" maxlength="200" placeholder="S · M · L · XL">
+          </div>
+
+          <div class="form-group full">
+            <label for="image">Imagen del Producto</label>
+            <input type="file" id="image" name="image" class="form-control" accept="image/jpeg,image/png,image/webp">
+            <div class="image-preview" id="imagePreviewWrap" style="display:none;">
+              <img id="imagePreviewImg" alt="Vista previa">
+              <div class="image-info">
+                <span id="imageInfoText">—</span>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button type="button" class="button secondary" id="removeImageBtn" style="width:auto;padding:8px 14px;font-size:10px;">QUITAR NUEVA</button>
+                  <button type="button" class="button secondary" id="deleteCurrentImageBtn" style="width:auto;padding:8px 14px;font-size:10px;display:none;">ELIMINAR IMAGEN ACTUAL</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
+          <button type="submit" class="button primary" id="submitBtn" style="flex:1;min-width:220px;">GUARDAR CAMBIOS</button>
+          <a href="/admin/products.html" class="button secondary" style="width:auto;padding:16px 28px;">VOLVER A PRODUCTOS</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer-auth">
+    <strong>NAREL LOCAL</strong> · Panel Administrador · © 2026
+  </footer>
+
+  <script src="../assets/js/supabaseClientBrowser.js"></script>
+  <script src="../assets/js/authGuard.js"></script>
+  <script src="./assets/js/admin/productEdit.js"></script>
+</body>
+</html>

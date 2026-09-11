@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Iniciar Sesión - Panel Administrador</title>
+    <link rel="stylesheet" href="./assets/css/admin.css">
+</head>
+<body class="login-body">
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-brand">
+                <svg class="brand-logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect width="48" height="48" rx="12" fill="var(--color-primary, #6366f1)"/>
+                    <path d="M24 14L14 34H20L22 28H26L28 34H34L24 14ZM23.2 24L24 19.6L24.8 24H23.2Z" fill="white"/>
+                </svg>
+                <h1 class="brand-title">Panel Admin</h1>
+                <p class="brand-subtitle">Gestión comercial SaaS</p>
+            </div>
+
+            <form id="loginForm" class="login-form" novalidate>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <div class="input-with-icon">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                        <input type="email" id="email" name="email" placeholder="tu@email.com" required autocomplete="email" aria-describedby="emailHelp">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <div class="input-with-icon">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password" aria-describedby="passwordHelp">
+                        <button type="button" class="toggle-password" id="togglePassword" aria-label="Mostrar contraseña" aria-pressed="false">
+                            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <label class="checkbox-group">
+                    <input type="checkbox" id="remember" name="remember">
+                    <span>Recordarme en este equipo</span>
+                </label>
+
+                <div class="form-error" id="loginError" role="alert" aria-live="polite"></div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+                    <span class="btn-text">Ingresar</span>
+                    <span class="spinner spinner-sm"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        if (localStorage.getItem('admin_token')) {
+            window.location.replace('index.html#/dashboard');
+            return;
+        }
+
+        const form = document.getElementById('loginForm');
+        const errorEl = document.getElementById('loginError');
+        const loginBtn = document.getElementById('loginBtn');
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const emailInput = document.getElementById('email');
+
+        try {
+            const savedEmail = localStorage.getItem('admin_remember_email');
+            if (savedEmail) {
+                emailInput.value = savedEmail;
+                document.getElementById('remember').checked = true;
+            }
+        } catch(e) {}
+
+        togglePassword.addEventListener('click', function() {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            togglePassword.setAttribute('aria-pressed', String(isPassword));
+        });
+
+        function showToastError(mensaje) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast error show';
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+                <div class="toast-body">
+                    <div class="toast-title">Error al iniciar sesión</div>
+                    <div class="toast-message">${mensaje.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(function() {
+                toast.classList.remove('show');
+                setTimeout(function() { toast.remove(); }, 320);
+            }, 3500);
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            errorEl.textContent = '';
+            loginBtn.classList.add('loading');
+            loginBtn.disabled = true;
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const remember = document.getElementById('remember').checked;
+
+            if (!email || !password) {
+                errorEl.textContent = 'Completá email y contraseña';
+                loginBtn.classList.remove('loading');
+                loginBtn.disabled = false;
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, password: password })
+                });
+
+                let data = null;
+                try {
+                    const text = await res.text();
+                    data = text ? JSON.parse(text) : null;
+                } catch(err) {
+                    data = null;
+                }
+
+                if (!res.ok) {
+                    const msg = (data && (data.error || data.message)) || 'Credenciales inválidas';
+                    throw new Error(msg);
+                }
+
+                const token = data?.token;
+                if (!token) throw new Error('Respuesta inválida del servidor');
+
+                localStorage.setItem('admin_token', token);
+
+                if (data?.admin?.nombre) {
+                    try { localStorage.setItem('admin_name', data.admin.nombre); } catch(e) {}
+                }
+                if (data?.admin?.email) {
+                    try { localStorage.setItem('admin_email', data.admin.email); } catch(e) {}
+                }
+
+                if (remember) {
+                    try { localStorage.setItem('admin_remember_email', email); } catch(e) {}
+                } else {
+                    try { localStorage.removeItem('admin_remember_email'); } catch(e) {}
+                }
+
+                window.location.replace('index.html#/dashboard');
+            } catch (err) {
+                const msg = err.message || 'Error al conectar con el servidor';
+                errorEl.textContent = msg;
+                showToastError(msg);
+            } finally {
+                loginBtn.classList.remove('loading');
+                loginBtn.disabled = false;
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

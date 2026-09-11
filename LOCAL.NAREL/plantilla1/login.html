@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión — NAREL LOCAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./public/assets/css/auth-shared.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <span>CREW N.L.</span><span>·</span><span>ENVÍOS A TODO EL PAÍS</span><span>·</span><span>UNA NUEVA VISIÓN</span>
+  </div>
+
+  <header>
+    <a class="logo" href="./plantilla 1.html">
+      <div class="logo-circle"><img src="/assets/img/logo-ngl-diamond.jpeg" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;background:#000;" onerror="this.onerror=null;this.src='/logo_1.jpeg';var s2=function(){this.onerror=null;this.src='/logo%20solo.jpeg';this.addEventListener('error',function(){this.style.display='none';});}.bind(this);this.addEventListener('error',s2,{once:true});" /></div>
+      <div class="logo-text">
+        <span class="brand">NAREL LOCAL</span>
+        <span class="tag">@narel_local</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="./plantilla 1.html">TIENDA</a>
+      <a href="./login.html" class="active">LOGIN</a>
+      <a href="./register.html">REGISTRO</a>
+      <a href="./dashboard.html">DASHBOARD</a>
+    </div>
+  </header>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <h1 class="auth-title">Iniciar Sesión</h1>
+      <p class="auth-subtitle">ACCEDÉ A TU CUENTA · CREW N.L.</p>
+
+      <div id="formMessage" class="form-message"></div>
+
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="email">Correo electrónico</label>
+          <input type="email" id="email" name="email" class="form-control" placeholder="tu@email.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <div class="auth-links">
+          <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font:500 12px 'DM Mono',monospace;color:var(--grey);letter-spacing:.05em;">
+            <input type="checkbox" id="remember" style="accent-color:var(--white);width:14px;height:14px;">
+            Recordarme
+          </label>
+          <a href="./forgot-password.html">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button type="submit" id="submitBtn" class="button primary">ENTRAR</button>
+      </form>
+
+      <div class="auth-divider">
+        ¿No tenés cuenta? <a href="./register.html">CREAR CUENTA</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-auth">
+    <strong>© 2026</strong> · NAREL LOCAL · CREW N.L.
+  </div>
+
+  <script src="./public/assets/js/supabaseClientBrowser.js"></script>
+  <script src="./public/assets/js/authGuard.js"></script>
+  <script src="./public/assets/js/auth/login.js"></script>
+</body>
+</html>

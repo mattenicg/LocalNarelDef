@@ -1,0 +1,345 @@
+/* ==========================================================================
+   PROMO BANNERS (ofertas y combos gestionables desde el panel admin)
+   Extiende los estilos base de .promo-banner definidos en la home.
+   ========================================================================== */
+
+.promo-banners-root {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+
+.promo-banners-root .promo-banner {
+  animation: promoBannerIn .7s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+@keyframes promoBannerIn {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-banners-root .promo-banner {
+    animation: none;
+  }
+}
+
+/* ===== Etiqueta de tipo: OFERTA / COMBO ===== */
+.promo-type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  background: rgba(255, 255, 255, .06);
+  color: var(--white);
+  font: 700 10px 'Oswald', sans-serif;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+}
+
+.promo-type-pill[data-type="combo"] {
+  border-color: var(--yellow);
+  background: var(--yellow);
+  color: #0a0a0a;
+}
+
+/* ===== Grilla de productos dentro del banner ===== */
+.promo-products {
+  grid-column: 1 / -1;
+  position: relative;
+  z-index: 2;
+  margin-top: 6px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, .16);
+}
+
+.promo-products-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.promo-products-head h3 {
+  margin: 0;
+  font: 600 13px 'Oswald', sans-serif;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--white);
+}
+
+.promo-products-head span {
+  font: 400 11px 'DM Mono', monospace;
+  letter-spacing: .1em;
+  color: var(--grey);
+}
+
+.promo-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.promo-product {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(0, 0, 0, .55);
+  transition: border-color .25s, transform .25s;
+}
+
+.promo-product:hover {
+  border-color: rgba(255, 255, 255, .45);
+  transform: translateY(-3px);
+}
+
+.promo-product-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--dark2);
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+.promo-product-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .4s;
+}
+
+.promo-product:hover .promo-product-media img {
+  transform: scale(1.05);
+}
+
+.promo-product-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--border);
+}
+
+.promo-product-placeholder svg {
+  width: 26px;
+  height: 26px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.promo-product-off {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  background: var(--yellow);
+  color: #0a0a0a;
+  font: 700 10px 'Oswald', sans-serif;
+  letter-spacing: .12em;
+}
+
+.promo-product-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 12px 14px;
+  flex: 1;
+}
+
+.promo-product-name {
+  margin: 0;
+  font: 600 12px 'Oswald', sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--white);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.promo-product-sizes {
+  font: 400 10px 'DM Mono', monospace;
+  letter-spacing: .08em;
+  color: var(--grey);
+}
+
+.promo-price-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.promo-price-old {
+  font: 400 12px 'DM Mono', monospace;
+  color: var(--grey);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.promo-price-new {
+  font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: .02em;
+  color: var(--white);
+}
+
+.promo-product-add,
+.promo-combo-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--white);
+  background: transparent;
+  color: var(--white);
+  cursor: pointer;
+  font: 700 11px 'Oswald', sans-serif;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  transition: background .2s, color .2s, transform .2s;
+}
+
+.promo-product-add svg,
+.promo-combo-add svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+}
+
+.promo-product-add:hover:not(:disabled),
+.promo-combo-add:hover:not(:disabled) {
+  background: var(--white);
+  color: #0a0a0a;
+}
+
+.promo-product-add:disabled,
+.promo-combo-add:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  border-color: var(--border);
+  color: var(--grey);
+}
+
+.promo-product-add:focus-visible,
+.promo-combo-add:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+
+/* ===== Barra de combo (precio total + agregar todo) ===== */
+.promo-combo-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 14px 18px;
+  border: 1px solid rgba(255, 255, 255, .28);
+  background: rgba(255, 255, 255, .05);
+}
+
+.promo-combo-total {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.promo-combo-total span {
+  font: 500 10px 'DM Mono', monospace;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.promo-combo-prices {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.promo-combo-prices b {
+  font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+  font-size: clamp(26px, 2.6vw, 34px);
+  line-height: 1;
+  color: var(--white);
+}
+
+.promo-combo-add {
+  padding: 13px 20px;
+  background: var(--yellow);
+  color: #0a0a0a;
+  border-color: var(--yellow);
+}
+
+.promo-combo-add:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: var(--white);
+}
+
+.promo-combo-note {
+  width: 100%;
+  margin: 0;
+  font: 400 10px 'DM Mono', monospace;
+  letter-spacing: .08em;
+  color: var(--grey);
+}
+
+/* ===== Marcas de promo dentro del carrito ===== */
+.cart-item-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  font: 700 8px 'Oswald', sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--white);
+  vertical-align: middle;
+}
+
+.cart-item-info small s {
+  color: var(--grey);
+  opacity: .8;
+  margin-right: 4px;
+}
+
+.cart-item-info small b {
+  color: var(--white);
+}
+
+@media (max-width: 860px) {
+  .promo-products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .promo-combo-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .promo-combo-add {
+    width: 100%;
+  }
+}
