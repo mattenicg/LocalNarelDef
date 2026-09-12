@@ -85,10 +85,14 @@
       id: String(raw && raw.id || ''),
       title: String(raw && raw.title || DEFAULT_BANNER.title),
       subtitle: String(raw && raw.subtitle || ''),
+      short_description: String(raw && raw.short_description || ''),
+      description: String(raw && raw.description || ''),
       cta_text: String(raw && raw.cta_text || DEFAULT_BANNER.cta_text),
       link: safeUrl(raw && raw.link, true) || DEFAULT_BANNER.link,
       image_url: safeUrl(raw && raw.image_url, false),
       banner_type: type,
+      badge_label: String(raw && raw.badge_label || ''),
+      badge_color: String(raw && raw.badge_color || ''),
       end_date: resolveEndDate(raw || {}),
       items,
     };
@@ -180,6 +184,12 @@
     const subtitle = banner.subtitle
       ? `<p class="promo-subtitle">${escapeHtml(banner.subtitle)}</p>`
       : '';
+    const shortDesc = banner.short_description
+      ? `<p class="promo-short-desc">${escapeHtml(banner.short_description)}</p>`
+      : '';
+    const badge = banner.badge_label
+      ? `<span class="promo-badge" style="background:${escapeHtml(banner.badge_color || '#ef4444')};">${escapeHtml(banner.badge_label)}</span>`
+      : '';
     return `<article class="promo-banner" data-banner-id="${escapeHtml(banner.id)}" data-banner-type="${banner.banner_type}">
       <div class="promo-banner-glow"></div>
       <div class="promo-banner-bg"></div>
@@ -189,9 +199,11 @@
           <span class="flash-dot"></span>
           <span>¡POR TIEMPO LIMITADO!</span>
         </div>
+        ${badge}
         <span class="promo-type-pill" data-type="${banner.banner_type}">${banner.banner_type === 'combo' ? 'COMBO' : 'OFERTA'}</span>
         ${titleMarkup(banner)}
         ${subtitle}
+        ${shortDesc}
         <a href="${escapeHtml(banner.link)}" class="promo-cta">
           <span>${escapeHtml(banner.cta_text)}</span>
           ${ARROW_SVG}

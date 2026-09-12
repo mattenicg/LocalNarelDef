@@ -74,6 +74,25 @@ EXCEPTION
 END
 $$;
 
+-- Campos extra migrados desde el sistema de promotions (consolidado en banners)
+ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS short_description VARCHAR(300);
+ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS terms_and_conditions TEXT;
+ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS discount_type VARCHAR(30) NOT NULL DEFAULT 'override_products';
+DO $$
+BEGIN
+  ALTER TABLE promo_banners ADD CONSTRAINT promo_banners_discount_type_check CHECK (discount_type IN ('percentage','fixed_amount','combo_price','override_products'));
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END
+$$;
+ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS discount_value NUMERIC(12,2) NOT NULL DEFAULT 0;
+ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS badge_label VARCHAR(60);
+ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS badge_color VARCHAR(20);
+ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS start_date TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE promo_banners ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_promo_banners_featured ON promo_banners(featured);
+
 -- Productos incluidos en un banner promocional.
 -- El precio "tachado" es products.price y promo_price es el precio exclusivo de la oferta.
 CREATE TABLE IF NOT EXISTS promo_banner_items (

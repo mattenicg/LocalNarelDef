@@ -9,6 +9,7 @@ const router = express.Router();
 router.use(authenticate, requireAdmin);
 
 const BANNER_TYPES = ['oferta', 'combo'];
+const DISCOUNT_TYPES = ['percentage', 'fixed_amount', 'combo_price', 'override_products'];
 const DEFAULT_DURATION_DAYS = 7;
 const MAX_ITEMS_PER_BANNER = 24;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -24,6 +25,15 @@ const bannerRules = [
   body('duration_days').optional({ nullable: true }).isFloat({ min: 0.02, max: 365 }).withMessage('Duración inválida.'),
   body('end_date').optional({ nullable: true }).custom((value) => !value || Number.isFinite(new Date(value).getTime())).withMessage('Fecha de vencimiento inválida.'),
   body('sort_order').optional().isInt().withMessage('Orden inválido.'),
+  body('short_description').optional({ nullable: true }).isString().isLength({ max: 300 }).withMessage('Descripción corta inválida.'),
+  body('description').optional({ nullable: true }).isString().withMessage('Descripción inválida.'),
+  body('terms_and_conditions').optional({ nullable: true }).isString().withMessage('Términos inválidos.'),
+  body('discount_type').optional({ nullable: true }).isIn(DISCOUNT_TYPES).withMessage('Tipo de descuento inválido.'),
+  body('discount_value').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Valor de descuento inválido.'),
+  body('badge_label').optional({ nullable: true }).isString().isLength({ max: 60 }).withMessage('Etiqueta de badge inválida.'),
+  body('badge_color').optional({ nullable: true }).isString().isLength({ max: 20 }).withMessage('Color de badge inválido.'),
+  body('start_date').optional({ nullable: true }).custom((value) => !value || Number.isFinite(new Date(value).getTime())).withMessage('Fecha de inicio inválida.'),
+  body('featured').optional().isBoolean().withMessage('Destacado inválido.'),
   body('items').optional({ nullable: true }).isArray({ max: MAX_ITEMS_PER_BANNER }).withMessage(`Máximo ${MAX_ITEMS_PER_BANNER} productos por banner.`),
   body('items.*.product_id').isUUID().withMessage('Producto inválido.'),
   body('items.*.promo_price').isFloat({ min: 0 }).withMessage('El precio promocional debe ser un número mayor o igual a 0.'),
@@ -94,6 +104,12 @@ async function attachItems(executor, banners) {
   return banners.map((banner) => ({ ...banner, items: grouped.get(banner.id) || [] }));
 }
 
+function resolveStartDate(payload) {
+  const explicit = payload.start_date ? new Date(payload.start_date) : null;
+  if (explicit && Number.isFinite(explicit.getTime())) return explicit.toISOString();
+  return new Date().toISOString();
+}
+
 function bannerValues(payload) {
   return [
     payload.title.trim(),
@@ -105,6 +121,15 @@ function bannerValues(payload) {
     resolveEndDate(payload),
     Number(payload.sort_order) || 0,
     BANNER_TYPES.includes(payload.banner_type) ? payload.banner_type : 'oferta',
+    payload.short_description || null,
+    payload.description || null,
+    payload.terms_and_conditions || null,
+    DISCOUNT_TYPES.includes(payload.discount_type) ? payload.discount_type : 'override_products',
+    Number(payload.discount_value) || 0,
+    payload.badge_label || null,
+    payload.badge_color || null,
+    resolveStartDate(payload),
+    payload.featured === true,
   ];
 }
 
@@ -129,8 +154,9 @@ router.post('/', bannerRules, async (req, res) => {
   const items = normalizeItems(req.body.items) || [];
   const banner = await withTransaction(async (client) => {
     const result = await client.query(
-      `INSERT INTO promo_banners(title,subtitle,cta_text,link,image_url,active,end_date,sort_order,banner_type)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      `INSERT INTO promo_banners(title,subtitle,cta_text,link,image_url,active,end_date,sort_order,banner_type,
+        short_description,description,terms_and_conditions,discount_type,discount_value,badge_label,badge_color,start_date,featured)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
       bannerValues(req.body),
     );
     const created = result.rows[0];
@@ -147,8 +173,9 @@ router.put('/:id', [param('id').isUUID().withMessage('Banner inválido.'), ...ba
   const banner = await withTransaction(async (client) => {
     const result = await client.query(
       `UPDATE promo_banners
-       SET title=$1,subtitle=$2,cta_text=$3,link=$4,image_url=$5,active=$6,end_date=$7,sort_order=$8,banner_type=$9
-       WHERE id=$10 RETURNING *`,
+       SET title=$1,subtitle=$2,cta_text=$3,link=$4,image_url=$5,active=$6,end_date=$7,sort_order=$8,banner_type=$9,
+        short_description=$10,description=$11,terms_and_conditions=$12,discount_type=$13,discount_value=$14,badge_label=$15,badge_color=$16,start_date=$17,featured=$18
+       WHERE id=$19 RETURNING *`,
       [...bannerValues(req.body), req.params.id],
     );
     const updated = result.rows[0];

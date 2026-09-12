@@ -52,6 +52,28 @@
   color: #0a0a0a;
 }
 
+/* ===== Badge personalizado de la promo ===== */
+.promo-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 5px 14px;
+  color: #fff;
+  font: 700 11px 'Oswald', sans-serif;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  border-radius: 3px;
+}
+
+/* ===== Descripción corta ===== */
+.promo-short-desc {
+  margin: 0;
+  font: 400 13px 'DM Mono', monospace;
+  letter-spacing: .04em;
+  color: var(--grey);
+  line-height: 1.6;
+}
+
 /* ===== Grilla de productos dentro del banner ===== */
 .promo-products {
   grid-column: 1 / -1;
