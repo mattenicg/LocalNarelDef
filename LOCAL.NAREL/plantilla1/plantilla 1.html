@@ -121,22 +121,33 @@
     }
 
     /* ===== TOPBAR ===== */
-    .topbar {
-      height: 34px;
-      background: linear-gradient(90deg, var(--yellow), var(--orange));
-      color: var(--black);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 18px;
-      font: 700 11px 'Bebas Neue', sans-serif;
-      letter-spacing: .22em;
-      text-transform: uppercase;
-    }
+   /* ===== TOPBAR (regla base, fuera de cualquier @media) ===== */
+  .topbar {
+    height: 34px;
+    background: linear-gradient(90deg,
+      var(--yellow), var(--orange),
+      var(--yellow), var(--orange)
+    );
+    background-size: 200% 100%;
+    animation: topbarSlide 8s linear infinite;
+    color: var(--black);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    font: 700 11px 'Bebas Neue', sans-serif;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+  }
 
-    .topbar span {
-      opacity: .55
-    }
+  .topbar span {
+    opacity: .55
+  }
+
+  @keyframes topbarSlide {
+    from { background-position: 0% 0; }
+    to   { background-position: -100% 0; }
+  }
 
     /* ===== HEADER ===== */
     header {
