@@ -355,7 +355,15 @@
       var controller = this._brickController;
       this._brickController = null;
       if (controller && typeof controller.unmount === 'function') {
-        return controller.unmount().catch(function () {});
+        try {
+          var result = controller.unmount();
+
+          if (result && typeof result.catch === 'function') {
+            return result.catch(function () {});
+          }
+        } catch (error) {
+          // Ignorar errores al desmontar el Brick.
+        }
       }
       return Promise.resolve();
     }
