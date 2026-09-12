@@ -349,18 +349,11 @@
           });
         });
       });
-    }
-
-    _destroyBrick() {
+   _destroyBrick() {
   var controller = this._brickController;
   this._brickController = null;
-
   if (controller && typeof controller.unmount === 'function') {
-    try {
-      controller.unmount();
-    } catch (error) {
-      // El Brick ya fue desmontado o no pudo desmontarse.
-    }
+    return controller.unmount().catch(function () {});
   }
 }
 
