@@ -352,13 +352,17 @@
     }
 
     _destroyBrick() {
-      var controller = this._brickController;
-      this._brickController = null;
-      if (controller && typeof controller.unmount === 'function') {
-        return controller.unmount().catch(function () {});
-      }
-      return Promise.resolve();
+  var controller = this._brickController;
+  this._brickController = null;
+
+  if (controller && typeof controller.unmount === 'function') {
+    try {
+      controller.unmount();
+    } catch (error) {
+      // El Brick ya fue desmontado o no pudo desmontarse.
     }
+  }
+}
 
     _updateAmount() {
       var self = this;
