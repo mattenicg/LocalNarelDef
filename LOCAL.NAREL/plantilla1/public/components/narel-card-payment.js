@@ -349,13 +349,16 @@
           });
         });
       });
-   _destroyBrick() {
-  var controller = this._brickController;
-  this._brickController = null;
-  if (controller && typeof controller.unmount === 'function') {
-    return controller.unmount().catch(function () {});
-  }
-}
+    }
+
+    _destroyBrick() {
+      var controller = this._brickController;
+      this._brickController = null;
+      if (controller && typeof controller.unmount === 'function') {
+        return controller.unmount().catch(function () {});
+      }
+      return Promise.resolve();
+    }
 
     _updateAmount() {
       var self = this;
