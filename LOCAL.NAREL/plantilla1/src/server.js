@@ -152,7 +152,7 @@ app.get('/api/products/public', async (req, res) => {
 app.get('/api/banners/public', async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 10, 50);
-    const result = await query('SELECT id,title,subtitle,cta_text,link,image_url,banner_type,active,end_date,sort_order,created_at FROM promo_banners WHERE active=true AND (end_date IS NULL OR end_date>now()) ORDER BY sort_order,created_at DESC LIMIT $1',[limit]);
+    const result = await query('SELECT id,title,subtitle,short_description,description,terms_and_conditions,discount_type,discount_value,badge_label,badge_color,cta_text,link,image_url,banner_type,active,start_date,end_date,sort_order,featured,created_at FROM promo_banners WHERE active=true AND (end_date IS NULL OR end_date>now()) ORDER BY sort_order,created_at DESC LIMIT $1',[limit]);
     const banners = result.rows;
     if (banners.length) {
       const items = await query(

@@ -48,6 +48,9 @@
     $('bannerProductSearch')?.addEventListener('input', renderPicker);
     $('bannerProductsList')?.addEventListener('change', handlePickerChange);
     $('bannerProductsList')?.addEventListener('input', handlePickerChange);
+    $('bannerDiscountType')?.addEventListener('change', updateDiscountHelp);
+    $('bannerBadgeLabel')?.addEventListener('input', updateBadgePreview);
+    $('bannerBadgeColor')?.addEventListener('input', updateBadgePreview);
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
       closeDelete();
@@ -245,6 +248,48 @@
     if (group) group.style.display = isCustom ? '' : 'none';
   }
 
+  function updateDiscountHelp() {
+    const typeEl = $('bannerDiscountType');
+    const helpEl = $('discountValueHelp');
+    const valEl = $('bannerDiscountValue');
+    if (!typeEl || !helpEl) return;
+    const v = typeEl.value || 'override_products';
+    if (v === 'override_products') {
+      helpEl.textContent = 'El precio lo definís en cada producto de abajo';
+      if (valEl) valEl.placeholder = 'No aplica para este tipo';
+    } else if (v === 'percentage') {
+      helpEl.textContent = 'Porcentaje global a todos los productos. Ej: 30 → 30% off';
+      if (valEl) valEl.placeholder = '30';
+    } else if (v === 'fixed_amount') {
+      helpEl.textContent = 'Monto fijo a descontar a cada producto. Ej: 5000 → -$5000';
+      if (valEl) valEl.placeholder = '5000';
+    } else if (v === 'combo_price') {
+      helpEl.textContent = 'Precio final para TODO el combo/pack completo. Ej: 19990';
+      if (valEl) valEl.placeholder = '19990';
+    }
+  }
+
+  function getLuminance(hex) {
+    const h = String(hex || '').replace('#', '');
+    if (h.length !== 6) return 0;
+    const r = parseInt(h.substring(0, 2), 16) / 255;
+    const g = parseInt(h.substring(2, 4), 16) / 255;
+    const b = parseInt(h.substring(4, 6), 16) / 255;
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+
+  function updateBadgePreview() {
+    const labelEl = $('bannerBadgeLabel');
+    const colorEl = $('bannerBadgeColor');
+    const preview = $('badgePreview');
+    if (!preview) return;
+    const label = (labelEl?.value || '').trim() || 'OFERTA';
+    const color = colorEl?.value || '#ef4444';
+    preview.textContent = label.toUpperCase();
+    preview.style.background = color;
+    preview.style.color = getLuminance(color) > 0.5 ? '#000' : '#fff';
+  }
+
   // ===================== Formulario =====================
 
   function openForm(banner) {
@@ -260,8 +305,19 @@
     $('bannerEndDate').value = localDateValue(banner?.end_date);
     $('bannerActive').checked = banner ? banner.active !== false : true;
     $('bannerDuration').value = editingId ? 'custom' : '7';
+    $('bannerShortDesc').value = banner?.short_description || '';
+    $('bannerDesc').value = banner?.description || '';
+    $('bannerTerms').value = banner?.terms_and_conditions || '';
+    $('bannerDiscountType').value = banner?.discount_type || 'override_products';
+    $('bannerDiscountValue').value = Number(banner?.discount_value) || 0;
+    $('bannerBadgeLabel').value = banner?.badge_label || 'OFERTA';
+    $('bannerBadgeColor').value = banner?.badge_color || '#ef4444';
+    $('bannerStartDate').value = localDateValue(banner?.start_date);
+    $('bannerFeatured').checked = banner ? banner.featured === true : false;
     $('bannerProductSearch').value = '';
     toggleCustomEndDate();
+    updateDiscountHelp();
+    updateBadgePreview();
 
     picked.clear();
     (Array.isArray(banner?.items) ? banner.items : []).forEach((item) => {
@@ -344,13 +400,22 @@
     const body = {
       title,
       subtitle: $('bannerSubtitle').value.trim(),
+      short_description: $('bannerShortDesc').value.trim(),
+      description: $('bannerDesc').value.trim(),
+      terms_and_conditions: $('bannerTerms').value.trim(),
+      discount_type: $('bannerDiscountType').value,
+      discount_value: Number($('bannerDiscountValue').value) || 0,
+      badge_label: $('bannerBadgeLabel').value.trim(),
+      badge_color: $('bannerBadgeColor').value,
       cta_text: $('bannerCta').value.trim(),
       sort_order: Number($('bannerSort').value) || 0,
       link: $('bannerLink').value.trim(),
       image_url: $('bannerImage').value.trim(),
       banner_type: bannerType,
+      start_date: $('bannerStartDate').value || null,
       end_date: endDate,
       active: $('bannerActive').checked,
+      featured: $('bannerFeatured').checked,
       items: collected.items,
     };
 

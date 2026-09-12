@@ -1,0 +1,15 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/api/health",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    { "name": "OPENAI_API_KEY", "description": "OpenAI API key for the AI assistant (platform.openai.com/api-keys). Optional.", "requiredAtBoot": false },
+    { "name": "MERCADO_PAGO_PUBLIC_KEY", "description": "Mercado Pago public key (Developers > Credentials). Optional, only with PAYMENT_PROVIDER=mercadopago.", "requiredAtBoot": false },
+    { "name": "MERCADO_PAGO_ACCESS_TOKEN", "description": "Mercado Pago access token (Developers > Credentials). Optional.", "requiredAtBoot": false },
+    { "name": "MERCADO_PAGO_WEBHOOK_SECRET", "description": "Mercado Pago webhook secret signature. Optional.", "requiredAtBoot": false },
+    { "name": "SMTP_HOST", "description": "SMTP server for password-reset emails. Optional (reset URL is logged when unset).", "requiredAtBoot": false },
+    { "name": "SMTP_USER", "description": "SMTP username. Optional.", "requiredAtBoot": false },
+    { "name": "SMTP_PASSWORD", "description": "SMTP password. Optional.", "requiredAtBoot": false },
+    { "name": "SMTP_FROM", "description": "Sender address for outgoing emails. Optional.", "requiredAtBoot": false }
+  ]
+}

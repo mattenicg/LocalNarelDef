@@ -118,6 +118,25 @@
       <form id="bannerForm" novalidate>
         <div class="form-group"><label for="bannerTitle">Título *</label><input class="form-control" id="bannerTitle" name="title" maxlength="120" required placeholder="PROMOS\nEXCLUSIVAS"></div>
         <div class="form-group"><label for="bannerSubtitle">Subtítulo</label><textarea class="form-control" id="bannerSubtitle" name="subtitle" rows="3" maxlength="280"></textarea></div>
+        <div class="form-group"><label for="bannerShortDesc">Descripción corta</label><input class="form-control" id="bannerShortDesc" name="short_description" maxlength="300" placeholder="Breve explicación de la promo"></div>
+        <div class="form-group"><label for="bannerDesc">Descripción completa</label><textarea class="form-control" id="bannerDesc" name="description" rows="3" maxlength="8000" placeholder="Detalle completo de la oferta, beneficios, etc."></textarea></div>
+        <div class="form-group"><label for="bannerTerms">Términos y condiciones</label><textarea class="form-control" id="bannerTerms" name="terms_and_conditions" rows="3" maxlength="5000" placeholder="Reglas, válido hasta stock mínimo, no acumulable, etc."></textarea></div>
+        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label for="bannerDiscountType">Tipo de descuento</label>
+            <select class="form-control" id="bannerDiscountType" name="discount_type">
+              <option value="override_products">Precio por producto (definilo abajo en cada uno)</option>
+              <option value="percentage">Porcentaje global (% off)</option>
+              <option value="fixed_amount">Monto fijo ($ off)</option>
+              <option value="combo_price">Precio del combo completo</option>
+            </select>
+          </div>
+          <div class="form-group"><label for="bannerDiscountValue">Valor de descuento</label><input class="form-control" id="bannerDiscountValue" name="discount_value" type="number" min="0" step="0.01" value="0" placeholder="Ej: 30 (%) o 5000 ($)"><span class="field-hint" id="discountValueHelp">Solo para tipos % / $ fijo / combo</span></div>
+        </div>
+        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group"><label for="bannerBadgeLabel">Etiqueta del badge</label><input class="form-control" id="bannerBadgeLabel" name="badge_label" maxlength="60" value="OFERTA" placeholder="Ej: HOT SALE"></div>
+          <div class="form-group"><label for="bannerBadgeColor">Color del badge</label><div style="display:flex;align-items:center;gap:10px;"><input class="form-control" id="bannerBadgeColor" name="badge_color" type="color" value="#ef4444" style="width:60px;height:44px;padding:4px;min-width:60px;cursor:pointer;"><span class="badge-preview" id="badgePreview" style="background:#ef4444;color:#fff;padding:4px 12px;font:700 11px 'Oswald',sans-serif;letter-spacing:.1em;text-transform:uppercase;border-radius:3px;">OFERTA</span></div></div>
+        </div>
         <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
           <div class="form-group"><label for="bannerCta">Texto del botón</label><input class="form-control" id="bannerCta" name="cta_text" maxlength="60" value="VER LAS PROMOS"></div>
           <div class="form-group"><label for="bannerSort">Orden</label><input class="form-control" id="bannerSort" name="sort_order" type="number" min="0" value="0"></div>
@@ -150,8 +169,12 @@
           </div>
         </div>
         <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group"><label for="bannerStartDate">Inicio</label><input class="form-control" id="bannerStartDate" name="start_date" type="datetime-local"></div>
           <div class="form-group" id="bannerEndDateGroup" style="display:none;"><label for="bannerEndDate">Vence</label><input class="form-control" id="bannerEndDate" name="end_date" type="datetime-local"></div>
-          <label style="display:flex;align-items:center;gap:10px;margin:26px 0 20px;font:600 12px 'Oswald',sans-serif;letter-spacing:.12em;text-transform:uppercase;"><input id="bannerActive" name="active" type="checkbox" checked> Activo</label>
+        </div>
+        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <label style="display:flex;align-items:center;gap:10px;margin:0 0 20px;font:600 12px 'Oswald',sans-serif;letter-spacing:.12em;text-transform:uppercase;"><input id="bannerActive" name="active" type="checkbox" checked> Activo</label>
+          <label style="display:flex;align-items:center;gap:10px;margin:0 0 20px;font:600 12px 'Oswald',sans-serif;letter-spacing:.12em;text-transform:uppercase;"><input id="bannerFeatured" name="featured" type="checkbox"> Destacado</label>
         </div>
         <div class="form-group">
           <label for="bannerProductSearch">Productos de la promo</label>
