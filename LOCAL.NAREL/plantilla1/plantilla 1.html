@@ -121,34 +121,37 @@
     }
 
     /* ===== TOPBAR ===== */
-   /* ===== TOPBAR (regla base, fuera de cualquier @media) ===== */
+  /* ===== TOPBAR (marquesina infinita) ===== */
   .topbar {
     height: 34px;
-    background: linear-gradient(90deg,
-      var(--yellow), var(--orange),
-      var(--yellow), var(--orange)
-    );
-    background-size: 200% 100%;
-    animation: topbarSlide 8s linear infinite;
+    background: linear-gradient(90deg, var(--yellow), var(--orange));
     color: var(--black);
     display: flex;
-    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .topbar-track {
+    display: flex;
     align-items: center;
     gap: 18px;
+    padding-right: 18px;
+    flex-shrink: 0;
     font: 700 11px 'Bebas Neue', sans-serif;
     letter-spacing: .22em;
     text-transform: uppercase;
+    animation: topbarMarquee 18s linear infinite;
   }
 
   .topbar span {
     opacity: .55
   }
 
-  @keyframes topbarSlide {
-    from { background-position: 0% 0; }
-    to   { background-position: -100% 0; }
+  @keyframes topbarMarquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100%); }
   }
-
     /* ===== HEADER ===== */
     header {
       position: sticky;
@@ -2810,9 +2813,14 @@
 
 <body>
 
-  <div class="topbar">
+ <div class="topbar">
+  <div class="topbar-track">
     <span>CREW N.L.</span><span>·</span><span>ENVÍOS A TODO EL PAÍS</span><span>·</span><span>UNA NUEVA VISIÓN</span>
   </div>
+  <div class="topbar-track" aria-hidden="true">
+    <span>CREW N.L.</span><span>·</span><span>ENVÍOS A TODO EL PAÍS</span><span>·</span><span>UNA NUEVA VISIÓN</span>
+  </div>
+</div>
 
   <header>
     <a class="logo" href="#inicio">
