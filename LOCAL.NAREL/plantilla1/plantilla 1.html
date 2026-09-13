@@ -2575,6 +2575,93 @@
     }
 
     /* ===== RESPONSIVE ===== */
+    /* ===== HAMBURGER MENU ===== */
+    .hamburger {
+      display: none;
+      width: 44px;
+      height: 44px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--white);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .25s;
+      flex-shrink: 0;
+    }
+    .hamburger:hover { border-color: var(--yellow); background: rgba(255,255,255,.06); }
+    .hamburger svg { width: 22px; height: 22px; }
+
+    .mobile-nav-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      z-index: 55;
+      opacity: 0;
+      visibility: hidden;
+      transition: all .3s;
+    }
+    .mobile-nav-overlay.open { opacity: 1; visibility: visible; }
+
+    .mobile-nav {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(320px, 85vw);
+      height: 100vh;
+      background: var(--dark);
+      border-left: 1px solid var(--border);
+      z-index: 60;
+      transform: translateX(100%);
+      transition: transform .3s cubic-bezier(.2,.8,.2,1);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .mobile-nav.open { transform: translateX(0); }
+    .mobile-nav-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mobile-nav-head .logo-text .brand { font-size: 18px; }
+    .mobile-nav-close {
+      width: 40px;
+      height: 40px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .25s;
+    }
+    .mobile-nav-close:hover { border-color: var(--yellow); color: var(--yellow); }
+    .mobile-nav-close svg { width: 20px; height: 20px; }
+    .mobile-nav-links {
+      flex: 1;
+      padding: 16px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .mobile-nav-links a {
+      padding: 16px 24px;
+      font: 600 14px 'Oswald', sans-serif;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--grey);
+      border-bottom: 1px solid var(--border);
+      transition: all .2s;
+    }
+    .mobile-nav-links a:hover, .mobile-nav-links a.active {
+      color: var(--yellow);
+      background: rgba(255,255,255,.04);
+    }
+
     @media(max-width:1100px) {
       .category-grid {
         grid-template-columns: repeat(3, 1fr)
@@ -2599,6 +2686,14 @@
     @media(max-width:960px) {
       nav {
         display: none
+      }
+
+      .hamburger {
+        display: flex
+      }
+
+      .header-actions {
+        gap: 8px
       }
 
       .hero {
@@ -2662,8 +2757,23 @@
 
     @media(max-width:520px) {
       header {
-        padding: 0 20px;
+        padding: 0 16px;
         height: 72px
+      }
+
+      .hero-actions {
+        flex-direction: column
+      }
+
+      .hero-actions .button {
+        width: 100%;
+        justify-content: center
+      }
+
+      .header-actions .bag {
+        padding: 8px 10px;
+        font-size: 10px;
+        gap: 6px
       }
 
       .logo-circle {
@@ -5375,6 +5485,93 @@
     }
 
     /* ===== RESPONSIVE ===== */
+    /* ===== HAMBURGER MENU ===== */
+    .hamburger {
+      display: none;
+      width: 44px;
+      height: 44px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--white);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .25s;
+      flex-shrink: 0;
+    }
+    .hamburger:hover { border-color: var(--yellow); background: rgba(255,255,255,.06); }
+    .hamburger svg { width: 22px; height: 22px; }
+
+    .mobile-nav-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      z-index: 55;
+      opacity: 0;
+      visibility: hidden;
+      transition: all .3s;
+    }
+    .mobile-nav-overlay.open { opacity: 1; visibility: visible; }
+
+    .mobile-nav {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(320px, 85vw);
+      height: 100vh;
+      background: var(--dark);
+      border-left: 1px solid var(--border);
+      z-index: 60;
+      transform: translateX(100%);
+      transition: transform .3s cubic-bezier(.2,.8,.2,1);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .mobile-nav.open { transform: translateX(0); }
+    .mobile-nav-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mobile-nav-head .logo-text .brand { font-size: 18px; }
+    .mobile-nav-close {
+      width: 40px;
+      height: 40px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .25s;
+    }
+    .mobile-nav-close:hover { border-color: var(--yellow); color: var(--yellow); }
+    .mobile-nav-close svg { width: 20px; height: 20px; }
+    .mobile-nav-links {
+      flex: 1;
+      padding: 16px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .mobile-nav-links a {
+      padding: 16px 24px;
+      font: 600 14px 'Oswald', sans-serif;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--grey);
+      border-bottom: 1px solid var(--border);
+      transition: all .2s;
+    }
+    .mobile-nav-links a:hover, .mobile-nav-links a.active {
+      color: var(--yellow);
+      background: rgba(255,255,255,.04);
+    }
+
     @media(max-width:1100px) {
       .category-grid {
         grid-template-columns: repeat(3, 1fr)
@@ -5399,6 +5596,14 @@
     @media(max-width:960px) {
       nav {
         display: none
+      }
+
+      .hamburger {
+        display: flex
+      }
+
+      .header-actions {
+        gap: 8px
       }
 
       .hero {
@@ -5462,8 +5667,23 @@
 
     @media(max-width:520px) {
       header {
-        padding: 0 20px;
+        padding: 0 16px;
         height: 72px
+      }
+
+      .hero-actions {
+        flex-direction: column
+      }
+
+      .hero-actions .button {
+        width: 100%;
+        justify-content: center
+      }
+
+      .header-actions .bag {
+        padding: 8px 10px;
+        font-size: 10px;
+        gap: 6px
       }
 
       .logo-circle {
@@ -5658,6 +5878,13 @@
       <a href="#como-comprar">¿CÓMO COMPRAR?</a>
       <a href="#contacto">CONTACTO</a>
     </nav>
+    <button class="hamburger" type="button" id="hamburgerBtn" aria-label="Menú" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
     <div class="header-actions">
       <button class="bag" type="button" id="accountBtn" aria-haspopup="menu" aria-expanded="false">
         CUENTA <span class="badge-circle" id="accountInitials">↯</span>
@@ -5716,6 +5943,27 @@
       </div>
     </div>
   </header>
+  <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+  <aside class="mobile-nav" id="mobileNav" aria-hidden="true">
+    <div class="mobile-nav-head">
+      <div class="logo-text"><span class="brand">NAREL LOCAL</span></div>
+      <button class="mobile-nav-close" type="button" id="mobileNavClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18"/>
+          <line x1="18" y1="6" x2="6" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <nav class="mobile-nav-links" id="mobileNavLinks">
+      <a href="#inicio" class="active">INICIO</a>
+      <a href="#pantalones">PANTALONES</a>
+      <a href="#camperas">CAMPERAS</a>
+      <a href="#buzos">BUZOS</a>
+      <a href="#otros-servicios">OTROS SERVICIOS</a>
+      <a href="#como-comprar">¿CÓMO COMPRAR?</a>
+      <a href="#contacto">CONTACTO</a>
+    </nav>
+  </aside>
 
   <main>
     <!-- ===== HERO / BRAND ===== -->
@@ -6215,6 +6463,56 @@
   </footer>
 
   <script>
+    // ===== MOBILE NAV =====
+    (function() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const mobileNav = document.getElementById('mobileNav');
+      const mobileNavOverlay = document.getElementById('mobileNavOverlay');
+      const mobileNavClose = document.getElementById('mobileNavClose');
+      const mobileNavLinks = document.getElementById('mobileNavLinks');
+      
+      function openMobileNav() {
+        if (!mobileNav) return;
+        mobileNav.classList.add('open');
+        mobileNavOverlay && mobileNavOverlay.classList.add('open');
+        mobileNav.setAttribute('aria-hidden', 'false');
+        hamburgerBtn && hamburgerBtn.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+      }
+      
+      function closeMobileNav() {
+        if (!mobileNav) return;
+        mobileNav.classList.remove('open');
+        mobileNavOverlay && mobileNavOverlay.classList.remove('open');
+        mobileNav.setAttribute('aria-hidden', 'true');
+        hamburgerBtn && hamburgerBtn.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      }
+      
+      hamburgerBtn && hamburgerBtn.addEventListener('click', openMobileNav);
+      mobileNavClose && mobileNavClose.addEventListener('click', closeMobileNav);
+      mobileNavOverlay && mobileNavOverlay.addEventListener('click', closeMobileNav);
+      
+      // Close mobile nav when a link is clicked
+      if (mobileNavLinks) {
+        mobileNavLinks.querySelectorAll('a').forEach(function(link) {
+          link.addEventListener('click', closeMobileNav);
+        });
+      }
+      
+      // Sync active link with main nav
+      function syncActiveLink() {
+        const mainNavActive = document.querySelector('nav a.active');
+        const activeHref = mainNavActive ? mainNavActive.getAttribute('href') : '#inicio';
+        if (mobileNavLinks) {
+          mobileNavLinks.querySelectorAll('a').forEach(function(link) {
+            link.classList.toggle('active', link.getAttribute('href') === activeHref);
+          });
+        }
+      }
+      syncActiveLink();
+    })();
+
     // El checkout externo es la única fuente de verdad; este bloque legacy queda desactivado.
     window.NAREL_CHECKOUT_V2 = true;
     if (!window.NAREL_CHECKOUT_V2) {
