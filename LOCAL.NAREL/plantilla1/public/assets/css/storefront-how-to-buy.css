@@ -213,6 +213,93 @@
     height: 40px;
     margin: 0 auto;
   }
+
+  .how-help {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 18px;
+  }
+
+  .how-help .wa-link {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .how-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .how-step {
+    padding: 26px 22px 28px;
+  }
+
+  .how-step-num {
+    font-size: 48px;
+  }
+
+  .how-step h4 {
+    font-size: 22px;
+  }
+
+  .how-step p {
+    font-size: 17px;
+  }
+
+  .how-to-buy-intro {
+    font-size: 17px;
+    margin-bottom: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .how-to-buy {
+    padding: 56px 16px 64px;
+  }
+
+  .how-step {
+    padding: 22px 18px 24px;
+  }
+
+  .how-step-num {
+    font-size: 40px;
+  }
+
+  .how-step-icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .how-step-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .how-step h4 {
+    font-size: 20px;
+  }
+
+  .how-step p {
+    font-size: 16px;
+  }
+
+  .how-demo-btn {
+    padding: 13px 22px;
+    font-size: 14px;
+  }
+
+  .how-help {
+    padding: 22px 20px;
+  }
+
+  .how-help p {
+    font-size: 17px;
+  }
+
+  .how-help .wa-link {
+    font-size: 16px;
+    padding: 14px 22px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
