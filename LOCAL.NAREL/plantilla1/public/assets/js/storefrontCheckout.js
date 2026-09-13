@@ -387,6 +387,10 @@
       showAlert('Elegí un talle para cada producto que lo requiere.');
       throw new Error('Falta elegir un talle.');
     }
+    if (!get('checkoutPolicyAccept')?.checked) {
+      showAlert('Debés aceptar la política de cambios para continuar.');
+      throw new Error('Política de cambios no aceptada.');
+    }
 
     state.submitting = true;
     const payload = buildOrderPayload(form);
@@ -541,6 +545,22 @@
           ${cardGatewayMarkup}
         </fieldset>
 
+        <fieldset class="checkout-fieldset">
+          <legend>POLÍTICA DE CAMBIOS</legend>
+          <div class="checkout-policy">
+            <div class="checkout-policy-text">
+              <p>1 — El envío por cambios de prenda o talles queda a cargo exclusivamente del cliente.</p>
+              <p>2 — Si notan que la prenda al momento de abrirla está fallada, manchada o con algún defecto de fábrica, se debe informar al momento de recibirla. (Si esto no sucede, corre por cuenta del cliente los gastos.)</p>
+              <p>3 — Cambios en Santa Fe capital y alrededores solo los realizamos en nuestro local físico de <strong>LA PEATONAL San Martín 2029</strong>, sin excepción.</p>
+            </div>
+            <label class="checkout-policy-accept">
+              <input type="checkbox" id="checkoutPolicyAccept" name="policy_accept" required aria-describedby="checkoutError-policy">
+              <span>Leí y acepto la política de cambios</span>
+            </label>
+            <span class="checkout-error" id="checkoutError-policy"></span>
+          </div>
+        </fieldset>
+
         <div class="checkout-summary" id="checkoutSummary"></div>
         <div class="checkout-actions checkout-actions-single">
           <button type="button" class="btn ghost" id="cancelCheckoutBtn">CANCELAR</button>
@@ -601,6 +621,11 @@
       if (cartHasMissingSizes()) {
         event.preventDefault();
         showAlert('Elegí un talle para cada producto que lo requiere.');
+        return;
+      }
+      if (!get('checkoutPolicyAccept')?.checked) {
+        event.preventDefault();
+        showAlert('Debés aceptar la política de cambios para continuar.');
       }
     });
 
