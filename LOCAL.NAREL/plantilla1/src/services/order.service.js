@@ -83,6 +83,24 @@ async function createOrderWithStock(payload, options = {}) {
     const orderNumber = `NL-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(sequence.rows[0].n).padStart(5, '0')}`;
     const mpReference = externalReference || (paymentMethod === 'mercadopago_card' ? orderNumber : null);
 
+    const isSantaFeCapital = (cityName) => {
+      if (!cityName) return false;
+      const clean = String(cityName).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return /^(santa\s*fe(\s*capital|\s*de\s*la\s*vera\s*cruz)?|sta\.?\s*fe(\s*capital)?)$/i.test(clean) ||
+             clean.includes('santa fe capital') ||
+             clean === 'santa fe';
+    };
+
+    let finalNotes = shipping.notes || null;
+    if (shipping.method === 'envio' && subtotal >= 40000 && isSantaFeCapital(shipping.city)) {
+      const tag = 'PROMO ENVÍO GRATIS: Santa Fe Capital ($40.000+)';
+      if (!finalNotes) {
+        finalNotes = tag;
+      } else if (!finalNotes.includes('PROMO ENVÍO GRATIS')) {
+        finalNotes = `${finalNotes} | ${tag}`;
+      }
+    }
+
     const orderResult = await client.query(
       `INSERT INTO orders(
         order_number, customer_name, customer_email, customer_phone,
@@ -100,7 +118,7 @@ async function createOrderWithStock(payload, options = {}) {
         shipping.address || null,
         shipping.city || null,
         shipping.postal_code || null,
-        shipping.notes || null,
+        finalNotes,
         paymentMethod,
         mpReference,
         idempotencyKey,

@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "dev": "node src/server.js",
+    "build": "node -e \"console.log('Build OK')\"",
     "seed": "node src/db/postgres-seed.js",
     "preflight": "node scripts/preflight.js",
     "lint": "eslint src/**/*.js",

@@ -1,0 +1,242 @@
+/* ===== STOREFRONT SECTIONS HAMBURGER MENU (PC & DESKTOP) ===== */
+
+.nav-secciones-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Button with hamburger icon for sections */
+.nav-secciones-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font: 600 12px 'Oswald', sans-serif;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all .25s ease;
+  user-select: none;
+}
+
+.nav-secciones-btn .hamburger-svg {
+  width: 17px;
+  height: 17px;
+  stroke: var(--yellow);
+  transition: transform .25s ease;
+  flex-shrink: 0;
+}
+
+.nav-secciones-btn .chevron-svg {
+  width: 12px;
+  height: 12px;
+  stroke: var(--grey);
+  transition: transform .25s ease, stroke .2s ease;
+  flex-shrink: 0;
+}
+
+.nav-secciones-btn:hover,
+.nav-secciones-btn.active,
+.nav-secciones-container:hover .nav-secciones-btn {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  background: rgba(245, 208, 32, 0.08);
+  box-shadow: 0 0 16px rgba(245, 208, 32, 0.15);
+}
+
+.nav-secciones-btn:hover .chevron-svg,
+.nav-secciones-btn.active .chevron-svg,
+.nav-secciones-container:hover .chevron-svg {
+  stroke: var(--yellow);
+  transform: rotate(180deg);
+}
+
+.nav-secciones-btn:hover .hamburger-svg,
+.nav-secciones-container:hover .hamburger-svg {
+  transform: scale(1.1);
+}
+
+/* Dropdown menu container on PC */
+.nav-secciones-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  width: 320px;
+  background: rgba(13, 13, 13, 0.98);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 1px rgba(255, 255, 255, 0.1);
+  padding: 14px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .22s cubic-bezier(.2, .8, .2, 1),
+              transform .22s cubic-bezier(.2, .8, .2, 1),
+              visibility .22s;
+  z-index: 100;
+}
+
+/* Arrow pointer */
+.nav-secciones-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: #0d0d0d;
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+/* Active / Open state (on hover or click) */
+.nav-secciones-container:hover .nav-secciones-dropdown,
+.nav-secciones-dropdown.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Dropdown Header */
+.nav-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 12px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 8px;
+}
+
+.nav-dropdown-tag {
+  font: 500 10px 'DM Mono', monospace;
+  letter-spacing: .15em;
+  color: var(--yellow);
+  background: rgba(245, 208, 32, 0.12);
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid rgba(245, 208, 32, 0.3);
+}
+
+.nav-dropdown-title {
+  font: 600 11px 'Oswald', sans-serif;
+  letter-spacing: .18em;
+  color: var(--grey);
+  text-transform: uppercase;
+}
+
+/* Dropdown Links Grid / List */
+.nav-dropdown-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all .2s ease;
+  border: 1px solid transparent;
+}
+
+.nav-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(245, 208, 32, 0.3);
+  transform: translateX(3px);
+}
+
+.nav-dd-badge {
+  font: 500 10px 'DM Mono', monospace;
+  color: var(--grey);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  letter-spacing: 0.05em;
+  transition: color .2s, border-color .2s;
+}
+
+.nav-dropdown-item:hover .nav-dd-badge {
+  color: var(--yellow);
+  border-color: rgba(245, 208, 32, 0.4);
+}
+
+.nav-dd-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.nav-dd-name {
+  font: 600 13px 'Oswald', sans-serif;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--white);
+  transition: color .2s ease;
+}
+
+.nav-dropdown-item:hover .nav-dd-name {
+  color: var(--yellow);
+}
+
+.nav-dd-desc {
+  font: 400 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--grey);
+  margin-top: 2px;
+  letter-spacing: 0;
+}
+
+/* Dropdown Footer */
+.nav-dropdown-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nav-dropdown-panel-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: 600 11px 'Oswald', sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--grey);
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.nav-dropdown-panel-btn:hover {
+  color: var(--yellow);
+  border-color: var(--yellow);
+  background: rgba(245, 208, 32, 0.06);
+}
+
+.nav-dropdown-panel-btn svg {
+  stroke: currentColor;
+}
+
+/* Guarantee that on mobile (<960px), nav is hidden and nothing changes */
+@media (max-width: 960px) {
+  .nav-secciones-container {
+    display: none !important;
+  }
+}

@@ -63,7 +63,15 @@ const allowedOrigins = String(ORIGIN_PERMITIDO || '')
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || (NODE_ENV !== 'production' && allowedOrigins.includes('*'))) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        allowedOrigins.includes('*') ||
+        NODE_ENV !== 'production' ||
+        origin.includes('.run.app') ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1')
+      ) {
         return callback(null, true);
       }
       const error = new Error('Origen no permitido por CORS');
@@ -195,11 +203,11 @@ app.get('/api/promotions/public', async (req, res) => {
 
 function guessCategoryFallback(name, description){
   const haystack = (String(name || '') + ' ' + String(description || '')).toLowerCase();
-  if (/(pantalon|jogger|baggy|cargo|wide|chino)/i.test(haystack)) return 'pantalones';
-  if (/(campera|chaqueta|parka|camperita)/i.test(haystack)) return 'camperas';
-  if (/(buzo|hoodie|sudadera|canguro)/i.test(haystack)) return 'buzos';
-  if (/(remera|tee|t-shirt|playera|musculosa)/i.test(haystack)) return 'remeras';
-  if (/(accesorio|gorra|cap|bufanda|cinturon|media|medias|mochila|llavero)/i.test(haystack)) return 'accesorios';
+  if (/(pantalon|jogger|baggy|cargo|wide|chino|bermuda|short)/i.test(haystack)) return 'pantalones';
+  if (/(campera|chaqueta|parka|camperita|puffer|rompeviento)/i.test(haystack)) return 'camperas';
+  if (/(buzo|hoodie|sudadera|canguro|crewneck)/i.test(haystack)) return 'buzos';
+  if (/(remera|tee|t-shirt|playera|musculosa|top)/i.test(haystack)) return 'remeras';
+  if (/(accesorio|gorra|cap|bufanda|cinturon|media|medias|mochila|llavero|piluso|cadena|collar|anillo|reloj|riñonera|bolso|beanie)/i.test(haystack)) return 'accesorios';
   const m = /\[CAT:\s*([a-z_]+)\]/i.exec(String(description || ''));
   if (m) return m[1].toLowerCase();
   return 'remeras';

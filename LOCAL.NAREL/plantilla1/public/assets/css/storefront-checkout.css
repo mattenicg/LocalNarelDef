@@ -289,3 +289,69 @@
   .checkout-actions-single button{min-width:0}
   .checkout-confirmation{padding:34px 20px}
 }
+
+/* ===== PROMO DE ENVÍO GRATIS EN CHECKOUT ===== */
+.btn-sfe-helper {
+  background: none;
+  border: 1px dashed var(--yellow);
+  color: var(--yellow);
+  font: 600 9px 'DM Mono', monospace;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all .2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-sfe-helper:hover {
+  background: var(--yellow);
+  color: #0a0a0a;
+}
+
+.checkout-promo-box {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-left: 3px solid rgba(255, 255, 255, .3);
+  background: rgba(255, 255, 255, .04);
+}
+
+.checkout-promo-box-applied {
+  border-left-color: var(--yellow);
+  background: rgba(245, 208, 32, 0.08);
+}
+
+.checkout-promo-box-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.checkout-promo-badge {
+  font: 700 10px 'Oswald', sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--yellow);
+}
+
+.checkout-promo-box-head small {
+  font: 500 9px 'DM Mono', monospace;
+  color: var(--grey);
+  letter-spacing: .1em;
+}
+
+.checkout-promo-box p {
+  margin: 0;
+  color: var(--white);
+  font: 400 11px 'DM Mono', monospace;
+  line-height: 1.45;
+}
+
+.checkout-promo-box p strong {
+  color: var(--yellow);
+}
+

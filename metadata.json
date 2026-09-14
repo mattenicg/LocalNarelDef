@@ -1,0 +1,6 @@
+{
+  "name": "Narel Store",
+  "description": "Tienda comercial y panel de administración Narel con catálogo de productos, promociones y checkout",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

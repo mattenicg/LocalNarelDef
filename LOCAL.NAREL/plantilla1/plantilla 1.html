@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="/assets/css/storefront-checkout.css">
   <link rel="stylesheet" href="/assets/css/storefront-promo-banners.css">
   <link rel="stylesheet" href="/assets/css/storefront-how-to-buy.css">
+  <link rel="stylesheet" href="/assets/css/storefront-sections-menu.css">
   <style>
     @font-face {
       font-family: 'Chrome';
@@ -5835,6 +5836,527 @@
 
       .countdown-item {
         padding: 6px 4px
+      }
+    }
+
+    /* ===== CART CROSS-SELLING SECTION ===== */
+    .cart-cross-sell {
+      border-top: 1px solid var(--border);
+      background: #0e0e0e;
+      padding: 14px 18px 12px;
+    }
+
+    .cart-cross-sell-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .cart-cross-sell-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font: 700 12px 'Oswald', sans-serif;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+
+    .cart-cross-sell-title .bar-accent {
+      width: 3px;
+      height: 12px;
+      background: linear-gradient(180deg, var(--yellow), var(--orange));
+      display: inline-block;
+    }
+
+    .cart-cross-sell-sub {
+      font: 400 11px 'Oswald', sans-serif;
+      letter-spacing: .05em;
+      color: var(--grey);
+      text-transform: uppercase;
+    }
+
+    .cart-cross-sell-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 195px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .cart-cross-sell-items::-webkit-scrollbar {
+      width: 4px;
+    }
+    .cart-cross-sell-items::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    .cart-cs-item {
+      display: grid;
+      grid-template-columns: 46px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 6px 8px;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      transition: border-color .2s;
+    }
+
+    .cart-cs-item:hover {
+      border-color: #404040;
+    }
+
+    .cart-cs-img {
+      width: 46px;
+      height: 46px;
+      background: var(--black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font: 700 13px 'Oswald', sans-serif;
+      color: var(--grey);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .cart-cs-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .cart-cs-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .cart-cs-info h5 {
+      font: 600 12px 'Oswald', sans-serif;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--white);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0;
+    }
+
+    .cart-cs-price {
+      font: 700 13px 'Oswald', sans-serif;
+      color: var(--orange);
+      letter-spacing: .03em;
+    }
+
+    .cart-cs-add-btn {
+      padding: 6px 12px;
+      background: transparent;
+      color: var(--white);
+      border: 1px solid var(--border);
+      font: 700 11px 'Oswald', sans-serif;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+
+    .cart-cs-add-btn:hover {
+      background: var(--white);
+      color: var(--black);
+      border-color: var(--white);
+    }
+
+    /* ===== PRODUCT DETAIL MODAL ===== */
+    .product-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .3s, visibility .3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .product-modal.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .product-modal-dialog {
+      background: var(--dark);
+      border: 1px solid var(--border);
+      width: min(840px, 100%);
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      padding: 32px 36px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+      transform: translateY(20px);
+      transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .product-modal.open .product-modal-dialog {
+      transform: translateY(0);
+    }
+
+    .product-modal-close {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--white);
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .2s;
+      z-index: 10;
+    }
+
+    .product-modal-close:hover {
+      background: var(--white);
+      color: var(--black);
+      border-color: var(--white);
+    }
+
+    .pm-main {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 32px;
+      align-items: start;
+      margin-bottom: 32px;
+    }
+
+    .pm-gallery {
+      position: relative;
+      background: var(--black);
+      border: 1px solid var(--border);
+      aspect-ratio: 4/5;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pm-gallery img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .pm-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: var(--black);
+      border: 1px solid var(--border);
+      color: var(--white);
+      font: 700 10px 'DM Mono', monospace;
+      letter-spacing: .15em;
+      padding: 4px 10px;
+      text-transform: uppercase;
+      z-index: 2;
+    }
+
+    .pm-info {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .pm-eyebrow {
+      font: 600 11px 'DM Mono', monospace;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--grey);
+    }
+
+    .pm-title {
+      font: 700 28px 'Oswald', sans-serif;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--white);
+      line-height: 1.15;
+      margin: 0;
+    }
+
+    .pm-price-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin: 4px 0;
+    }
+
+    .pm-price {
+      font-family: 'Bebas Neue', 'Oswald', sans-serif;
+      font-size: 36px;
+      color: var(--white);
+      letter-spacing: .05em;
+    }
+
+    .pm-stock-pill {
+      font: 600 11px 'DM Mono', monospace;
+      letter-spacing: .1em;
+      padding: 3px 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--grey);
+      text-transform: uppercase;
+    }
+
+    .pm-desc {
+      font: 400 14px/1.6 'Oswald', sans-serif;
+      color: var(--grey);
+      letter-spacing: .03em;
+    }
+
+    .pm-sizes-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .pm-sizes-label {
+      font: 700 11px 'Oswald', sans-serif;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+
+    .pm-size-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pm-size-btn {
+      padding: 8px 14px;
+      background: var(--black);
+      border: 1px solid var(--border);
+      color: var(--white);
+      font: 600 12px 'Oswald', sans-serif;
+      letter-spacing: .1em;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .pm-size-btn:hover {
+      border-color: #666;
+    }
+
+    .pm-size-btn.selected {
+      background: var(--white);
+      color: var(--black);
+      border-color: var(--white);
+      font-weight: 700;
+    }
+
+    .pm-btn-add {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 16px 28px;
+      background: linear-gradient(135deg, var(--yellow), var(--orange));
+      color: var(--black);
+      font: 700 14px 'Oswald', sans-serif;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+      transition: all .25s;
+      margin-top: 10px;
+    }
+
+    .pm-btn-add:hover {
+      opacity: .92;
+      transform: translateY(-2px);
+    }
+
+    .pm-btn-add:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .pm-btn-add.added-feedback {
+      background: #2a7a3a;
+      color: #fff;
+    }
+
+    /* ===== COMPLETÁ TU COMPRA (MODAL CROSS-SELLING) ===== */
+    .pm-cross-sell {
+      border-top: 1px solid var(--border);
+      padding-top: 26px;
+      margin-top: 10px;
+    }
+
+    .pm-cross-sell-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .pm-cross-sell-head .bar-accent {
+      width: 4px;
+      height: 24px;
+      background: linear-gradient(180deg, var(--yellow), var(--orange));
+      display: block;
+    }
+
+    .pm-cross-sell-title {
+      font: 700 18px 'Oswald', sans-serif;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--white);
+      margin: 0;
+    }
+
+    .pm-cross-sell-sub {
+      display: block;
+      font: 400 12px 'Oswald', sans-serif;
+      letter-spacing: .06em;
+      color: var(--grey);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .pm-cross-sell-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+    }
+
+    .pm-rec-card {
+      background: var(--black);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      transition: border-color .2s, transform .2s;
+    }
+
+    .pm-rec-card:hover {
+      border-color: #555;
+      transform: translateY(-2px);
+    }
+
+    .pm-rec-img {
+      width: 100%;
+      aspect-ratio: 1;
+      background: #111;
+      overflow: hidden;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 700 14px 'Oswald', sans-serif;
+      color: var(--grey);
+    }
+
+    .pm-rec-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .pm-rec-cat {
+      font: 600 10px 'DM Mono', monospace;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--grey);
+      margin-bottom: 4px;
+    }
+
+    .pm-rec-name {
+      font: 600 13px 'Oswald', sans-serif;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--white);
+      margin: 0 0 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.25;
+      min-height: 32px;
+    }
+
+    .pm-rec-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+
+    .pm-rec-price {
+      font: 700 14px 'Oswald', sans-serif;
+      color: var(--orange);
+      letter-spacing: .02em;
+    }
+
+    .pm-rec-add-btn {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--white);
+      font: 700 11px 'Oswald', sans-serif;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .pm-rec-add-btn:hover {
+      background: var(--white);
+      color: var(--black);
+      border-color: var(--white);
+    }
+
+    .pm-rec-add-btn.added {
+      background: #2a7a3a;
+      border-color: #2a7a3a;
+      color: #fff;
+    }
+
+    @media (max-width: 768px) {
+      .product-modal {
+        padding: 10px;
+      }
+      .product-modal-dialog {
+        padding: 24px 18px;
+        max-height: 94vh;
+      }
+      .pm-main {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      .pm-gallery {
+        max-height: 280px;
+      }
+      .pm-cross-sell-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
       }
     }
   </style>
@@ -5871,10 +6393,75 @@
     </a>
     <nav>
       <a href="#inicio" class="active">INICIO</a>
-      <a href="#pantalones">PANTALONES</a>
-      <a href="#camperas">CAMPERAS</a>
-      <a href="#buzos">BUZOS</a>
-      <a href="#otros-servicios">OTROS SERVICIOS</a>
+      <div class="nav-secciones-container" id="navSeccionesContainer">
+        <button type="button" class="nav-secciones-btn" id="navSectionsBtn" aria-expanded="false" aria-haspopup="true" aria-label="Menú hamburguesa de secciones">
+          <svg class="hamburger-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+          <span>SECCIONES</span>
+          <svg class="chevron-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="nav-secciones-dropdown" id="navSectionsDropdown" role="menu">
+          <div class="nav-dropdown-header">
+            <span class="nav-dropdown-tag">CATÁLOGO</span>
+            <span class="nav-dropdown-title">SECCIONES</span>
+          </div>
+          <div class="nav-dropdown-grid">
+            <a href="#pantalones" class="nav-dropdown-item" role="menuitem">
+              <span class="nav-dd-badge">01</span>
+              <div class="nav-dd-info">
+                <span class="nav-dd-name">PANTALONES</span>
+                <span class="nav-dd-desc">Cargos, joggers, oversize</span>
+              </div>
+            </a>
+            <a href="#camperas" class="nav-dropdown-item" role="menuitem">
+              <span class="nav-dd-badge">02</span>
+              <div class="nav-dd-info">
+                <span class="nav-dd-name">CAMPERAS</span>
+                <span class="nav-dd-desc">Puffer, denim, rompevientos</span>
+              </div>
+            </a>
+            <a href="#buzos" class="nav-dropdown-item" role="menuitem">
+              <span class="nav-dd-badge">03</span>
+              <div class="nav-dd-info">
+                <span class="nav-dd-name">BUZOS</span>
+                <span class="nav-dd-desc">Hoodies, cuello redondo, estampados</span>
+              </div>
+            </a>
+            <a href="#remeras" class="nav-dropdown-item" role="menuitem">
+              <span class="nav-dd-badge">04</span>
+              <div class="nav-dd-info">
+                <span class="nav-dd-name">REMERAS</span>
+                <span class="nav-dd-desc">Boxy fit, urban, basic</span>
+              </div>
+            </a>
+            <a href="#accesorios" class="nav-dropdown-item" role="menuitem">
+              <span class="nav-dd-badge">05</span>
+              <div class="nav-dd-info">
+                <span class="nav-dd-name">ACCESORIOS</span>
+                <span class="nav-dd-desc">Gorras, medias, cadenas</span>
+              </div>
+            </a>
+            <a href="#otros-servicios" class="nav-dropdown-item" role="menuitem">
+              <span class="nav-dd-badge">06</span>
+              <div class="nav-dd-info">
+                <span class="nav-dd-name">OTROS SERVICIOS</span>
+                <span class="nav-dd-desc">Atención y servicios especiales</span>
+              </div>
+            </a>
+          </div>
+          <div class="nav-dropdown-footer">
+            <button type="button" class="nav-dropdown-panel-btn" id="openDrawerFromNavBtn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              <span>VER EN PANEL LATERAL</span>
+            </button>
+          </div>
+        </div>
+      </div>
       <a href="#como-comprar">¿CÓMO COMPRAR?</a>
       <a href="#contacto">CONTACTO</a>
     </nav>
@@ -5959,6 +6546,8 @@
       <a href="#pantalones">PANTALONES</a>
       <a href="#camperas">CAMPERAS</a>
       <a href="#buzos">BUZOS</a>
+      <a href="#remeras">REMERAS</a>
+      <a href="#accesorios">ACCESORIOS</a>
       <a href="#otros-servicios">OTROS SERVICIOS</a>
       <a href="#como-comprar">¿CÓMO COMPRAR?</a>
       <a href="#contacto">CONTACTO</a>
@@ -5966,6 +6555,46 @@
   </aside>
 
   <main>
+    <!-- ===== BANNER PROMOCIÓN DE ENVÍOS GRATIS ===== -->
+    <section class="shipping-promo-banner" id="shippingPromoBanner" aria-label="Promoción Envíos Gratis">
+      <div class="shipping-promo-inner">
+        <div class="shipping-promo-content">
+          <div class="shipping-promo-badge">
+            <span class="shipping-promo-dot"></span>
+            <span>EXCLUSIVA PARA SANTA FE CAPITAL</span>
+          </div>
+          <h2 class="shipping-promo-heading">
+            ENVÍOS GRATIS SOLO POR ESTA SEMANA, ¿QUÉ ESPERÁS? ¡ASÍ SE INAUGURA UNA WEB! ⚡
+          </h2>
+          <div class="shipping-promo-detail">
+            <span>Compras a partir de <strong>$40.000</strong>.</span>
+          </div>
+        </div>
+        <div class="shipping-promo-timer-wrap">
+          <div class="shipping-promo-countdown" id="shippingPromoCountdown">
+            <div class="sp-cd-tag">TERMINA EN</div>
+            <div class="sp-cd-digits">
+              <div class="sp-cd-cell">
+                <span class="sp-cd-num" data-sp-days>--</span>
+                <span class="sp-cd-unit">DÍAS</span>
+              </div>
+              <span class="sp-cd-colon">:</span>
+              <div class="sp-cd-cell">
+                <span class="sp-cd-num" data-sp-hours>--</span>
+                <span class="sp-cd-unit">HORAS</span>
+              </div>
+              <span class="sp-cd-colon">:</span>
+              <div class="sp-cd-cell">
+                <span class="sp-cd-num" data-sp-mins>--</span>
+                <span class="sp-cd-unit">MIN</span>
+              </div>
+            </div>
+            <div class="sp-cd-status" id="shippingPromoHint">Fecha de finalización a configurar</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== HERO / BRAND ===== -->
     <section class="hero" id="inicio">
       <div class="hero-copy">
@@ -6048,8 +6677,13 @@
           <h3>REMERAS</h3>
           <span class="view">VER MÁS <span>↗</span></span>
         </a>
-        <a href="#otros-servicios" class="category scroll-reveal">
+        <a href="#accesorios" class="category scroll-reveal">
           <span class="num">05</span>
+          <h3>ACCESORIOS</h3>
+          <span class="view">VER MÁS <span>↗</span></span>
+        </a>
+        <a href="#otros-servicios" class="category scroll-reveal">
+          <span class="num">06</span>
           <h3>OTROS<br>SERVICIOS</h3>
           <span class="view">VER MÁS <span>↗</span></span>
         </a>
@@ -6334,6 +6968,17 @@
         <p style="font-size:11px;opacity:.5">Agregá prendas para comenzar</p>
       </div>
     </div>
+    <!-- RECOMENDACIONES CROSS-SELLING EN EL CARRITO -->
+    <div class="cart-cross-sell" id="cartCrossSell" style="display: none;">
+      <div class="cart-cross-sell-head">
+        <div class="cart-cross-sell-title">
+          <span class="bar-accent"></span>
+          <span>COMPLETÁ TU COMPRA</span>
+        </div>
+        <small class="cart-cross-sell-sub">También podés agregar</small>
+      </div>
+      <div class="cart-cross-sell-items" id="cartCrossSellItems"></div>
+    </div>
     <div class="cart-footer">
       <div class="cart-total-row">
         <span>TOTAL</span>
@@ -6414,6 +7059,19 @@
           <button class="btn confirm" id="confirmPayBtn" disabled>CONFIRMAR PAGO</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== PRODUCT DETAIL MODAL (CON CROSS-SELLING) ===== -->
+  <div class="product-modal" id="productModal" aria-hidden="true">
+    <div class="product-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
+      <button type="button" class="product-modal-close" id="closeProductModalBtn" aria-label="Cerrar detalle">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      <div class="product-modal-body" id="productModalBody"></div>
     </div>
   </div>
 
@@ -6499,10 +7157,63 @@
           link.addEventListener('click', closeMobileNav);
         });
       }
+
+      // ===== DESKTOP SECTIONS HAMBURGER DROPDOWN =====
+      const navSectionsBtn = document.getElementById('navSectionsBtn');
+      const navSectionsDropdown = document.getElementById('navSectionsDropdown');
+      const openDrawerFromNavBtn = document.getElementById('openDrawerFromNavBtn');
+
+      if (navSectionsBtn && navSectionsDropdown) {
+        navSectionsBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const isOpen = navSectionsDropdown.classList.toggle('open');
+          navSectionsBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        // Close dropdown when clicking a section link inside it
+        navSectionsDropdown.querySelectorAll('a').forEach(function(link) {
+          link.addEventListener('click', function() {
+            navSectionsDropdown.classList.remove('open');
+            navSectionsBtn.setAttribute('aria-expanded', 'false');
+          });
+        });
+      }
+
+      if (openDrawerFromNavBtn) {
+        openDrawerFromNavBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (navSectionsDropdown) {
+            navSectionsDropdown.classList.remove('open');
+            navSectionsBtn && navSectionsBtn.setAttribute('aria-expanded', 'false');
+          }
+          openMobileNav();
+        });
+      }
+
+      // Global click & escape listeners for dropdown & drawer
+      document.addEventListener('click', function(e) {
+        if (navSectionsDropdown && navSectionsDropdown.classList.contains('open')) {
+          if (!navSectionsDropdown.contains(e.target) && (!navSectionsBtn || !navSectionsBtn.contains(e.target))) {
+            navSectionsDropdown.classList.remove('open');
+            navSectionsBtn && navSectionsBtn.setAttribute('aria-expanded', 'false');
+          }
+        }
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          if (navSectionsDropdown && navSectionsDropdown.classList.contains('open')) {
+            navSectionsDropdown.classList.remove('open');
+            navSectionsBtn && navSectionsBtn.setAttribute('aria-expanded', 'false');
+          }
+          closeMobileNav();
+        }
+      });
       
-      // Sync active link with main nav
+      // Sync active link with main nav and sections menu
       function syncActiveLink() {
-        const mainNavActive = document.querySelector('nav a.active');
+        const mainNavActive = document.querySelector('nav a.active, .nav-secciones-dropdown a.active');
         const activeHref = mainNavActive ? mainNavActive.getAttribute('href') : '#inicio';
         if (mobileNavLinks) {
           mobileNavLinks.querySelectorAll('a').forEach(function(link) {
@@ -6890,12 +7601,18 @@
 
     // Nav active link on scroll
     const sections = document.querySelectorAll('.catalog-section, .services-section, .hero, .info-strip');
-    const navLinks = document.querySelectorAll('nav a');
+    const allNavLinks = document.querySelectorAll('nav > a, .nav-secciones-dropdown a, #mobileNavLinks a');
+    const navSectionsBtnEl = document.getElementById('navSectionsBtn');
+    const catalogSectionIds = ['pantalones', 'camperas', 'buzos', 'remeras', 'accesorios', 'otros-servicios'];
+
     const navObserver = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const id = entry.target.id;
-          navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+          allNavLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+          if (navSectionsBtnEl) {
+            navSectionsBtnEl.classList.toggle('active', catalogSectionIds.includes(id));
+          }
         }
       });
     }, { rootMargin: '-40% 0px -55% 0px' });
@@ -7030,11 +7747,11 @@
 
       function guessCategory(name, description) {
         const haystack = (String(name || '') + ' ' + String(description || '')).toLowerCase();
-        if (/(pantalon|jogger|baggy|cargo|wide|chino)/i.test(haystack)) return 'pantalones';
-        if (/(campera|chaqueta|parka|camperita)/i.test(haystack)) return 'camperas';
-        if (/(buzo|hoodie|sudadera|canguro)/i.test(haystack)) return 'buzos';
-        if (/(remera|tee|t-shirt|playera|musculosa)/i.test(haystack)) return 'remeras';
-        if (/(accesorio|gorra|cap|bufanda|cinturon|media|medias|mochila|llavero)/i.test(haystack)) return 'accesorios';
+        if (/(pantalon|jogger|baggy|cargo|wide|chino|bermuda|short)/i.test(haystack)) return 'pantalones';
+        if (/(campera|chaqueta|parka|camperita|puffer|rompeviento)/i.test(haystack)) return 'camperas';
+        if (/(buzo|hoodie|sudadera|canguro|crewneck)/i.test(haystack)) return 'buzos';
+        if (/(remera|tee|t-shirt|playera|musculosa|top)/i.test(haystack)) return 'remeras';
+        if (/(accesorio|gorra|cap|bufanda|cinturon|media|medias|mochila|llavero|piluso|cadena|collar|anillo|reloj|riñonera|bolso|beanie)/i.test(haystack)) return 'accesorios';
         // Fallback: parsear tag [CAT:x] en description
         const m = /\[CAT:\s*([a-z_]+)\]/i.exec(String(description || ''));
         if (m) return m[1].toLowerCase();
@@ -7059,7 +7776,7 @@
           : `<div class="placeholder">${PLACEHOLDER_IMG_SVG}<span>IMAGEN</span></div>`;
 
         return (
-          `<article class="product" data-id="${htmlEscape(p.id || '')}" data-price="${Number(p.price || 0)}" data-stock="${stock}" data-name="${name}" data-image="${htmlEscape(imgUrl)}" data-sizes="${sizes}">` +
+          `<article class="product" data-id="${htmlEscape(p.id || '')}" data-price="${Number(p.price || 0)}" data-stock="${stock}" data-name="${name}" data-image="${htmlEscape(imgUrl)}" data-sizes="${sizes}" style="cursor:pointer;" title="Click para ver detalle y completar tu compra">` +
           `<span class="product-shine" aria-hidden="true"></span>` +
           `<span class="product-badge">${badge}</span>` +
           `<div class="product-image">${innerImg}</div>` +
@@ -7068,7 +7785,7 @@
           `<p class="product-desc">${desc}${sizesLine}</p>` +
           `<div class="product-bottom">` +
           `<span class="product-price">${priceStr}</span>` +
-          `<button type="button" class="btn-add"${disabledBtn} data-action="add">` +
+          `<button type="button" class="btn-add"${disabledBtn} data-action="add" aria-label="Agregar ${name} al carrito">` +
           `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>` +
           `<span>${btnText}</span>` +
           `</button>` +
@@ -7078,10 +7795,346 @@
         );
       }
 
+      // ===== INTELLIGENT CROSS-SELLING ALGORITHM =====
+      function getCrossSellProducts(catalog, targetItemOrList, maxCount) {
+        if (!maxCount) maxCount = 4;
+        if (!Array.isArray(catalog) || !catalog.length) return [];
+        const sourceList = Array.isArray(targetItemOrList) ? targetItemOrList : [targetItemOrList];
+        const excludedIds = new Set();
+        const currentCategories = new Set();
+
+        sourceList.forEach(item => {
+          if (!item) return;
+          const id = String(item.id || item.product_id || '');
+          if (id) excludedIds.add(id);
+          const cat = String(item.category || guessCategory(item.name, item.description) || '').toLowerCase();
+          if (cat) currentCategories.add(cat);
+        });
+
+        // Always exclude items that are currently in the cart
+        if (window.shop && typeof window.shop.getItems === 'function') {
+          const cartItems = window.shop.getItems();
+          cartItems.forEach(ci => {
+            if (ci && ci.id) {
+              excludedIds.add(String(ci.id));
+              const cCat = String(ci.category || guessCategory(ci.name, ci.description) || '').toLowerCase();
+              if (cCat) currentCategories.add(cCat);
+            }
+          });
+        }
+
+        // Complementary logic
+        const targetComplementary = new Set();
+        currentCategories.forEach(cat => {
+          if (['remeras', 'buzos', 'camperas'].includes(cat)) {
+            targetComplementary.add('pantalones');
+            targetComplementary.add('accesorios');
+          } else if (cat === 'pantalones') {
+            targetComplementary.add('remeras');
+            targetComplementary.add('buzos');
+            targetComplementary.add('camperas');
+            targetComplementary.add('accesorios');
+          } else if (cat === 'accesorios') {
+            targetComplementary.add('remeras');
+            targetComplementary.add('buzos');
+            targetComplementary.add('pantalones');
+          }
+        });
+
+        // Filter eligible candidates: not excluded and in stock
+        const candidates = catalog.filter(p => {
+          if (!p || !p.id) return false;
+          if (excludedIds.has(String(p.id))) return false;
+          const stock = p.stock == null ? 99 : Number(p.stock);
+          return stock > 0;
+        });
+
+        // Score candidates
+        const scored = candidates.map(p => {
+          const pCat = String(p.category || guessCategory(p.name, p.description) || 'remeras').toLowerCase();
+          let score = 0;
+          if (targetComplementary.has(pCat)) score += 10;
+          if (!currentCategories.has(pCat)) score += 5;
+          if (p.featured) score += 3;
+          if (p.image_url) score += 2;
+          score += (p.id ? String(p.id).charCodeAt(0) % 3 : 0);
+          return { product: p, score };
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+        return scored.slice(0, Math.max(2, Math.min(4, maxCount))).map(s => s.product);
+      }
+
+      // ===== PRODUCT DETAIL MODAL & CROSS-SELLING =====
+      let currentModalProduct = null;
+      let selectedModalSize = '';
+
+      function openProductModal(prod) {
+        if (!prod) return;
+        currentModalProduct = prod;
+        selectedModalSize = '';
+        const modal = document.getElementById('productModal');
+        const body = document.getElementById('productModalBody');
+        if (!modal || !body) return;
+
+        renderProductModalContent();
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        if (prod.id) {
+          try {
+            history.replaceState(null, '', '#producto-' + encodeURIComponent(prod.id));
+          } catch (_e) {}
+        }
+      }
+
+      function closeProductModal() {
+        const modal = document.getElementById('productModal');
+        if (!modal) return;
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        currentModalProduct = null;
+        try {
+          if (window.location.hash.startsWith('#producto-')) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+        } catch (_e) {}
+      }
+
+      function renderModalCrossSellGridHTML(recs) {
+        return recs.map(rec => {
+          const recCat = (rec.category || guessCategory(rec.name, rec.description) || 'remeras').toUpperCase();
+          const recImg = rec.image_url
+            ? `<img src="${htmlEscape(rec.image_url)}" alt="${htmlEscape(rec.name)}" loading="lazy">`
+            : `<span>${htmlEscape((rec.id || 'NL').slice(0, 2).toUpperCase())}</span>`;
+          return (
+            `<div class="pm-rec-card" data-rec-id="${htmlEscape(rec.id)}">` +
+            `<div class="pm-rec-img">${recImg}</div>` +
+            `<span class="pm-rec-cat">${htmlEscape(recCat)}</span>` +
+            `<h5 class="pm-rec-name" title="${htmlEscape(rec.name)}">${htmlEscape(rec.name)}</h5>` +
+            `<div class="pm-rec-bottom">` +
+            `<span class="pm-rec-price">${fmtPriceClean(rec.price)}</span>` +
+            `<button type="button" class="pm-rec-add-btn" data-pm-rec-add="${htmlEscape(rec.id)}" aria-label="Agregar ${htmlEscape(rec.name)} al carrito">` +
+            `+ AGREGAR` +
+            `</button>` +
+            `</div>` +
+            `</div>`
+          );
+        }).join('');
+      }
+
+      function renderProductModalContent() {
+        const body = document.getElementById('productModalBody');
+        if (!body || !currentModalProduct) return;
+        const p = currentModalProduct;
+        const cat = (p.category || guessCategory(p.name, p.description) || 'remeras').toLowerCase();
+        const badge = CAT_LABEL[cat] || 'NUEVO';
+        const priceStr = fmtPriceClean(p.price) || '';
+        const name = htmlEscape(p.name || 'Producto');
+        const desc = htmlEscape(p.description || '').replace(/\[CAT:\s*[a-z_]+\]/gi, '').trim() || 'Prenda de alta calidad confeccionada con diseño urbano y corte contemporáneo.';
+        const stock = Number(p.stock) || 0;
+        const stockText = stock > 0 ? (stock <= 5 ? `ÚLTIMAS ${stock} UNIDADES` : `EN STOCK (${stock})`) : 'SIN STOCK';
+        const imgUrl = (p.image_url && typeof p.image_url === 'string') ? p.image_url.trim() : '';
+
+        // Sizes chips
+        const rawSizes = String(p.sizes || '').trim();
+        const sizeList = rawSizes.split(/\s*[-|/,]\s*/).map(s => s.trim()).filter(Boolean);
+        let sizesHTML = '';
+        if (sizeList.length) {
+          if (!selectedModalSize) selectedModalSize = sizeList[0];
+          sizesHTML = `
+            <div class="pm-sizes-section">
+              <span class="pm-sizes-label">ELEGÍ TU TALLE:</span>
+              <div class="pm-size-chips" id="pmSizeChips">
+                ${sizeList.map(s => `
+                  <button type="button" class="pm-size-btn ${s === selectedModalSize ? 'selected' : ''}" data-pm-size="${htmlEscape(s)}">
+                    ${htmlEscape(s)}
+                  </button>
+                `).join('')}
+              </div>
+            </div>`;
+        }
+
+        const imgHTML = imgUrl
+          ? `<img src="${htmlEscape(imgUrl)}" alt="${name}">`
+          : `<span>${htmlEscape((p.id || 'NL').slice(0, 2).toUpperCase())}</span>`;
+
+        // Cross-selling complementary products
+        const recs = getCrossSellProducts(window.__CATALOG_PRODUCTS__ || [], [p], 4);
+        let crossSellHTML = '';
+        if (recs && recs.length > 0) {
+          crossSellHTML = `
+            <div class="pm-cross-sell" id="pmCrossSellSection">
+              <div class="pm-cross-sell-head">
+                <span class="bar-accent"></span>
+                <div>
+                  <h3 class="pm-cross-sell-title">COMPLETÁ TU COMPRA</h3>
+                  <small class="pm-cross-sell-sub">También podés agregar · Prendas que combinan con este estilo</small>
+                </div>
+              </div>
+              <div class="pm-cross-sell-grid" id="pmCrossSellGrid">
+                ${renderModalCrossSellGridHTML(recs)}
+              </div>
+            </div>`;
+        }
+
+        body.innerHTML = `
+          <div class="pm-main">
+            <div class="pm-gallery">
+              <span class="pm-badge">${badge}</span>
+              ${imgHTML}
+            </div>
+            <div class="pm-info">
+              <span class="pm-eyebrow">${htmlEscape(cat.toUpperCase())} // CREW N.L.</span>
+              <h2 class="pm-title" id="pmTitle">${name}</h2>
+              <div class="pm-price-wrap">
+                <span class="pm-price">${priceStr}</span>
+                <span class="pm-stock-pill">${stockText}</span>
+              </div>
+              <p class="pm-desc">${desc}</p>
+              ${sizesHTML}
+              <button type="button" class="pm-btn-add" id="pmMainAddBtn" ${stock <= 0 ? 'disabled' : ''}>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+                <span>${stock <= 0 ? 'SIN STOCK' : 'AGREGAR AL CARRITO'}</span>
+              </button>
+            </div>
+          </div>
+          ${crossSellHTML}
+        `;
+
+        bindProductModalEvents(body);
+      }
+
+      function bindProductModalEvents(container) {
+        // Size selection
+        container.querySelectorAll('[data-pm-size]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            selectedModalSize = btn.dataset.pmSize;
+            container.querySelectorAll('[data-pm-size]').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+          });
+        });
+
+        // Main Add to Cart button
+        const mainAdd = container.querySelector('#pmMainAddBtn');
+        if (mainAdd && currentModalProduct) {
+          mainAdd.addEventListener('click', () => {
+            try {
+              if (window.shop && typeof window.shop.addToCart === 'function') {
+                window.shop.addToCart({
+                  id: currentModalProduct.id,
+                  name: currentModalProduct.name,
+                  price: Number(currentModalProduct.price) || 0,
+                  image: currentModalProduct.image_url || '',
+                  stock: Number(currentModalProduct.stock) || 0,
+                  sizes: currentModalProduct.sizes || '',
+                  size: selectedModalSize || '',
+                  qty: 1
+                });
+                mainAdd.classList.add('added-feedback');
+                const span = mainAdd.querySelector('span');
+                if (span) span.textContent = '✓ AGREGADO AL CARRITO';
+                setTimeout(() => {
+                  mainAdd.classList.remove('added-feedback');
+                  if (span) span.textContent = 'AGREGAR AL CARRITO';
+                }, 1400);
+
+                // Re-evaluate modal cross-sell recommendations
+                refreshModalCrossSell();
+              }
+            } catch (err) {
+              console.warn('[pm-add]', err);
+            }
+          });
+        }
+
+        // Complementary Cross-Sell "+ AGREGAR" buttons
+        container.querySelectorAll('[data-pm-rec-add]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const recId = btn.dataset.pmRecAdd;
+            const recProd = (window.__CATALOG_PRODUCTS__ || []).find(p => String(p.id) === String(recId));
+            if (!recProd) return;
+
+            try {
+              if (window.shop && typeof window.shop.addToCart === 'function') {
+                window.shop.addToCart({
+                  id: recProd.id,
+                  name: recProd.name,
+                  price: Number(recProd.price) || 0,
+                  image: recProd.image_url || '',
+                  stock: Number(recProd.stock) || 0,
+                  sizes: recProd.sizes || '',
+                  qty: 1
+                });
+
+                btn.classList.add('added');
+                btn.textContent = '✓ AGREGADO';
+
+                // Automatically refresh cross-sell
+                setTimeout(() => {
+                  refreshModalCrossSell();
+                }, 400);
+              }
+            } catch (err) {
+              console.warn('[pm-rec-add]', err);
+            }
+          });
+        });
+      }
+
+      function refreshModalCrossSell() {
+        if (!currentModalProduct) return;
+        const grid = document.getElementById('pmCrossSellGrid');
+        const section = document.getElementById('pmCrossSellSection');
+        if (!grid || !section) return;
+
+        const recs = getCrossSellProducts(window.__CATALOG_PRODUCTS__ || [], [currentModalProduct], 4);
+        if (!recs || !recs.length) {
+          section.style.display = 'none';
+          grid.innerHTML = '';
+          return;
+        }
+
+        section.style.display = 'block';
+        grid.innerHTML = renderModalCrossSellGridHTML(recs);
+        bindProductModalEvents(document.getElementById('productModalBody'));
+      }
+
+      // Close modal bindings
+      const closeBtn = document.getElementById('closeProductModalBtn');
+      if (closeBtn) closeBtn.addEventListener('click', closeProductModal);
+
+      const modalEl = document.getElementById('productModal');
+      if (modalEl) {
+        modalEl.addEventListener('click', (e) => {
+          if (e.target === modalEl) closeProductModal();
+        });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeProductModal();
+      });
+
+      window.addEventListener('hashchange', () => {
+        if (window.location.hash.startsWith('#producto-')) {
+          const pid = decodeURIComponent(window.location.hash.replace('#producto-', ''));
+          const found = (window.__CATALOG_PRODUCTS__ || []).find(p => String(p.id) === String(pid));
+          if (found) openProductModal(found);
+        } else if (modalEl && modalEl.classList.contains('open')) {
+          closeProductModal();
+        }
+      });
+
       function mountAddToCart(root) {
         root.querySelectorAll('.btn-add[data-action="add"]:not([data-mounted="1"])').forEach(btn => {
           btn.dataset.mounted = '1';
-          btn.addEventListener('click', () => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
             try {
               if (window.shop && typeof window.shop.addToCart === 'function') {
                 const card = btn.closest('.product');
@@ -7099,23 +8152,22 @@
                 window.shop.addToCart(item);
               } else if (window.cart && typeof window.cart.add === 'function') {
                 window.cart.add({ ...btn.closest('.product').dataset, qty: 1 });
-              } else {
-                // Fallback: mostrar toast simple
-                const prev = document.getElementById('__toast_ntf__');
-                if (prev) prev.remove();
-                const t = document.createElement('div');
-                t.id = '__toast_ntf__';
-                t.textContent = 'Agregado al carrito';
-                Object.assign(t.style, {
-                  position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-                  background: '#0a0a0a', color: '#fff', border: '1px solid #2a2a2a',
-                  padding: '12px 18px', borderRadius: '6px', fontFamily: "'Oswald', sans-serif",
-                  letterSpacing: '.08em', zIndex: 999999, boxShadow: '0 20px 40px rgba(0,0,0,.6)'
-                });
-                document.body.appendChild(t);
-                setTimeout(() => t.remove(), 1800);
               }
-            } catch (e) { console.warn('[add-cart]', e); }
+            } catch (err) { console.warn('[add-cart]', err); }
+          });
+        });
+      }
+
+      function mountProductCardClicks(root) {
+        root.querySelectorAll('.product:not([data-click-mounted="1"])').forEach(card => {
+          card.dataset.clickMounted = '1';
+          card.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-add')) return;
+            const id = card.dataset.id;
+            const prod = (window.__CATALOG_PRODUCTS__ || []).find(p => String(p.id) === String(id));
+            if (prod) {
+              openProductModal(prod);
+            }
           });
         });
       }
@@ -7124,7 +8176,6 @@
         const containers = document.querySelectorAll('.products[data-category]');
         if (!containers.length) return;
 
-        // Mostrar loading opcional (mantenemos diseño intacto, sin ruido)
         try {
           const res = await fetch('/api/products/public?limit=200', {
             method: 'GET',
@@ -7136,17 +8187,28 @@
           if (!json || !json.ok) throw new Error(json && json.message ? json.message : 'error');
           const list = Array.isArray(json.data) ? json.data : [];
 
-          // Asignar categoría (si viene vacío usar name guess)
           list.forEach(p => { if (!p.category) p.category = guessCategory(p.name, p.description); });
 
-          // Renderizar cada contenedor
+          // Expose to window for cross-selling & checkout modules
+          window.__CATALOG_PRODUCTS__ = list;
+          window.dispatchEvent(new CustomEvent('catalog:loaded', { detail: list }));
+
+          // Render each container
           containers.forEach(container => {
             const cat = String(container.dataset.category || '').toLowerCase();
             const items = list.filter(p => String(p.category || '').toLowerCase() === cat);
             if (!items.length) { container.innerHTML = ''; return; }
             container.innerHTML = items.map(productCardHTML).join('');
             mountAddToCart(container);
+            mountProductCardClicks(container);
           });
+
+          // Check if URL opened with a product hash
+          if (window.location.hash.startsWith('#producto-')) {
+            const pid = decodeURIComponent(window.location.hash.replace('#producto-', ''));
+            const found = list.find(p => String(p.id) === String(pid));
+            if (found) openProductModal(found);
+          }
         } catch (err) {
           console.warn('[render-products] No se pudieron cargar productos:', err.message || err);
         }
@@ -7162,6 +8224,7 @@
   <script src="/components/narel-card-payment.js"></script>
   <script src="/assets/js/storefrontCheckout.js"></script>
   <script src="/assets/js/storefrontPromoBanners.js"></script>
+  <script src="/assets/js/shippingPromo.js"></script>
 </body>
 
 </html>

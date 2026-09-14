@@ -1,6 +1,7 @@
 (function () {
   'use strict';
 
+  // mercadoPagoCardBrick brick integration
   const STORAGE_KEY = 'narel_cart_v1';
   const state = {
     items: loadCart(),
@@ -156,6 +157,7 @@
         container.appendChild(empty);
         empty.style.display = '';
       }
+      renderCartCrossSell([]);
       return;
     }
 
@@ -195,6 +197,122 @@
           </button>
         </div>`;
       container.appendChild(row);
+    });
+
+    renderCartCrossSell(state.items);
+  }
+
+  function guessProductCategory(name, desc) {
+    const s = (String(name || '') + ' ' + String(desc || '')).toLowerCase();
+    if (/(pantalon|jogger|baggy|cargo|wide|chino|bermuda|short)/i.test(s)) return 'pantalones';
+    if (/(campera|chaqueta|parka|camperita|puffer|rompeviento)/i.test(s)) return 'camperas';
+    if (/(buzo|hoodie|sudadera|canguro|crewneck)/i.test(s)) return 'buzos';
+    if (/(remera|tee|t-shirt|playera|musculosa|top)/i.test(s)) return 'remeras';
+    if (/(accesorio|gorra|cap|bufanda|cinturon|media|medias|mochila|llavero|piluso|cadena|collar|anillo|reloj|riñonera|bolso|beanie)/i.test(s)) return 'accesorios';
+    const m = /\[CAT:\s*([a-z_]+)\]/i.exec(String(desc || ''));
+    if (m) return m[1].toLowerCase();
+    return 'remeras';
+  }
+
+  function getCartCrossSellItems(cartItems, maxCount = 3) {
+    const catalog = window.__CATALOG_PRODUCTS__ || [];
+    if (!catalog.length || !cartItems.length) return [];
+
+    const inCartIds = new Set(cartItems.map((it) => String(it.id)));
+    const inCartCategories = new Set(
+      cartItems.map((it) => String(it.category || guessProductCategory(it.name, it.description) || '').toLowerCase())
+    );
+
+    const targetComplementary = new Set();
+    inCartCategories.forEach((cat) => {
+      if (['remeras', 'buzos', 'camperas'].includes(cat)) {
+        targetComplementary.add('pantalones');
+        targetComplementary.add('accesorios');
+      } else if (cat === 'pantalones') {
+        targetComplementary.add('remeras');
+        targetComplementary.add('buzos');
+        targetComplementary.add('camperas');
+        targetComplementary.add('accesorios');
+      } else if (cat === 'accesorios') {
+        targetComplementary.add('remeras');
+        targetComplementary.add('buzos');
+        targetComplementary.add('pantalones');
+      }
+    });
+
+    const candidates = catalog.filter((p) => {
+      if (!p || !p.id) return false;
+      if (inCartIds.has(String(p.id))) return false;
+      const stock = p.stock == null ? 99 : Number(p.stock);
+      return stock > 0;
+    });
+
+    const scored = candidates.map((p) => {
+      const pCat = String(p.category || guessProductCategory(p.name, p.description) || 'remeras').toLowerCase();
+      let score = 0;
+      if (targetComplementary.has(pCat)) score += 10;
+      if (!inCartCategories.has(pCat)) score += 5;
+      if (p.featured) score += 3;
+      if (p.image_url) score += 2;
+      return { product: p, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, maxCount).map((s) => s.product);
+  }
+
+  function renderCartCrossSell(cartItems) {
+    const csRoot = get('cartCrossSell');
+    const csItems = get('cartCrossSellItems');
+    if (!csRoot || !csItems) return;
+
+    if (!cartItems || !cartItems.length) {
+      csRoot.style.display = 'none';
+      csItems.innerHTML = '';
+      return;
+    }
+
+    const recs = getCartCrossSellItems(cartItems, 3);
+    if (!recs.length) {
+      csRoot.style.display = 'none';
+      csItems.innerHTML = '';
+      return;
+    }
+
+    csRoot.style.display = 'block';
+    csItems.innerHTML = recs.map((p) => {
+      const img = p.image_url
+        ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy">`
+        : `<span>${escapeHtml(String(p.id || 'NL').slice(0, 2).toUpperCase())}</span>`;
+      return `
+        <div class="cart-cs-item" data-rec-id="${escapeHtml(p.id)}">
+          <div class="cart-cs-img">${img}</div>
+          <div class="cart-cs-info">
+            <h5 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h5>
+            <span class="cart-cs-price">${formatCurrency(p.price)}</span>
+          </div>
+          <button type="button" class="cart-cs-add-btn" data-cart-cs-add="${escapeHtml(p.id)}" aria-label="Agregar ${escapeHtml(p.name)} al carrito">
+            + AGREGAR
+          </button>
+        </div>`;
+    }).join('');
+
+    csItems.querySelectorAll('[data-cart-cs-add]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.cartCsAdd;
+        const prod = (window.__CATALOG_PRODUCTS__ || []).find((p) => String(p.id) === String(id));
+        if (!prod) return;
+        addToCart({
+          id: prod.id,
+          name: prod.name,
+          price: Number(prod.price) || 0,
+          image: prod.image_url || '',
+          stock: Number(prod.stock) || 0,
+          sizes: prod.sizes || '',
+          qty: 1,
+        });
+      });
     });
   }
 
@@ -331,22 +449,84 @@
     return state.items.reduce((sum, item) => sum + (item.list_price ? (item.list_price - item.price) * item.qty : 0), 0);
   }
 
+  function isSantaFeCapital(cityName) {
+    if (!cityName) return false;
+    const clean = String(cityName).trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return /^(santa\s*fe(\s*capital|\s*de\s*la\s*vera\s*cruz)?|sta\.?\s*fe(\s*capital)?)$/i.test(clean) ||
+           clean.includes('santa fe capital') ||
+           clean === 'santa fe';
+  }
+
+  function isEligibleForFreeShipping(subtotal, city, isDelivery) {
+    if (!isDelivery) return false;
+    return (Number(subtotal) || 0) >= 40000 && isSantaFeCapital(city);
+  }
+
   function renderCheckoutSummary() {
     const summary = get('checkoutSummary');
     if (!summary) return;
     const savings = promoSavings();
+    const subtotal = totalPrice();
+    const isDelivery = get('shippingMethodEnvio')?.checked;
+    const cityInput = get('checkoutCity');
+    const city = cityInput ? cityInput.value : '';
+    const eligible = isEligibleForFreeShipping(subtotal, city, isDelivery);
+    const isSfe = isSantaFeCapital(city);
+
     const savingsRow = savings > 0
       ? `<div class="row"><span>Descuento promos</span><strong>- ${formatCurrency(savings)}</strong></div>`
       : '';
+
+    let shippingRowHtml = '';
+    let promoCalloutHtml = '';
+
+    if (!isDelivery) {
+      shippingRowHtml = `<div class="row"><span>Envío</span><strong>Sin costo (Retiro en local)</strong></div>`;
+    } else if (eligible) {
+      shippingRowHtml = `<div class="row"><span>Envío</span><strong style="color:var(--yellow);">¡GRATIS! (Promo Santa Fe Capital)</strong></div>`;
+      promoCalloutHtml = `
+        <div class="checkout-promo-box checkout-promo-box-applied">
+          <div class="checkout-promo-box-head">
+            <span class="checkout-promo-badge">⚡ ENVÍO GRATIS APLICADO</span>
+            <small>EXCLUSIVA SANTA FE CAPITAL</small>
+          </div>
+          <p>Tu compra es a partir de $40.000 con entrega en Santa Fe Capital. ¡El costo de envío es $0!</p>
+        </div>`;
+    } else if (isSfe && subtotal < 40000) {
+      shippingRowHtml = `<div class="row"><span>Envío</span><strong>A coordinar</strong></div>`;
+      const diff = 40000 - subtotal;
+      promoCalloutHtml = `
+        <div class="checkout-promo-box">
+          <div class="checkout-promo-box-head">
+            <span class="checkout-promo-badge">PROMOCIÓN DISPONIBLE</span>
+            <small>SANTA FE CAPITAL</small>
+          </div>
+          <p>Agregá <strong>${formatCurrency(diff)}</strong> para acceder al <strong>ENVÍO GRATIS</strong> exclusivo para Santa Fe Capital.</p>
+        </div>`;
+    } else {
+      shippingRowHtml = `<div class="row"><span>Envío</span><strong>A coordinar</strong></div>`;
+    }
+
     summary.innerHTML = `
       <div class="row"><span>Productos</span><strong>${totalQuantity()}</strong></div>
-      <div class="row"><span>Subtotal</span><strong>${formatCurrency(totalPrice())}</strong></div>
+      <div class="row"><span>Subtotal</span><strong>${formatCurrency(subtotal)}</strong></div>
       ${savingsRow}
-      <div class="row"><span>Envío</span><strong>A coordinar</strong></div>
-      <div class="row total-row"><span>TOTAL A PAGAR</span><strong>${formatCurrency(totalPrice())}</strong></div>`;
+      ${shippingRowHtml}
+      ${promoCalloutHtml}
+      <div class="row total-row"><span>TOTAL A PAGAR</span><strong>${formatCurrency(subtotal)}</strong></div>`;
   }
 
   function buildOrderPayload(form) {
+    const subtotal = totalPrice();
+    const city = form.elements.city?.value.trim() || '';
+    const isDelivery = form.elements.shipping_method?.value === 'envio';
+    const isFree = isEligibleForFreeShipping(subtotal, city, isDelivery);
+    let notes = form.elements.notes?.value.trim() || '';
+    if (isFree) {
+      notes = (notes ? notes + ' | ' : '') + 'PROMO ENVÍO GRATIS: Santa Fe Capital ($40.000+)';
+    }
+
     return {
       items: state.items.map((item) => ({
         product_id: item.id,
@@ -362,9 +542,9 @@
       shipping: {
         method: form.elements.shipping_method.value,
         address: form.elements.address?.value.trim() || '',
-        city: form.elements.city?.value.trim() || '',
+        city: city,
         postal_code: form.elements.postal_code?.value.trim() || '',
-        notes: form.elements.notes?.value.trim() || '',
+        notes: notes,
       },
       payment_method: 'mercadopago_card',
     };
@@ -524,8 +704,11 @@
               <span class="checkout-error" id="checkoutError-address"></span>
             </div>
             <div class="checkout-field">
-              <label for="checkoutCity">Ciudad <span>*</span></label>
-              <input id="checkoutCity" name="city" type="text" autocomplete="address-level2" aria-describedby="checkoutError-city">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+                <label for="checkoutCity">Ciudad <span>*</span></label>
+                <button type="button" id="btnSantaFeHelper" class="btn-sfe-helper" title="Seleccionar Santa Fe Capital para aplicar a la promo">Santa Fe Capital</button>
+              </div>
+              <input id="checkoutCity" name="city" type="text" autocomplete="address-level2" placeholder="Ej. Santa Fe Capital" aria-describedby="checkoutError-city">
               <span class="checkout-error" id="checkoutError-city"></span>
             </div>
             <div class="checkout-field">
@@ -576,6 +759,24 @@
     if (pickupCopy) pickupCopy.textContent = `${pickupAddress} · coordinamos por WhatsApp.`;
     if (shippingCopy) shippingCopy.textContent = shippingNote;
 
+    const updateShippingCopy = () => {
+      const delivery = get('shippingMethodEnvio')?.checked;
+      const city = form.elements.city?.value.trim() || '';
+      const subtotal = totalPrice();
+      const eligible = isEligibleForFreeShipping(subtotal, city, delivery);
+      const isSfe = isSantaFeCapital(city);
+
+      if (shippingCopy) {
+        if (delivery && eligible) {
+          shippingCopy.innerHTML = '<strong style="color:var(--yellow)">¡ENVÍO GRATIS APLICADO!</strong> Exclusivo Santa Fe Capital.';
+        } else if (delivery && isSfe && subtotal < 40000) {
+          shippingCopy.innerHTML = `${shippingNote} <span style="color:var(--yellow);display:block;margin-top:2px;">(Envío gratis en compras desde $40.000)</span>`;
+        } else {
+          shippingCopy.textContent = shippingNote;
+        }
+      }
+    };
+
     const toggleShipping = () => {
       const delivery = get('shippingMethodEnvio')?.checked;
       shippingFields?.classList.toggle('checkout-hidden', !delivery);
@@ -583,12 +784,29 @@
         const input = form.elements[field];
         if (input) input.required = delivery;
       });
+      updateShippingCopy();
+      renderCheckoutSummary();
     };
 
     form.querySelectorAll('input[name="shipping_method"]').forEach((input) => input.addEventListener('change', toggleShipping));
     ['name', 'email', 'phone', 'address', 'city', 'postal_code'].forEach((field) => {
       form.elements[field]?.addEventListener('blur', () => validateCheckoutField(field, form));
     });
+
+    form.elements.city?.addEventListener('input', () => {
+      updateShippingCopy();
+      renderCheckoutSummary();
+    });
+
+    get('btnSantaFeHelper')?.addEventListener('click', () => {
+      if (form.elements.city) {
+        form.elements.city.value = 'Santa Fe Capital';
+        validateCheckoutField('city', form);
+        updateShippingCopy();
+        renderCheckoutSummary();
+      }
+    });
+
     get('cancelCheckoutBtn')?.addEventListener('click', () => setPaymentOpen(false));
     toggleShipping();
     renderCheckoutSummary();
@@ -696,6 +914,10 @@
       addManyToCart,
       renderCart,
       openCart: () => setCartOpen(true),
+      getItems: () => state.items.slice(),
+    });
+    window.addEventListener('catalog:loaded', () => {
+      renderCart();
     });
     renderCart();
   }

@@ -1,0 +1,13 @@
+{
+  "name": "narel-store-root",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "LOCAL.NAREL/plantilla1"
+  ],
+  "scripts": {
+    "dev": "npm --prefix LOCAL.NAREL/plantilla1 run dev",
+    "build": "npm --prefix LOCAL.NAREL/plantilla1 run build",
+    "start": "npm --prefix LOCAL.NAREL/plantilla1 run start"
+  }
+}

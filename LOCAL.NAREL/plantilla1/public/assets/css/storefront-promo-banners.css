@@ -365,3 +365,154 @@
     width: 100%;
   }
 }
+
+/* ==========================================================================
+   PROMOCIÓN DE ENVÍOS GRATIS (SANTA FE CAPITAL)
+   ========================================================================== */
+.shipping-promo-banner {
+  position: relative;
+  z-index: 40;
+  width: 100%;
+  background: #0d0d0d;
+  background: linear-gradient(90deg, #0d0d0d 0%, #171717 50%, #0d0d0d 100%);
+  border-bottom: 2px solid var(--yellow);
+  padding: 16px 5vw;
+}
+
+.shipping-promo-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.shipping-promo-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.shipping-promo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: rgba(245, 208, 32, 0.12);
+  border: 1px solid var(--yellow);
+  color: var(--yellow);
+  font: 700 10px 'Oswald', sans-serif;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.shipping-promo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 8px var(--yellow);
+}
+
+.shipping-promo-heading {
+  margin: 0 0 6px;
+  font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+  font-size: clamp(19px, 2.1vw, 28px);
+  line-height: 1.15;
+  color: var(--white);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.shipping-promo-detail {
+  font: 500 13px 'DM Mono', monospace;
+  color: var(--grey);
+  letter-spacing: .05em;
+}
+
+.shipping-promo-detail strong {
+  color: var(--white);
+}
+
+.shipping-promo-timer-wrap {
+  flex-shrink: 0;
+}
+
+.shipping-promo-countdown {
+  min-width: 220px;
+  border: 1.5px solid rgba(255, 255, 255, .25);
+  background: rgba(0, 0, 0, .75);
+  padding: 10px 16px;
+  text-align: center;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+.sp-cd-tag {
+  font: 700 9px 'DM Mono', monospace;
+  letter-spacing: .28em;
+  color: var(--yellow);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.sp-cd-digits {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.sp-cd-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 46px;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .1);
+}
+
+.sp-cd-num {
+  font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--white);
+}
+
+.sp-cd-unit {
+  font: 600 8px 'DM Mono', monospace;
+  letter-spacing: .15em;
+  color: var(--grey);
+  margin-top: 2px;
+}
+
+.sp-cd-colon {
+  font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+  font-size: 20px;
+  line-height: 1;
+  color: var(--yellow);
+}
+
+.sp-cd-status {
+  margin-top: 6px;
+  font: 400 9px 'DM Mono', monospace;
+  letter-spacing: .06em;
+  color: var(--grey);
+}
+
+@media (max-width: 860px) {
+  .shipping-promo-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .shipping-promo-timer-wrap {
+    width: 100%;
+  }
+  .shipping-promo-countdown {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
