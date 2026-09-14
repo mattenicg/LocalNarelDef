@@ -16,10 +16,10 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/storefront-checkout.css">
-  <link rel="stylesheet" href="/assets/css/storefront-promo-banners.css">
-  <link rel="stylesheet" href="/assets/css/storefront-how-to-buy.css">
-  <link rel="stylesheet" href="/assets/css/storefront-sections-menu.css">
+  <link rel="stylesheet" href="/assets/css/storefront-checkout.css?v=20260914-2">
+  <link rel="stylesheet" href="/assets/css/storefront-promo-banners.css?v=20260914-2">
+  <link rel="stylesheet" href="/assets/css/storefront-how-to-buy.css?v=20260914-2">
+  <link rel="stylesheet" href="/assets/css/storefront-sections-menu.css?v=20260914-2">
   <style>
     @font-face {
       font-family: 'Chrome';
@@ -6359,6 +6359,228 @@
         gap: 10px;
       }
     }
+
+    /* ==========================================================================
+       PROMOCIÓN DE ENVÍOS GRATIS Y TABLA DEL TIEMPO (COUNTDOWN)
+       ========================================================================== */
+    .shipping-promo-banner {
+      position: relative;
+      z-index: 40;
+      width: 100%;
+      background: #0d0d0d;
+      background: linear-gradient(90deg, #0a0a0a 0%, #151515 50%, #0a0a0a 100%);
+      border-bottom: 2px solid var(--yellow);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 14px 4vw;
+      box-sizing: border-box;
+    }
+
+    .shipping-promo-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      box-sizing: border-box;
+    }
+
+    .shipping-promo-content {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .shipping-promo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 4px 10px;
+      background: rgba(245, 208, 32, 0.12);
+      border: 1px solid var(--yellow);
+      border-radius: 3px;
+      color: var(--yellow);
+      font: 700 10px 'DM Mono', monospace;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      box-sizing: border-box;
+    }
+
+    .shipping-promo-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--yellow);
+      box-shadow: 0 0 8px var(--yellow);
+      flex-shrink: 0;
+    }
+
+    .shipping-promo-heading {
+      margin: 0;
+      font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+      font-size: clamp(20px, 2.2vw, 30px);
+      line-height: 1.15;
+      color: var(--white);
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    .shipping-promo-detail {
+      margin: 0;
+      font: 500 13px 'DM Mono', monospace;
+      color: var(--grey);
+      letter-spacing: .04em;
+    }
+
+    .shipping-promo-detail strong {
+      color: var(--yellow);
+      font-weight: 700;
+    }
+
+    .shipping-promo-timer-wrap {
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Tabla / Tarjeta del tiempo */
+    .shipping-promo-countdown {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 250px;
+      background: #111111;
+      background: linear-gradient(180deg, #181818 0%, #0c0c0c 100%);
+      border: 1.5px solid rgba(245, 208, 32, 0.45);
+      border-radius: 6px;
+      padding: 12px 18px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), inset 0 0 14px rgba(245, 208, 32, 0.06);
+      text-align: center;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .shipping-promo-countdown::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+      border-radius: 6px 6px 0 0;
+    }
+
+    .sp-cd-tag {
+      font: 700 10px 'DM Mono', monospace;
+      letter-spacing: .25em;
+      color: var(--yellow);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sp-cd-tag::before,
+    .sp-cd-tag::after {
+      content: "";
+      display: inline-block;
+      width: 14px;
+      height: 1px;
+      background: rgba(245, 208, 32, 0.4);
+    }
+
+    /* Grilla de dígitos estrictamente horizontal */
+    .sp-cd-digits {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 6px !important;
+      flex-wrap: nowrap !important;
+      white-space: nowrap !important;
+      width: 100%;
+    }
+
+    .sp-cd-cell {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-width: 52px;
+      padding: 6px 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+      box-sizing: border-box;
+      transition: border-color .2s ease;
+    }
+
+    .sp-cd-cell:hover {
+      border-color: rgba(245, 208, 32, 0.5);
+    }
+
+    .sp-cd-num {
+      font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+      font-size: 26px;
+      line-height: 1;
+      color: var(--white);
+      letter-spacing: .04em;
+      font-variant-numeric: tabular-nums;
+      display: block;
+    }
+
+    .sp-cd-unit {
+      font: 600 9px 'DM Mono', monospace;
+      letter-spacing: .15em;
+      color: var(--grey);
+      margin-top: 3px;
+      display: block;
+      text-transform: uppercase;
+    }
+
+    .sp-cd-colon {
+      font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+      font-size: 22px;
+      line-height: 1;
+      color: var(--yellow);
+      user-select: none;
+      padding-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .sp-cd-status {
+      margin-top: 8px;
+      font: 500 10px 'DM Mono', monospace;
+      letter-spacing: .08em;
+      color: var(--grey);
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 900px) {
+      .shipping-promo-inner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+      }
+      .shipping-promo-timer-wrap {
+        width: 100%;
+        justify-content: center;
+      }
+      .shipping-promo-countdown {
+        width: 100%;
+        min-width: 0;
+        max-width: 420px;
+        margin: 0 auto;
+      }
+    }
   </style>
 </head>
 
@@ -8224,7 +8446,7 @@
   <script src="/components/narel-card-payment.js"></script>
   <script src="/assets/js/storefrontCheckout.js"></script>
   <script src="/assets/js/storefrontPromoBanners.js"></script>
-  <script src="/assets/js/shippingPromo.js"></script>
+  <script src="/assets/js/shippingPromo.js?v=20260914-2"></script>
 </body>
 
 </html>
