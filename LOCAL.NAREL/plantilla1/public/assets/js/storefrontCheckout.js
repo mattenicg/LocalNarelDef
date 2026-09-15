@@ -634,6 +634,129 @@
     }
   }
 
+  async function processManualPayment(form, method) {
+    if (state.submitting) return;
+    clearAlert();
+    if (!validateCheckoutForm(form)) {
+      showAlert('Revisá los datos del comprador y la entrega antes de continuar.');
+      return;
+    }
+    if (!state.items.length) {
+      showAlert('El carrito está vacío.');
+      return;
+    }
+    if (cartHasMissingSizes()) {
+      showAlert('Elegí un talle para cada producto que lo requiere.');
+      return;
+    }
+    if (!get('checkoutPolicyAccept')?.checked) {
+      showAlert('Debés aceptar la política de cambios para continuar.');
+      return;
+    }
+
+    state.submitting = true;
+    const btn = method === 'transferencia' ? get('btnConfirmTransfer') : get('btnConfirmEfectivo');
+    const oldText = btn ? btn.textContent : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'PROCESANDO PEDIDO…';
+    }
+
+    try {
+      const payload = buildOrderPayload(form);
+      payload.payment_method = method;
+
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json.ok) {
+        throw new Error(json.message || 'No pudimos registrar tu pedido. Probá nuevamente.');
+      }
+
+      const order = json.data || {};
+      state.items = [];
+      saveCart();
+      renderCart();
+      renderConfirmation(order, 'pending');
+    } catch (error) {
+      showAlert(error.message || 'No se pudo crear el pedido.');
+    } finally {
+      state.submitting = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = oldText;
+      }
+    }
+  }
+
+  async function processWalletPayment(form) {
+    if (state.submitting) return;
+    clearAlert();
+    if (!validateCheckoutForm(form)) {
+      showAlert('Revisá los datos del comprador y la entrega antes de continuar.');
+      return;
+    }
+    if (!state.items.length) {
+      showAlert('El carrito está vacío.');
+      return;
+    }
+    if (cartHasMissingSizes()) {
+      showAlert('Elegí un talle para cada producto que lo requiere.');
+      return;
+    }
+    if (!get('checkoutPolicyAccept')?.checked) {
+      showAlert('Debés aceptar la política de cambios para continuar.');
+      return;
+    }
+
+    state.submitting = true;
+    const btn = get('btnPayWithWallet');
+    const oldText = btn ? btn.textContent : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'CONECTANDO CON MERCADO PAGO…';
+    }
+
+    try {
+      const payload = buildOrderPayload(form);
+      const prefResponse = await fetch('/api/payments/mercadopago/preference', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          items: payload.items.map((i) => ({
+            product_id: i.product_id,
+            product_name: i.product_name,
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+          })),
+          customer: payload.customer,
+          shipping: payload.shipping,
+          total: Number(totalPrice().toFixed(2)),
+        }),
+      });
+      const prefJson = await prefResponse.json().catch(() => ({}));
+      if (!prefResponse.ok || !prefJson.ok || !prefJson.data?.init_point) {
+        throw new Error(prefJson.message || 'No se pudo generar la orden de pago en Mercado Pago.');
+      }
+
+      // Redirigir a la pantalla de pago de Mercado Pago
+      window.location.href = prefJson.data.init_point;
+    } catch (error) {
+      showAlert(error.message || 'Error al conectar con Mercado Pago.');
+    } finally {
+      state.submitting = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = oldText;
+      }
+    }
+  }
+
   function renderConfirmation(order, paymentState = 'approved') {
     const paymentContent = get('paymentContent');
     if (!paymentContent) return;
@@ -650,13 +773,17 @@
       ? 'Recibimos tu pedido, pero Mercado Pago todavía no confirmó el cobro. No vuelvas a pagar; te avisaremos cuando cambie el estado.'
       : 'El pago fue aprobado por Mercado Pago y registramos tu pedido correctamente.';
 
-    if (ticketUrl) {
+    if (order.payment_method === 'transferencia') {
+      title = 'PEDIDO RECIBIDO - TRANSFERENCIA';
+      copy = 'Tu pedido fue registrado. Realizá la transferencia a los datos bancarios y envianos el comprobante por WhatsApp para despachar tus prendas.';
+    } else if (order.payment_method === 'efectivo') {
+      title = 'PEDIDO RECIBIDO - EFECTIVO';
+      copy = 'Tus prendas y talles ya están reservados. Te esperamos en nuestro local físico de LA PEATONAL San Martín 2029 para abonar al retirar.';
+    } else if (ticketUrl) {
       title = 'CUPÓN DE PAGO GENERADO';
       copy = 'Tu pedido fue registrado. Podés pagar con tu cupón en cualquier sucursal antes del vencimiento.';
     }
 
-    // Al reemplazar este HTML, narel-card-payment (si estaba montado) se
-    // desconecta del DOM y limpia su propio Brick automáticamente.
     paymentContent.innerHTML = `
       <div class="checkout-confirmation ${pending ? 'is-pending' : ''}">
         <div class="success-circle" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
@@ -746,9 +873,143 @@
           </div>
         </fieldset>
 
-        <fieldset class="checkout-fieldset">
+        <fieldset class="checkout-fieldset" id="checkoutPaymentFieldset">
           <legend>MÉTODO DE PAGO</legend>
-          ${cardGatewayMarkup}
+          
+          <div class="checkout-field full" style="margin-bottom: 12px;">
+            <label for="checkoutPaymentSelector">Seleccioná cómo querés abonar <span>*</span></label>
+            <select id="checkoutPaymentSelector" class="checkout-select-large">
+              <option value="card" selected>💳 Tarjeta de Crédito / Débito (Hasta 24 cuotas · Mercado Pago)</option>
+              <option value="mercadopago">💙 Billetera Mercado Pago (Dinero en cuenta o Mercado Crédito)</option>
+              <option value="transferencia">🏦 Transferencia Bancaria (CBU / Alias · Sin recargo)</option>
+              <option value="efectivo">💵 Efectivo (Pago en local San Martín 2029)</option>
+            </select>
+          </div>
+
+          <div class="checkout-method-tabs" role="tablist" aria-label="Medios de pago disponibles">
+            <button type="button" class="checkout-method-tab active" data-method="card">
+              <span class="tab-icon">💳</span>
+              <span class="tab-title">Tarjeta Crédito / Débito</span>
+              <small class="tab-desc">Hasta 24 cuotas</small>
+            </button>
+            <button type="button" class="checkout-method-tab" data-method="mercadopago">
+              <span class="tab-icon">💙</span>
+              <span class="tab-title">Mercado Pago</span>
+              <small class="tab-desc">Saldo / Crédito</small>
+            </button>
+            <button type="button" class="checkout-method-tab" data-method="transferencia">
+              <span class="tab-icon">🏦</span>
+              <span class="tab-title">Transferencia</span>
+              <small class="tab-desc">CBU / Alias</small>
+            </button>
+            <button type="button" class="checkout-method-tab" data-method="efectivo">
+              <span class="tab-icon">💵</span>
+              <span class="tab-title">Efectivo</span>
+              <small class="tab-desc">En el local</small>
+            </button>
+          </div>
+
+          <!-- PANEL 1: TARJETA DE CRÉDITO / DÉBITO -->
+          <div id="methodPanelCard" class="checkout-payment-panel">
+            <div class="checkout-cuotas-notice">
+              <div class="ccn-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <span>SELECTOR DE CUOTAS INTELIGENTE</span>
+              </div>
+              <strong class="ccn-title">¿Dónde se eligen las cuotas?</strong>
+              <p class="ccn-text">
+                Ingresá los números de tu tarjeta: al escribir los primeros dígitos, tu banco habilita de inmediato el <strong>menú desplegable de cuotas (1, 3, 6, 12 o 24 pagos)</strong> con las promociones bancarias vigentes.
+              </p>
+              <div class="ccn-cards">
+                <span>Visa</span><span>Mastercard</span><span>Cabal</span><span>Amex</span><span>Naranja X</span><span>Débito</span>
+              </div>
+            </div>
+            ${cardGatewayMarkup}
+          </div>
+
+          <!-- PANEL 2: BILLETERA MERCADO PAGO -->
+          <div id="methodPanelMercadopago" class="checkout-payment-panel checkout-hidden">
+            <div class="checkout-wallet-box">
+              <div class="cwb-header">
+                <span style="font:700 15px 'Oswald',sans-serif;color:var(--yellow);letter-spacing:.08em;">PAGO SEGURO CON MERCADO PAGO</span>
+                <span class="cwb-badge">DINERO EN CUENTA O CRÉDITO</span>
+              </div>
+              <p class="cwb-copy">
+                Aboná de forma instantánea utilizando el <strong>saldo disponible en tu cuenta de Mercado Pago</strong> o en cuotas mediante <strong>Mercado Crédito</strong>.
+              </p>
+              <div class="cwb-actions">
+                <button type="button" class="btn confirm" id="btnPayWithWallet">PAGAR CON MERCADO PAGO</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANEL 3: TRANSFERENCIA BANCARIA -->
+          <div id="methodPanelTransferencia" class="checkout-payment-panel checkout-hidden">
+            <div class="checkout-transfer-box">
+              <div class="ctb-header">
+                <span style="font:700 15px 'Oswald',sans-serif;color:var(--yellow);letter-spacing:.08em;">DATOS PARA LA TRANSFERENCIA</span>
+                <small style="color:var(--grey);font:400 10px 'DM Mono',monospace;">ACREDITACIÓN INMEDIATA</small>
+              </div>
+              <div class="ctb-grid">
+                <div class="ctb-item">
+                  <span>Banco</span>
+                  <strong>Banco Nación · Cta. Cte. PESOS</strong>
+                </div>
+                <div class="ctb-item copyable">
+                  <span>CBU</span>
+                  <div>
+                    <strong>0720311188000004567890</strong>
+                    <button type="button" class="btn-copy-clip" data-clipboard="0720311188000004567890">COPIAR</button>
+                  </div>
+                </div>
+                <div class="ctb-item copyable">
+                  <span>Alias</span>
+                  <div>
+                    <strong>narel.flows.mp</strong>
+                    <button type="button" class="btn-copy-clip" data-clipboard="narel.flows.mp">COPIAR</button>
+                  </div>
+                </div>
+                <div class="ctb-item">
+                  <span>Titular</span>
+                  <strong>Narel Local - TIENDA</strong>
+                </div>
+              </div>
+              <div class="ctb-instructions">
+                <p><strong>1.</strong> Realizá la transferencia por el monto total de tu compra.</p>
+                <p><strong>2.</strong> Presioná el botón de confirmación abajo.</p>
+                <p><strong>3.</strong> Enviá el comprobante a nuestro WhatsApp para coordinar el retiro o despacho.</p>
+              </div>
+              <div class="cwb-actions" style="margin-top:14px;">
+                <button type="button" class="btn confirm" id="btnConfirmTransfer">CONFIRMAR PEDIDO POR TRANSFERENCIA</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANEL 4: EFECTIVO EN LOCAL -->
+          <div id="methodPanelEfectivo" class="checkout-payment-panel checkout-hidden">
+            <div class="checkout-efectivo-box">
+              <div class="ctb-header">
+                <span style="font:700 15px 'Oswald',sans-serif;color:var(--yellow);letter-spacing:.08em;">PAGO EN EFECTIVO EN EL LOCAL</span>
+                <small style="color:var(--grey);font:400 10px 'DM Mono',monospace;">SANTA FE CAPITAL</small>
+              </div>
+              <div class="ctb-grid">
+                <div class="ctb-item">
+                  <span>Sucursal de retiro</span>
+                  <strong>LA PEATONAL · San Martín 2029</strong>
+                </div>
+                <div class="ctb-item">
+                  <span>Horarios</span>
+                  <strong>Lunes a Sábados de 09:00 a 17:00 hs</strong>
+                </div>
+              </div>
+              <p style="color:var(--grey);font:400 11px 'DM Mono',monospace;margin:12px 0 0;line-height:1.5;">
+                Reservá tus prendas y talles confirmando el pedido. Abonás en efectivo al momento del retiro en el local.
+              </p>
+              <div class="cwb-actions" style="margin-top:14px;">
+                <button type="button" class="btn confirm" id="btnConfirmEfectivo">CONFIRMAR PEDIDO EN EFECTIVO</button>
+              </div>
+            </div>
+          </div>
         </fieldset>
 
         <fieldset class="checkout-fieldset">
@@ -811,6 +1072,75 @@
       renderCheckoutSummary();
     };
 
+    // Sincronización entre el menú desplegable y los botones de medios de pago
+    const selectPaymentMethod = (method) => {
+      const select = get('checkoutPaymentSelector');
+      if (select && select.value !== method) select.value = method;
+
+      form.querySelectorAll('.checkout-method-tab').forEach((tab) => {
+        tab.classList.toggle('active', tab.dataset.method === method);
+      });
+
+      const panels = {
+        card: get('methodPanelCard'),
+        mercadopago: get('methodPanelMercadopago'),
+        transferencia: get('methodPanelTransferencia'),
+        efectivo: get('methodPanelEfectivo'),
+      };
+
+      Object.entries(panels).forEach(([m, panel]) => {
+        if (!panel) return;
+        panel.classList.toggle('checkout-hidden', m !== method);
+      });
+
+      if (method === 'card' && !state.cardPaymentEl) {
+        mountCardPaymentGateway(form);
+      }
+    };
+
+    get('checkoutPaymentSelector')?.addEventListener('change', (e) => {
+      selectPaymentMethod(e.target.value);
+    });
+
+    form.querySelectorAll('.checkout-method-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        selectPaymentMethod(tab.dataset.method);
+      });
+    });
+
+    // Copiar CBU / Alias en un clic
+    form.querySelectorAll('[data-clipboard]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const text = btn.dataset.clipboard;
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const input = document.createElement('input');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            input.remove();
+          }
+          const oldText = btn.textContent;
+          btn.textContent = '¡COPIADO!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = oldText;
+            btn.classList.remove('copied');
+          }, 2000);
+        } catch (_e) {
+          showAlert(`Copiá manualmente: ${text}`);
+        }
+      });
+    });
+
+    // Botones de acción de los distintos métodos
+    get('btnPayWithWallet')?.addEventListener('click', () => processWalletPayment(form));
+    get('btnConfirmTransfer')?.addEventListener('click', () => processManualPayment(form, 'transferencia'));
+    get('btnConfirmEfectivo')?.addEventListener('click', () => processManualPayment(form, 'efectivo'));
+
     form.querySelectorAll('input[name="shipping_method"]').forEach((input) => input.addEventListener('change', toggleShipping));
     ['name', 'email', 'phone', 'address', 'city', 'postal_code'].forEach((field) => {
       form.elements[field]?.addEventListener('blur', () => validateCheckoutField(field, form));
@@ -839,13 +1169,18 @@
   async function mountCardPaymentGateway(form) {
     const mount = get('checkoutCardMount');
     if (!mount) return;
+    mount.innerHTML = '';
 
     const cardEl = document.createElement('narel-card-payment');
     cardEl.setAttribute('amount', String(Number(totalPrice().toFixed(2))));
     cardEl.setAttribute('locale', state.publicConfig.MERCADO_PAGO_LOCALE || 'es-AR');
     cardEl.setAttribute('max-installments', '24');
+    cardEl.setAttribute('brick-type', 'cardPayment');
 
-    // Intentamos obtener una preferencia para habilitar Dinero en cuenta / Billetera MP
+    const emailVal = form?.elements?.email?.value?.trim();
+    if (emailVal) cardEl.setAttribute('payer-email', emailVal);
+
+    // Intentamos obtener una preferencia para vincular la orden
     try {
       const prefResponse = await fetch('/api/payments/mercadopago/preference', {
         method: 'POST',
@@ -868,11 +1203,10 @@
         }
       }
     } catch (_e) {
-      // Si la preferencia falla o no hay credenciales en local, continúa con tarjetas y tickets
+      // Si la preferencia falla en local, continúa con el formulario de tarjeta
     }
 
-    // Gate: si el comprador o el carrito no están listos, cancelamos el
-    // envío del Brick antes de procesar
+    // Gate: si el comprador o el carrito no están listos, cancelamos el envío del Brick
     cardEl.addEventListener('narel-payment-submit', (event) => {
       if (state.submitting) { event.preventDefault(); return; }
       if (!validateCheckoutForm(form)) {
@@ -963,8 +1297,17 @@
       addManyToCart,
       renderCart,
       openCart: () => setCartOpen(true),
+      closeCart: () => setCartOpen(false),
+      openCheckout: () => {
+        setCartOpen(false);
+        setPaymentOpen(true);
+        renderCheckout();
+      },
+      closeCheckout: () => setPaymentOpen(false),
       getItems: () => state.items.slice(),
     });
+    window.openPayment = window.shop.openCheckout;
+    window.closePayment = window.shop.closeCheckout;
     window.addEventListener('catalog:loaded', () => {
       renderCart();
     });

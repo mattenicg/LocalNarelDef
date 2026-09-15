@@ -7547,254 +7547,51 @@
     document.getElementById('closeCartBtn').addEventListener('click', closeCart);
     cartOverlay.addEventListener('click', closeCart);
 
-    // ============ PAYMENT MODAL ============
+    // ============ PAYMENT MODAL & CHECKOUT DELEGATION ============
     const paymentModal = document.getElementById('paymentModal');
     const closePaymentBtn = document.getElementById('closePaymentBtn');
     const paymentContent = document.getElementById('paymentContent');
 
-    let selectedMethod = null;
-
-    const NARANJA_X_CHECKOUT_URL = '';
-    const BANK_ALIAS = 'narel.flows.mp';
-    const BANK_CBU = '0720311188000004567890';
-    const BANK_NAME = 'Banco Nación · Cta. Cte. PESOS';
-    const BANK_TITULAR = 'Narel Local - TIENDA';
-
-    function copyText(text, btnEl) {
-      if (!navigator.clipboard) {
-        const ta = document.createElement('textarea');
-        ta.value = text; document.body.appendChild(ta);
-        ta.select(); try { document.execCommand('copy') } catch (e) { }
-        ta.remove();
-      } else {
-        navigator.clipboard.writeText(text).catch(() => { });
-      }
-      if (btnEl) {
-        const orig = btnEl.textContent;
-        btnEl.textContent = 'COPIADO ✓';
-        btnEl.classList.add('copied');
-        setTimeout(() => { btnEl.textContent = orig; btnEl.classList.remove('copied'); }, 1800);
-      }
-    }
-
-    function methodDetailsHTML(method, totalPrice, orderId) {
-      if (method === 'naranja-x') {
-        return `
-          <div class="pay-detail-card">
-            <h5>Pago seguro con Naranja X</h5>
-            <p class="pay-instructions">El pago online de una sola vez quedará habilitado cuando se configure la cuenta de Naranja X.</p>
-            ${NARANJA_X_CHECKOUT_URL ? `<a class="btn confirm" href="${NARANJA_X_CHECKOUT_URL}" target="_blank" rel="noopener">ABRIR NARANJA X</a>` : '<p>Medio de pago pendiente de configuración.</p>'}
-            <div class="pay-instructions">
-              <p>Orden: <strong>${orderId}</strong><br>Monto: <strong>${fmt(totalPrice)}</strong></p>
-            </div>
-          </div>`;
-      }
-      if (method === 'transferencia') {
-        return `
-          <div class="pay-detail-card">
-            <h5>Datos Bancarios / Transferencia</h5>
-            <div class="pay-row">
-              <span>Banco</span>
-              <b>${BANK_NAME}</b>
-            </div>
-            <div class="pay-row copy-row">
-              <span>CBU</span>
-              <b>${BANK_CBU} <button class="copy-btn" data-copy="${BANK_CBU}">COPIAR</button></b>
-            </div>
-            <div class="pay-row copy-row">
-              <span>Alias CBU</span>
-              <b>${BANK_ALIAS} <button class="copy-btn" data-copy="${BANK_ALIAS}">COPIAR</button></b>
-            </div>
-            <div class="pay-row">
-              <span>Titular</span>
-              <b>${BANK_TITULAR}</b>
-            </div>
-            <div class="pay-instructions">
-              <p><strong>Paso 1:</strong> Hacé una transferencia al CBU o alias indicado por <strong>${fmt(totalPrice)}</strong>.<br>
-              <strong>Paso 2:</strong> En el concepto/descripción escribí: <strong>ORDEN ${orderId}</strong>.<br>
-              <strong>Paso 3:</strong> Confirmá abajo y enviá el comprobante por WhatsApp para validar tu pedido.</p>
-            </div>
-          </div>`;
-      }
-      if (method === 'efectivo') {
-        return `
-          <div class="pay-detail-card">
-            <h5>Pago en Efectivo</h5>
-            <div class="pay-row">
-              <span>Total</span>
-              <b>${fmt(totalPrice)}</b>
-            </div>
-            <div class="pay-row">
-              <span>Opcion 1</span>
-              <b>Retiro en local</b>
-            </div>
-            <div class="pay-row">
-              <span>Dirección</span>
-              <b>San Martín, 2029</b>
-            </div>
-            <div class="pay-row">
-              <span>Opción 2</span>
-              <b>RapiPago / Pago Fácil</b>
-            </div>
-            <div class="pay-instructions">
-              <p><strong>Retiro en local:</strong> Acercate a San Martín 2029 de Lun a Sáb de <strong>09 a 17 hs</strong>, mencioná la <strong>ORDEN ${orderId}</strong> y abonás en efectivo ahí.<br><br>
-              <strong>RapiPago/PagoFácil:</strong> Confirmá abajo y te enviamos el cupón por WhatsApp para que lo pagues en cualquier sucursal.</p>
-            </div>
-          </div>`;
-      }
-      if (method === 'tarjeta') {
-        return `
-          <div class="pay-detail-card">
-            <h5>Pago con Tarjeta</h5>
-            <div class="pay-row">
-              <span>Total</span>
-              <b>${fmt(totalPrice)}</b>
-            </div>
-            <div class="pay-row">
-              <span>Tarjetas aceptadas</span>
-              <b>Visa · Mastercard · Cabal · Amex</b>
-            </div>
-            <div class="pay-row">
-              <span>Cuotas</span>
-              <b>Hasta 3 sin interés</b>
-            </div>
-            <div class="pay-instructions">
-              <p><strong>Paso 1:</strong> Confirmá la orden abajo.<br>
-              <strong>Paso 2:</strong> Te contactamos por WhatsApp y te enviamos el <strong>link de pago seguro con Naranja X</strong> para que completes los datos de tu tarjeta de forma protegida.<br>
-              <strong>Paso 3:</strong> Una vez aprobado el pago, te avisamos y coordinamos el envío/retiro.</p>
-            </div>
-          </div>`;
-      }
-      return '';
-    }
-
     function openPayment() {
-      const totalItems = cart.reduce((s, i) => s + i.qty, 0);
-      const totalPrice = cart.reduce((s, i) => s + i.qty * i.price, 0);
-      const orderId = 'NL-' + Math.floor(100000 + Math.random() * 900000);
-      paymentModal.dataset.orderId = orderId;
-      paymentModal.dataset.total = totalPrice;
-
-      selectedMethod = null;
-      paymentModal.classList.add('open');
-      closeCart();
-
-      paymentContent.innerHTML = `
-        <div class="payment-summary" id="paymentSummary">
-          <div class="row"><span>Orden N°</span><b>${orderId}</b></div>
-          <div class="row"><span>Subtotal</span><b>${totalItems + (totalItems === 1 ? ' producto' : ' productos')}</b></div>
-          <div class="row"><span>Envío</span><b>A coordinar</b></div>
-          <div class="row total-row"><span>TOTAL A PAGAR</span><b>${fmt(totalPrice)}</b></div>
-        </div>
-        <div class="payment-methods">
-          <h4>· ELEGÍ MÉTODO DE PAGO</h4>
-          <div class="pay-methods-grid">
-            <label class="pay-method" data-method="naranja-x">
-              <span class="radio"></span>
-              <span class="icon">
-                <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-              </span>
-              <span class="info"><b>Naranja X</b><span>Pago online de una sola vez</span></span>
-            </label>
-            <label class="pay-method" data-method="transferencia">
-              <span class="radio"></span>
-              <span class="icon">
-                <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M7 15h4M13 15h4M7 11v4M13 11v4"/></svg>
-              </span>
-              <span class="info"><b>Transferencia</b><span>Banco · CBU / Alias</span></span>
-            </label>
-            <label class="pay-method" data-method="efectivo">
-              <span class="radio"></span>
-              <span class="icon">
-                <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 10v.01M18 14v.01"/></svg>
-              </span>
-              <span class="info"><b>Efectivo</b><span>Local · RapiPago</span></span>
-            </label>
-            <label class="pay-method" data-method="tarjeta">
-              <span class="radio"></span>
-              <span class="icon">
-                <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h6"/></svg>
-              </span>
-              <span class="info"><b>Tarjeta Créd/Déb</b><span>Visa · Mastercard · Cabal</span></span>
-            </label>
-          </div>
-        </div>
-        <div class="payment-details" id="payDetails"></div>
-        <div class="payment-footer">
-          <button class="btn ghost" id="cancelPayBtn">CANCELAR</button>
-          <button class="btn confirm" id="confirmPayBtn" disabled>CONFIRMAR PEDIDO</button>
-        </div>`;
-
-      document.getElementById('cancelPayBtn').addEventListener('click', closePayment);
-      document.getElementById('confirmPayBtn').addEventListener('click', confirmPayment);
-
-      const detailsEl = document.getElementById('payDetails');
-      const confirmBtn = document.getElementById('confirmPayBtn');
-
-      document.querySelectorAll('.pay-method').forEach(m => {
-        m.addEventListener('click', () => {
-          document.querySelectorAll('.pay-method').forEach(x => x.classList.remove('selected'));
-          m.classList.add('selected');
-          selectedMethod = m.dataset.method;
-          detailsEl.innerHTML = methodDetailsHTML(selectedMethod, totalPrice, orderId);
-          confirmBtn.disabled = false;
-          detailsEl.querySelectorAll('[data-copy]').forEach(btn => {
-            btn.addEventListener('click', e => {
-              e.stopPropagation();
-              copyText(btn.dataset.copy, btn);
+      // Sincronizar ítems del carrito local si existen y el storefrontCheckout está disponible
+      if (window.shop && typeof window.shop.openCheckout === 'function') {
+        if (cart && cart.length && window.shop.getItems && !window.shop.getItems().length) {
+          cart.forEach(item => {
+            window.shop.addToCart({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              image: item.image || '',
+              sizes: item.sizes || '',
+              qty: item.qty || 1,
+              size: item.size || ''
             });
           });
-          detailsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        });
-      });
+        }
+        closeCart();
+        window.shop.openCheckout();
+        return;
+      }
+      
+      // Si storefrontCheckout.js aún no terminó de inicializar, esperar un instante
+      setTimeout(() => {
+        if (window.shop && typeof window.shop.openCheckout === 'function') {
+          closeCart();
+          window.shop.openCheckout();
+        }
+      }, 100);
     }
 
     function closePayment() {
-      paymentModal.classList.remove('open');
-      selectedMethod = null;
+      if (window.shop && typeof window.shop.closeCheckout === 'function') {
+        window.shop.closeCheckout();
+      } else {
+        paymentModal?.classList.remove('open');
+      }
     }
 
-    function confirmPayment() {
-      if (!selectedMethod) return;
-      const methodName = {
-        'naranja-x': 'Naranja X',
-        'transferencia': 'Transferencia Bancaria',
-        'efectivo': 'Efectivo',
-        'tarjeta': 'Tarjeta Crédito/Débito'
-      }[selectedMethod];
-      const orderId = paymentModal.dataset.orderId || ('NL-' + Math.floor(100000 + Math.random() * 900000));
-      const totalPrice = Number(paymentModal.dataset.total || cart.reduce((s, i) => s + i.qty * i.price, 0));
-
-      cart.length = 0;
-      updateCartUI();
-
-      const waLink = `https://wa.me/549343425944325?text=${encodeURIComponent(
-        `¡Hola Narel Local! 👋\nConfirmo mi pedido ✅\n\n🛒 ORDEN: ${orderId}\n💰 MONTO: ${fmt(totalPrice)}\n💳 MÉTODO: ${methodName}\n\nEnvío comprobante / coordino retiro.`
-      )}`;
-
-      paymentContent.innerHTML = `
-        <div class="success-box">
-          <div class="success-circle">
-            <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
-          </div>
-          <h3>¡PEDIDO RESERVADO!</h3>
-          <p>Orden <b style="color:var(--yellow)">${orderId}</b><br>
-          Total: <b style="color:var(--yellow)">${fmt(totalPrice)}</b><br>
-          Método: <b>${methodName}</b></p>
-          <p style="font-size:11px;opacity:.7;margin-bottom:8px">Tu carrito fue vaciado automáticamente.<br>Ahora enviá el comprobante para finalizar 👇</p>
-          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-            <a href="${waLink}" target="_blank" rel="noopener" class="btn confirm" style="text-decoration:none;min-width:260px;display:inline-flex;justify-content:center;align-items:center;gap:10px">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              ENVIAR COMPROBANTE POR WHATSAPP
-            </a>
-          </div>
-          <button class="btn ghost" id="closeSuccessBtn" style="margin-top:18px;min-width:240px">CERRAR</button>
-        </div>`;
-      document.getElementById('closeSuccessBtn').addEventListener('click', closePayment);
-    }
-
-    closePaymentBtn.addEventListener('click', closePayment);
-    checkoutBtn.addEventListener('click', openPayment);
+    closePaymentBtn?.addEventListener('click', closePayment);
+    checkoutBtn?.addEventListener('click', openPayment);
 
     }
 

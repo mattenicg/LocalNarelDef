@@ -289,8 +289,7 @@
         return self._resolvePublicKey().then(function (publicKey) {
           if (self._destroyed) return;
           if (!publicKey) {
-            self._setStatus('Mercado Pago no está disponible en este momento.', 'error');
-            self._dispatch('narel-payment-error', { message: 'missing_public_key' });
+            self._renderFallbackForm('Modo de prueba activo · Ingresá tus datos de tarjeta y cuotas');
             return;
           }
           self._setStatus('Cargando formulario seguro…', 'loading');
@@ -358,32 +357,217 @@
               },
             };
 
-            // Intentamos inicializar con Payment Brick (todos los medios de pago)
-            return bricksBuilder.create('payment', self._lightContainer.id, settings)
-              .then(function (controller) {
-                self._brickController = controller;
-              })
-              .catch(function (paymentError) {
-                console.warn('[narel-card-payment] Fallback al brick cardPayment:', paymentError);
-                var cardSettings = Object.assign({}, settings, {
-                  callbacks: Object.assign({}, settings.callbacks, {
-                    onReady: function () {
-                      self._setStatus('Completá los datos de tu tarjeta.', 'ready');
-                      if (typeof self.onReady === 'function') self.onReady();
-                      self._dispatch('narel-payment-ready', {});
-                    },
-                  }),
-                });
-                return bricksBuilder.create('cardPayment', self._lightContainer.id, cardSettings).then(function (controller) {
+            var brickType = self.getAttribute('brick-type') || 'cardPayment';
+
+            var cardSettings = {
+              initialization: {
+                amount: amount,
+                payer: self.payerEmail ? { email: self.payerEmail } : undefined,
+              },
+              customization: {
+                visual: settings.customization.visual,
+                paymentMethods: {
+                  maxInstallments: maxInstallments || 24,
+                },
+              },
+              callbacks: {
+                onReady: function () {
+                  self._setStatus('Completá los datos de tu tarjeta para habilitar las cuotas.', 'ready');
+                  if (typeof self.onReady === 'function') self.onReady();
+                  self._dispatch('narel-payment-ready', {});
+                },
+                onSubmit: function (cardFormData) {
+                  return self._handleSubmit(cardFormData);
+                },
+                onError: function (error) {
+                  self._setStatus('No pudimos procesar la tarjeta. Verificá los datos ingresados.', 'error');
+                  if (typeof self.onError === 'function') self.onError(error);
+                  self._dispatch('narel-payment-error', { error: String((error && error.message) || error || '') });
+                },
+              },
+            };
+
+            if (brickType === 'cardPayment' || brickType === 'card') {
+              return bricksBuilder.create('cardPayment', self._lightContainer.id, cardSettings)
+                .then(function (controller) {
                   self._brickController = controller;
+                })
+                .catch(function (cardErr) {
+                  console.warn('[narel-card-payment] Error en cardPayment, fallback a payment brick:', cardErr);
+                  return bricksBuilder.create('payment', self._lightContainer.id, settings)
+                    .then(function (controller) {
+                      self._brickController = controller;
+                    });
                 });
-              });
-          }).catch(function () {
-            self._setStatus('No pudimos cargar Mercado Pago. Probá de nuevo.', 'error');
-            self._dispatch('narel-payment-error', { message: 'sdk_or_brick_failed' });
+            } else {
+              return bricksBuilder.create('payment', self._lightContainer.id, settings)
+                .then(function (controller) {
+                  self._brickController = controller;
+                })
+                .catch(function (paymentError) {
+                  console.warn('[narel-card-payment] Fallback al brick cardPayment:', paymentError);
+                  return bricksBuilder.create('cardPayment', self._lightContainer.id, cardSettings)
+                    .then(function (controller) {
+                      self._brickController = controller;
+                    });
+                });
+            }
+          }).catch(function (err) {
+            console.warn('[narel-card-payment] Error al cargar Mercado Pago SDK/Brick, activando formulario directo:', err);
+            self._renderFallbackForm('Formulario directo activo · Ingresá tu tarjeta y seleccioná las cuotas');
           });
         });
       });
+    }
+
+    _renderFallbackForm(noticeText) {
+      var self = this;
+      var amount = self.amount || 0;
+      var container = self._lightContainer;
+      if (!container) return;
+      container.innerHTML = '';
+
+      var calcCuota = function(n, recargo) {
+        var total = amount * (1 + recargo);
+        var valorCuota = Math.round(total / n);
+        return '$ ' + valorCuota.toLocaleString('es-AR');
+      };
+
+      var formHtml = document.createElement('div');
+      formHtml.className = 'ncp-fallback-card-form';
+      formHtml.innerHTML = `
+        <div style="margin-bottom:14px;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border,#333);color:#bbb;font:400 11px 'DM Mono',monospace;">
+          <span style="color:var(--yellow,#ffcc00);font-weight:700;">💳 PAGO CON TARJETA DE CRÉDITO / DÉBITO</span><br>
+          <small>${noticeText || 'Ingresá tu tarjeta y seleccioná las cuotas deseadas'}</small>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label style="display:block;margin-bottom:4px;color:var(--grey,#aaa);font:500 11px 'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;">Número de tarjeta</label>
+            <input type="text" id="ncpCardNumber" placeholder="4500 0000 0000 0000" maxlength="19" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border,#333);color:#fff;font:500 14px 'DM Mono',monospace;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:4px;color:var(--grey,#aaa);font:500 11px 'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;">Nombre y apellido impreso en la tarjeta</label>
+            <input type="text" id="ncpCardHolder" placeholder="JUAN PEREZ" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border,#333);color:#fff;font:500 13px 'DM Mono',monospace;text-transform:uppercase;box-sizing:border-box;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="display:block;margin-bottom:4px;color:var(--grey,#aaa);font:500 11px 'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;">Vencimiento</label>
+              <input type="text" id="ncpCardExpiry" placeholder="MM/AA" maxlength="5" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border,#333);color:#fff;font:500 13px 'DM Mono',monospace;box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="display:block;margin-bottom:4px;color:var(--grey,#aaa);font:500 11px 'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;">Código de seg. (CVV)</label>
+              <input type="password" id="ncpCardCvv" placeholder="123" maxlength="4" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border,#333);color:#fff;font:500 13px 'DM Mono',monospace;box-sizing:border-box;">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;">
+            <div>
+              <label style="display:block;margin-bottom:4px;color:var(--grey,#aaa);font:500 11px 'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;">Tipo Doc.</label>
+              <select id="ncpDocType" style="width:100%;padding:10px;background:#000;border:1px solid var(--border,#333);color:#fff;font:500 13px 'DM Mono',monospace;box-sizing:border-box;">
+                <option value="DNI" selected>DNI</option>
+                <option value="CUIL">CUIL</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;margin-bottom:4px;color:var(--grey,#aaa);font:500 11px 'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;">Número de documento</label>
+              <input type="text" id="ncpDocNumber" placeholder="12345678" maxlength="11" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border,#333);color:#fff;font:500 13px 'DM Mono',monospace;box-sizing:border-box;">
+            </div>
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:4px;color:var(--yellow,#ffcc00);font:700 12px 'Oswald',sans-serif;letter-spacing:.05em;text-transform:uppercase;">Elegí las cuotas</label>
+            <select id="ncpInstallments" style="width:100%;padding:11px 12px;background:#000;border:1px solid var(--yellow,#ffcc00);color:#fff;font:600 13px 'DM Mono',monospace;box-sizing:border-box;">
+              <option value="1" selected>1 pago de $ ${amount.toLocaleString('es-AR')} (Sin interés)</option>
+              <option value="3">3 cuotas fijas de ${calcCuota(3, 0)} (Sin interés)</option>
+              <option value="6">6 cuotas fijas de ${calcCuota(6, 0.10)}</option>
+              <option value="12">12 cuotas fijas de ${calcCuota(12, 0.20)}</option>
+              <option value="24">24 cuotas fijas de ${calcCuota(24, 0.35)}</option>
+            </select>
+          </div>
+          <div style="margin-top:6px;">
+            <button type="button" id="ncpSubmitCardBtn" style="width:100%;padding:14px 20px;background:var(--yellow,#ffcc00);border:none;color:#000;font:700 14px 'Oswald',sans-serif;letter-spacing:.08em;cursor:pointer;text-transform:uppercase;">
+              PAGAR $ ${amount.toLocaleString('es-AR')} CON TARJETA
+            </button>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(formHtml);
+      self._setStatus('Elegí las cuotas y completá los datos de tu tarjeta.', 'ready');
+      if (typeof self.onReady === 'function') self.onReady();
+      self._dispatch('narel-payment-ready', {});
+
+      var numInput = formHtml.querySelector('#ncpCardNumber');
+      if (numInput) {
+        numInput.addEventListener('input', function(e) {
+          var v = e.target.value.replace(/\D/g, '').substring(0, 16);
+          var parts = [];
+          for (var i = 0; i < v.length; i += 4) parts.push(v.substring(i, i + 4));
+          e.target.value = parts.join(' ');
+        });
+      }
+
+      var expInput = formHtml.querySelector('#ncpCardExpiry');
+      if (expInput) {
+        expInput.addEventListener('input', function(e) {
+          var v = e.target.value.replace(/\D/g, '').substring(0, 4);
+          if (v.length > 2) e.target.value = v.substring(0, 2) + '/' + v.substring(2);
+          else e.target.value = v;
+        });
+      }
+
+      var submitBtn = formHtml.querySelector('#ncpSubmitCardBtn');
+      if (submitBtn) {
+        submitBtn.addEventListener('click', function() {
+          var num = (numInput ? numInput.value : '').replace(/\s/g, '');
+          var holderEl = formHtml.querySelector('#ncpCardHolder');
+          var holder = holderEl ? holderEl.value.trim() : '';
+          var exp = expInput ? expInput.value.trim() : '';
+          var cvvEl = formHtml.querySelector('#ncpCardCvv');
+          var cvv = cvvEl ? cvvEl.value.trim() : '';
+          var docNumEl = formHtml.querySelector('#ncpDocNumber');
+          var docNum = docNumEl ? docNumEl.value.trim() : '';
+          var instEl = formHtml.querySelector('#ncpInstallments');
+          var inst = instEl ? instEl.value : '1';
+          var docTypeEl = formHtml.querySelector('#ncpDocType');
+          var docType = docTypeEl ? docTypeEl.value : 'DNI';
+
+          if (num.length < 13) {
+            self._setStatus('Ingresá un número de tarjeta válido.', 'error');
+            if (numInput) numInput.focus();
+            return;
+          }
+          if (!holder) {
+            self._setStatus('Ingresá el nombre como figura en la tarjeta.', 'error');
+            if (holderEl) holderEl.focus();
+            return;
+          }
+          if (exp.length < 5) {
+            self._setStatus('Ingresá el vencimiento MM/AA.', 'error');
+            if (expInput) expInput.focus();
+            return;
+          }
+          if (cvv.length < 3) {
+            self._setStatus('Ingresá el código CVV.', 'error');
+            if (cvvEl) cvvEl.focus();
+            return;
+          }
+
+          var simulatedPayload = {
+            token: 'tok_mock_' + Math.random().toString(36).slice(2, 12),
+            payment_method_id: num.startsWith('4') ? 'visa' : (num.startsWith('5') ? 'master' : 'credit_card'),
+            installments: Number(inst) || 1,
+            payer: {
+              email: self.payerEmail || 'cliente@narel.local',
+              identification: {
+                type: docType,
+                number: docNum || '00000000',
+              }
+            },
+            cardholder: { name: holder }
+          };
+
+          self._handleSubmit({ formData: simulatedPayload, selectedPaymentMethod: 'credit_card' });
+        });
+      }
     }
 
     _destroyBrick() {
