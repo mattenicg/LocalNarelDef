@@ -166,6 +166,110 @@
                   </label>
                 </div>
               </div>
+
+              <!-- PERSONALIZACIÓN VISUAL DE COMPRA DIRECTA (FORMATO TARJETA) -->
+              <div style="margin-top:20px;padding:16px;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:6px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid #222;padding-bottom:10px;flex-wrap:wrap;gap:8px;">
+                  <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em;">
+                    🎨 Formato e Información de Pago (Bajo el Producto)
+                  </span>
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;color:#888;">
+                    Personalizable por producto
+                  </span>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:14px;margin-bottom:16px;">
+                  <div>
+                    <label for="direct_discount_percent" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      % Descuento Transferencia:
+                    </label>
+                    <input type="number" id="direct_discount_percent" name="direct_discount_percent" class="form-control" value="25" min="0" max="100" step="0.5" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                  </div>
+
+                  <div>
+                    <label for="direct_discount_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      Texto Descuento:
+                    </label>
+                    <input type="text" id="direct_discount_text" name="direct_discount_text" class="form-control" value="con transferencia" placeholder="con transferencia" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                    <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "25% OFF con transferencia"</span>
+                  </div>
+
+                  <div>
+                    <label for="direct_installments_count" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      Cuotas a mostrar:
+                    </label>
+                    <input type="number" id="direct_installments_count" name="direct_installments_count" class="form-control" value="6" min="1" max="24" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                  </div>
+
+                  <div>
+                    <label for="direct_installments_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      Texto de Cuotas:
+                    </label>
+                    <input type="text" id="direct_installments_text" name="direct_installments_text" class="form-control" value="sin interés" placeholder="sin interés" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                    <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "6 x $18.750,00 sin interés"</span>
+                  </div>
+
+                  <div>
+                    <label for="direct_custom_transfer_price" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      Precio Transferencia Manual (Opcional):
+                    </label>
+                    <input type="number" id="direct_custom_transfer_price" name="direct_custom_transfer_price" class="form-control" placeholder="Dejar vacío para calcular auto" step="0.01" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                  </div>
+
+                  <div>
+                    <label for="direct_transfer_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      Texto Final Transferencia:
+                    </label>
+                    <input type="text" id="direct_transfer_text" name="direct_transfer_text" class="form-control" value="con Transferencia" placeholder="con Transferencia" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                    <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "$84.375,00 con Transferencia"</span>
+                  </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:18px;margin-bottom:16px;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#fff;">
+                    <input type="checkbox" id="direct_show_promo_badge" name="direct_show_promo_badge" checked style="accent-color:#fff;">
+                    Mostrar Badge "PROMO ACTIVA"
+                  </label>
+
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <label for="direct_promo_badge_text" style="font-size:11px;font-family:'DM Mono',monospace;color:#aaa;">Texto Badge:</label>
+                    <input type="text" id="direct_promo_badge_text" name="direct_promo_badge_text" class="form-control" value="PROMO ACTIVA" style="width:160px;background:#1a1a1a;border-color:#333;color:#fff;padding:6px 8px;font-size:12px;">
+                  </div>
+                </div>
+
+                <!-- VISTA PREVIA EN VIVO -->
+                <div style="margin-top:14px;padding:14px;background:#050505;border:1px dashed #333;border-radius:6px;">
+                  <div style="font-size:10px;font-family:'DM Mono',monospace;text-transform:uppercase;color:#888;margin-bottom:10px;letter-spacing:.05em;">
+                    👁️ Vista Previa en Tienda (Bajo el Producto):
+                  </div>
+                  
+                  <div id="directCardPreviewBox" style="background:#000;border:1px solid #222;border-radius:8px;padding:16px;max-width:340px;color:#fff;font-family:system-ui,-apple-system,sans-serif;">
+                    <div id="previewProdName" style="font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#ddd;margin-bottom:8px;">
+                      PANTALON BAGGY IGOR PINK
+                    </div>
+                    <div id="previewProdPrice" style="font-size:22px;font-weight:800;letter-spacing:-.02em;color:#fff;margin-bottom:10px;">
+                      $112.500,00
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
+                      <div id="previewDiscountBadge" style="background:#141414;border:1px solid #333;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;color:#eee;">
+                        25% OFF con transferencia
+                      </div>
+                      <div id="previewPromoBadge" style="background:#e50914;color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:12px;letter-spacing:.05em;text-align:center;line-height:1.1;">
+                        PROMO ACTIVA
+                      </div>
+                    </div>
+                    <div id="previewInstallmentsLine" style="font-size:12px;color:#999;margin-bottom:6px;">
+                      6 x $18.750,00 sin interés
+                    </div>
+                    <div id="previewTransferLine" style="font-size:14px;font-weight:700;color:#ff3366;margin-bottom:12px;">
+                      $84.375,00 con Transferencia
+                    </div>
+                    <button type="button" style="width:100%;padding:10px;background:#232733;color:#fff;border:1px solid #3d4354;border-radius:20px;font-size:13px;font-weight:700;cursor:default;">
+                      Comprar
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

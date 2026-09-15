@@ -26,9 +26,94 @@
     const chk = document.getElementById('direct_purchase');
     const box = document.getElementById('directPurchaseConfigBox');
     if (!chk || !box) return;
-    chk.addEventListener('change', () => {
+
+    function updateVisibility() {
       box.style.display = chk.checked ? 'block' : 'none';
+      updateDirectPreview();
+    }
+
+    chk.addEventListener('change', updateVisibility);
+
+    // Bind inputs for live preview
+    const inputsToWatch = [
+      'name', 'price',
+      'direct_discount_percent', 'direct_discount_text',
+      'direct_show_promo_badge', 'direct_promo_badge_text',
+      'direct_installments_count', 'direct_installments_text',
+      'direct_custom_transfer_price', 'direct_transfer_text'
+    ];
+
+    inputsToWatch.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', updateDirectPreview);
+        el.addEventListener('change', updateDirectPreview);
+      }
     });
+
+    updateDirectPreview();
+  }
+
+  function fmtPriceAR(num) {
+    const n = Number(num) || 0;
+    return '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function updateDirectPreview() {
+    const nameEl = document.getElementById('name');
+    const priceEl = document.getElementById('price');
+    const discPctEl = document.getElementById('direct_discount_percent');
+    const discTxtEl = document.getElementById('direct_discount_text');
+    const showPromoEl = document.getElementById('direct_show_promo_badge');
+    const promoTxtEl = document.getElementById('direct_promo_badge_text');
+    const instCountEl = document.getElementById('direct_installments_count');
+    const instTxtEl = document.getElementById('direct_installments_text');
+    const custTransEl = document.getElementById('direct_custom_transfer_price');
+    const transTxtEl = document.getElementById('direct_transfer_text');
+
+    const prevName = document.getElementById('previewProdName');
+    const prevPrice = document.getElementById('previewProdPrice');
+    const prevDisc = document.getElementById('previewDiscountBadge');
+    const prevPromo = document.getElementById('previewPromoBadge');
+    const prevInst = document.getElementById('previewInstallmentsLine');
+    const prevTrans = document.getElementById('previewTransferLine');
+
+    if (!prevPrice) return;
+
+    const basePrice = Number(priceEl?.value) || 0;
+    const name = (nameEl?.value || '').trim() || 'NOMBRE DEL PRODUCTO';
+    const discPct = discPctEl ? Number(discPctEl.value) || 0 : 25;
+    const discTxt = (discTxtEl?.value || 'con transferencia').trim();
+    const showPromo = showPromoEl ? showPromoEl.checked : true;
+    const promoTxt = (promoTxtEl?.value || 'PROMO ACTIVA').trim();
+    const instCount = instCountEl ? (Number(instCountEl.value) || 6) : 6;
+    const instTxt = (instTxtEl?.value || 'sin interés').trim();
+    const customTrans = custTransEl && custTransEl.value !== '' ? Number(custTransEl.value) : null;
+    const transTxt = (transTxtEl?.value || 'con Transferencia').trim();
+
+    if (prevName) prevName.textContent = name.toUpperCase();
+    if (prevPrice) prevPrice.textContent = fmtPriceAR(basePrice);
+
+    if (prevDisc) {
+      prevDisc.textContent = `${discPct}% OFF ${discTxt}`;
+    }
+
+    if (prevPromo) {
+      prevPromo.style.display = showPromo ? 'block' : 'none';
+      prevPromo.textContent = promoTxt;
+    }
+
+    if (prevInst) {
+      const instVal = instCount > 0 ? (basePrice / instCount) : basePrice;
+      prevInst.textContent = `${instCount} x ${fmtPriceAR(instVal)} ${instTxt}`;
+    }
+
+    if (prevTrans) {
+      const finalTransVal = (customTrans !== null && !isNaN(customTrans) && customTrans > 0)
+        ? customTrans
+        : (basePrice * (1 - (discPct / 100)));
+      prevTrans.textContent = `${fmtPriceAR(finalTransVal)} ${transTxt}`;
+    }
   }
 
   const DEFAULT_CATEGORIES = [
@@ -364,6 +449,24 @@
         if (!image_url) throw new Error('No se obtuvo la URL de la imagen');
       }
 
+      const discPctEl = document.getElementById('direct_discount_percent');
+      const discTxtEl = document.getElementById('direct_discount_text');
+      const showPromoEl = document.getElementById('direct_show_promo_badge');
+      const promoTxtEl = document.getElementById('direct_promo_badge_text');
+      const instCountEl = document.getElementById('direct_installments_count');
+      const instTxtEl = document.getElementById('direct_installments_text');
+      const custTransEl = document.getElementById('direct_custom_transfer_price');
+      const transTxtEl = document.getElementById('direct_transfer_text');
+
+      const direct_discount_percent = discPctEl && discPctEl.value !== '' ? Number(discPctEl.value) : 25;
+      const direct_discount_text = discTxtEl && discTxtEl.value ? discTxtEl.value.trim() : 'con transferencia';
+      const direct_show_promo_badge = showPromoEl ? showPromoEl.checked : true;
+      const direct_promo_badge_text = promoTxtEl && promoTxtEl.value ? promoTxtEl.value.trim() : 'PROMO ACTIVA';
+      const direct_installments_count = instCountEl && instCountEl.value !== '' ? Number(instCountEl.value) : 6;
+      const direct_installments_text = instTxtEl && instTxtEl.value ? instTxtEl.value.trim() : 'sin interés';
+      const direct_custom_transfer_price = custTransEl && custTransEl.value !== '' ? Number(custTransEl.value) : null;
+      const direct_transfer_text = transTxtEl && transTxtEl.value ? transTxtEl.value.trim() : 'con Transferencia';
+
       const createRes = await window.auth.apiFetch('/api/admin/products', {
         method: 'POST',
         body: {
@@ -381,6 +484,14 @@
           direct_purchase,
           allowed_payment_methods,
           allowed_installments,
+          direct_discount_percent,
+          direct_discount_text,
+          direct_show_promo_badge,
+          direct_promo_badge_text,
+          direct_installments_count,
+          direct_installments_text,
+          direct_custom_transfer_price,
+          direct_transfer_text,
         },
       });
 
