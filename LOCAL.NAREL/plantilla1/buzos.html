@@ -8600,6 +8600,7 @@
                 closeProductModal();
                 if (window.shop && typeof window.shop.startDirectCheckout === 'function') {
                   window.shop.startDirectCheckout({
+                    ...currentModalProduct,
                     id: currentModalProduct.id,
                     name: currentModalProduct.name,
                     price: Number(currentModalProduct.price) || 0,
@@ -8611,6 +8612,12 @@
                     direct_purchase: true,
                     allowed_payment_methods: currentModalProduct.allowed_payment_methods,
                     allowed_installments: currentModalProduct.allowed_installments,
+                    direct_discount_percent: currentModalProduct.direct_discount_percent,
+                    direct_discount_text: currentModalProduct.direct_discount_text,
+                    direct_custom_transfer_price: currentModalProduct.direct_custom_transfer_price,
+                    direct_transfer_price: currentModalProduct.direct_transfer_price,
+                    direct_installments_count: currentModalProduct.direct_installments_count,
+                    direct_installments_text: currentModalProduct.direct_installments_text,
                   });
                 }
                 return;
@@ -8741,7 +8748,19 @@
                 if (card.dataset.allowedInstallments) allowedInstallments = JSON.parse(card.dataset.allowedInstallments);
               } catch (_) {}
 
-              const item = {
+              const prod = (window.__CATALOG_PRODUCTS__ || []).find(p => String(p.id) === String(card.dataset.id));
+              const item = prod ? {
+                ...prod,
+                id: prod.id,
+                name: prod.name,
+                price: Number(prod.price) || 0,
+                image: prod.image_url || card.dataset.image || '',
+                stock: Number(prod.stock) || 0,
+                sizes: prod.sizes || card.dataset.sizes || '',
+                qty: 1,
+                size: sizeList.length === 1 ? sizeList[0] : '',
+                direct_purchase: isDirect,
+              } : {
                 id: card.dataset.id || ('local-' + Math.random().toString(36).slice(2, 10)),
                 name: card.dataset.name || 'Producto',
                 price: Number(card.dataset.price) || 0,
