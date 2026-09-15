@@ -599,6 +599,19 @@ function executeMemoryQuery(rawText, params = []) {
       });
       return { rows: [], rowCount: count };
     }
+    if (lowerSql.includes('set name = $1') || lowerSql.includes('set name=$1')) {
+      const newName = String(params[0] || '').trim();
+      const newSlug = String(params[1] || '').toLowerCase().trim();
+      const subId = String(params[2] || '');
+      const sub = data.subcategories.find((s) => s.id === subId);
+      if (sub) {
+        sub.name = newName;
+        sub.slug = newSlug;
+        sub.updated_at = nowIso();
+        return { rows: [{ ...sub }], rowCount: 1 };
+      }
+      return { rows: [], rowCount: 0 };
+    }
   }
 
   if (lowerSql.startsWith('delete from subcategories')) {
@@ -613,6 +626,17 @@ function executeMemoryQuery(rawText, params = []) {
 
   if (lowerSql.startsWith('select') && lowerSql.includes('from subcategories')) {
     let list = [...data.subcategories];
+    if (/where\s+id\s*=\s*\$1/.test(lowerSql)) {
+      const id = String(params[0] || '');
+      const found = list.find((s) => s.id === id);
+      return { rows: found ? [{ ...found }] : [], rowCount: found ? 1 : 0 };
+    }
+    if (/where\s+category_id\s*=\s*\$1\s+and\s+slug\s*=\s*\$2/.test(lowerSql)) {
+      const catId = String(params[0] || '');
+      const subSlug = String(params[1] || '').toLowerCase().trim();
+      const found = list.find((s) => s.category_id === catId && s.slug.toLowerCase() === subSlug);
+      return { rows: found ? [{ ...found }] : [], rowCount: found ? 1 : 0 };
+    }
     if (/where\s+category_slug\s*=\s*\$1\s+and\s+slug\s*=\s*\$2/.test(lowerSql)) {
       const catSlug = String(params[0] || '').toLowerCase().trim();
       const subSlug = String(params[1] || '').toLowerCase().trim();

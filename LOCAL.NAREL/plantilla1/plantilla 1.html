@@ -6817,7 +6817,7 @@
                 <span class="nav-dd-desc">Gorras, medias, cadenas</span>
               </div>
             </a>
-            <a href="/#otros-servicios" class="nav-dropdown-item" role="menuitem">
+            <a href="/#otros-servicios" class="nav-dropdown-item" role="menuitem" id="navItemOtrosServicios">
               <span class="nav-dd-badge">06</span>
               <div class="nav-dd-info">
                 <span class="nav-dd-name">OTROS SERVICIOS</span>
@@ -7055,7 +7055,7 @@
           <h3>ACCESORIOS</h3>
           <span class="view">VER MÁS <span>↗</span></span>
         </a>
-        <a href="/#otros-servicios" class="category scroll-reveal">
+        <a href="/#otros-servicios" class="category scroll-reveal" id="cardOtrosServicios">
           <span class="num">06</span>
           <h3>OTROS<br>SERVICIOS</h3>
           <span class="view">VER MÁS <span>↗</span></span>
@@ -8760,6 +8760,9 @@
       function syncCatalogWithCategories(categories) {
         if (!Array.isArray(categories) || !categories.length) return;
 
+        // Número dinámico para la tarjeta de OTROS SERVICIOS / Cómo comprar (N de secciones + 1)
+        const nextNum = String(categories.length + 1).padStart(2, '0');
+
         // 1. Sincronizar Header Dropdown
         const navGrid = document.getElementById('navDropdownGrid');
         if (navGrid) {
@@ -8776,8 +8779,8 @@
               </a>
             `;
           }).join('') + `
-            <a href="/#otros-servicios" class="nav-dropdown-item" role="menuitem">
-              <span class="nav-dd-badge">06</span>
+            <a href="/#otros-servicios" class="nav-dropdown-item" role="menuitem" id="navItemOtrosServicios">
+              <span class="nav-dd-badge">${nextNum}</span>
               <div class="nav-dd-info">
                 <span class="nav-dd-name">OTROS SERVICIOS</span>
                 <span class="nav-dd-desc">Venta mayorista y consultas</span>
@@ -8799,8 +8802,8 @@
               </a>
             `;
           }).join('') + `
-            <a href="/#otros-servicios" class="category scroll-reveal">
-              <span class="num">06</span>
+            <a href="/#otros-servicios" class="category scroll-reveal" id="cardOtrosServicios">
+              <span class="num">${nextNum}</span>
               <h3>OTROS<br>SERVICIOS</h3>
               <span class="view">VER MÁS <span>↗</span></span>
             </a>

@@ -75,6 +75,74 @@
       color: #9ca3af;
       font-family: 'DM Mono', monospace;
     }
+    /* Estilos para subcategorías interactivas */
+    .subcat-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .subcat-chip {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      overflow: hidden;
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      color: #e5e7eb;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .subcat-chip:hover {
+      border-color: rgba(255, 230, 0, 0.5);
+      background: rgba(255, 255, 255, 0.09);
+    }
+    .subcat-chip-name {
+      padding: 3px 6px 3px 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .subcat-chip-name:hover {
+      color: var(--yellow, #ffe600);
+    }
+    .subcat-chip-del {
+      background: transparent;
+      border: none;
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      color: #9ca3af;
+      cursor: pointer;
+      padding: 3px 7px;
+      font-size: 13px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s, background 0.15s;
+    }
+    .subcat-chip-del:hover {
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.2);
+    }
+    .subcat-add-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      color: var(--yellow, #ffe600);
+      background: rgba(255, 230, 0, 0.08);
+      border: 1px dashed rgba(255, 230, 0, 0.4);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .subcat-add-btn:hover {
+      background: rgba(255, 230, 0, 0.2);
+      border-color: var(--yellow, #ffe600);
+    }
   </style>
 </head>
 <body>
@@ -187,6 +255,14 @@
           <small class="form-hint">Define la posición en el menú de navegación y en la página principal.</small>
         </div>
 
+        <div class="form-group" id="sectionModalSubcatsGroup" style="display:none;margin-top:20px;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">
+          <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>Subcategorías de esta sección</span>
+            <button type="button" class="subcat-add-btn" id="modalAddSubcatBtn">+ Nueva Subcategoría</button>
+          </label>
+          <div id="sectionModalSubcatsList" class="subcat-list" style="margin-top:8px;"></div>
+        </div>
+
         <div id="sectionModalAlert" style="display:none;margin-top:12px;" class="alert"></div>
 
         <div class="modal-actions" style="margin-top:24px;">
@@ -208,6 +284,60 @@
       <div class="modal-actions" style="margin-top:20px;">
         <button type="button" class="button secondary" id="deleteCancelBtn" style="width:auto;padding:12px 20px;">CANCELAR</button>
         <button type="button" class="button primary" id="deleteConfirmBtn" style="width:auto;padding:12px 20px;background:#c53030;border-color:#c53030;">ELIMINAR SECCIÓN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR / EDITAR SUBCATEGORÍA -->
+  <div class="modal" id="subcatModal" role="dialog" aria-modal="true" aria-labelledby="subcatModalTitle" style="display:none;">
+    <div class="modal-dialog" style="max-width:480px;">
+      <h2 class="modal-title" id="subcatModalTitle">Nueva Subcategoría</h2>
+      <p class="modal-text" id="subcatModalDesc">Ingresá el nombre y el identificador de la subcategoría.</p>
+
+      <form id="subcatForm" novalidate style="margin-top:16px;">
+        <input type="hidden" id="subcatId">
+        <input type="hidden" id="subcatCategoryId">
+
+        <div class="form-group">
+          <label class="form-label" style="color:#9ca3af;">Sección Perteneciente</label>
+          <div id="subcatParentSectionName" style="font-size:14px;font-weight:700;color:var(--yellow);padding:6px 0;letter-spacing:.05em;"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="subcatName" class="form-label">Nombre de la Subcategoría *</label>
+          <input type="text" id="subcatName" class="form-control" placeholder="Ej: Cargo, Oversized, Hoodies, Gorras" required autocomplete="off">
+          <small class="form-hint">Se mostrará en los filtros y menús desplegables.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="subcatSlug" class="form-label">URL / Identificador de la Subcategoría *</label>
+          <input type="text" id="subcatSlug" class="form-control" placeholder="Ej: cargo, oversized" autocomplete="off">
+          <small class="form-hint">
+            Ruta completa: <span id="subcatUrlPreviewText" style="color:var(--yellow);font-weight:600;">/seccion/subcategoria</span>
+          </small>
+        </div>
+
+        <div id="subcatModalAlert" style="display:none;margin-top:12px;" class="alert"></div>
+
+        <div class="modal-actions" style="margin-top:24px;">
+          <button type="button" class="button secondary" id="subcatModalCancelBtn" style="width:auto;padding:12px 20px;">CANCELAR</button>
+          <button type="submit" class="button primary" id="subcatModalSaveBtn" style="width:auto;padding:12px 24px;">GUARDAR SUBCATEGORÍA</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ELIMINAR SUBCATEGORÍA -->
+  <div class="modal" id="deleteSubcatModal" role="dialog" aria-modal="true" aria-labelledby="deleteSubcatTitle" style="display:none;">
+    <div class="modal-dialog">
+      <h2 class="modal-title" id="deleteSubcatTitle">Eliminar Subcategoría</h2>
+      <p class="modal-text" id="deleteSubcatText">¿Estás seguro de que deseas eliminar esta subcategoría?</p>
+      <div class="callout-info" style="margin-top:12px;font-size:12px;">
+        <strong>Información:</strong> Los productos asignados a esta subcategoría no se borrarán; conservarán su sección principal.
+      </div>
+      <div class="modal-actions" style="margin-top:20px;">
+        <button type="button" class="button secondary" id="deleteSubcatCancelBtn" style="width:auto;padding:12px 20px;">CANCELAR</button>
+        <button type="button" class="button primary" id="deleteSubcatConfirmBtn" style="width:auto;padding:12px 20px;background:#c53030;border-color:#c53030;">ELIMINAR SUBCATEGORÍA</button>
       </div>
     </div>
   </div>

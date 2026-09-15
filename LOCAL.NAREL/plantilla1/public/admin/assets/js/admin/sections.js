@@ -3,6 +3,8 @@
 
   let sectionsList = [];
   let pendingDeleteId = null;
+  let pendingDeleteSubcatId = null;
+  let subcatSlugTouchedManually = false;
 
   window.addEventListener('DOMContentLoaded', init);
 
@@ -49,6 +51,7 @@
   }
 
   function bindEvents() {
+    // Buscador
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
       searchInput.addEventListener('input', () => {
@@ -57,6 +60,7 @@
       });
     }
 
+    // Modal Sección
     const btnOpenCreate = document.getElementById('btnOpenCreateSection');
     if (btnOpenCreate) {
       btnOpenCreate.addEventListener('click', () => openSectionModal(null));
@@ -103,6 +107,18 @@
       sectionForm.addEventListener('submit', handleFormSubmit);
     }
 
+    // Botón agregar subcategoría desde el modal de sección
+    const modalAddSubcatBtn = document.getElementById('modalAddSubcatBtn');
+    if (modalAddSubcatBtn) {
+      modalAddSubcatBtn.addEventListener('click', () => {
+        const currentCatId = document.getElementById('sectionId').value;
+        if (currentCatId) {
+          window.openCreateSubcategory(currentCatId);
+        }
+      });
+    }
+
+    // Modal Eliminar Sección
     const deleteModal = document.getElementById('deleteModal');
     const deleteCancelBtn = document.getElementById('deleteCancelBtn');
     const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
@@ -118,6 +134,69 @@
     if (deleteConfirmBtn) {
       deleteConfirmBtn.addEventListener('click', executeDelete);
     }
+
+    // Modal Crear / Editar Subcategoría
+    const subcatModal = document.getElementById('subcatModal');
+    const subcatModalCancelBtn = document.getElementById('subcatModalCancelBtn');
+    if (subcatModalCancelBtn) {
+      subcatModalCancelBtn.addEventListener('click', closeSubcatModal);
+    }
+    if (subcatModal) {
+      subcatModal.addEventListener('click', (e) => {
+        if (e.target === subcatModal) closeSubcatModal();
+      });
+    }
+
+    const subcatNameInput = document.getElementById('subcatName');
+    const subcatSlugInput = document.getElementById('subcatSlug');
+    const subcatUrlPreview = document.getElementById('subcatUrlPreviewText');
+
+    if (subcatNameInput && subcatSlugInput) {
+      subcatNameInput.addEventListener('input', () => {
+        if (!subcatSlugTouchedManually) {
+          const autoSlug = slugify(subcatNameInput.value);
+          subcatSlugInput.value = autoSlug;
+          updateSubcatUrlPreview();
+        }
+      });
+
+      subcatSlugInput.addEventListener('input', () => {
+        subcatSlugTouchedManually = true;
+        updateSubcatUrlPreview();
+      });
+    }
+
+    const subcatForm = document.getElementById('subcatForm');
+    if (subcatForm) {
+      subcatForm.addEventListener('submit', handleSubcatFormSubmit);
+    }
+
+    // Modal Eliminar Subcategoría
+    const deleteSubcatModal = document.getElementById('deleteSubcatModal');
+    const deleteSubcatCancelBtn = document.getElementById('deleteSubcatCancelBtn');
+    const deleteSubcatConfirmBtn = document.getElementById('deleteSubcatConfirmBtn');
+
+    if (deleteSubcatCancelBtn) {
+      deleteSubcatCancelBtn.addEventListener('click', closeDeleteSubcatModal);
+    }
+    if (deleteSubcatModal) {
+      deleteSubcatModal.addEventListener('click', (e) => {
+        if (e.target === deleteSubcatModal) closeDeleteSubcatModal();
+      });
+    }
+    if (deleteSubcatConfirmBtn) {
+      deleteSubcatConfirmBtn.addEventListener('click', executeDeleteSubcat);
+    }
+  }
+
+  function updateSubcatUrlPreview() {
+    const previewEl = document.getElementById('subcatUrlPreviewText');
+    if (!previewEl) return;
+    const catId = document.getElementById('subcatCategoryId').value;
+    const parentSec = sectionsList.find((s) => String(s.id) === String(catId));
+    const parentSlug = parentSec ? parentSec.slug : 'seccion';
+    const subSlug = slugify(document.getElementById('subcatSlug').value) || 'subcategoria';
+    previewEl.textContent = `/${parentSlug}/${subSlug}`;
   }
 
   async function loadSections() {
@@ -134,6 +213,16 @@
 
       sectionsList = Array.isArray(res.data) ? res.data : [];
       renderSections();
+
+      // Si el modal de edición de sección está abierto, actualizar su lista de subcategorías
+      const secModal = document.getElementById('sectionModal');
+      if (secModal && secModal.style.display === 'flex') {
+        const currentSecId = document.getElementById('sectionId').value;
+        const currentSec = sectionsList.find((s) => String(s.id) === String(currentSecId));
+        if (currentSec) {
+          renderModalSubcategories(currentSec);
+        }
+      }
     } catch (err) {
       console.error('[sections] error:', err);
       if (tbody) {
@@ -152,7 +241,8 @@
         const nameMatch = String(s.name || '').toLowerCase().includes(query);
         const slugMatch = String(s.slug || '').toLowerCase().includes(query);
         const subMatch = String(s.subtitle || '').toLowerCase().includes(query);
-        return nameMatch || slugMatch || subMatch;
+        const subcatMatch = Array.isArray(s.subcategories) && s.subcategories.some(sc => String(sc.name || '').toLowerCase().includes(query) || String(sc.slug || '').toLowerCase().includes(query));
+        return nameMatch || slugMatch || subMatch || subcatMatch;
       });
     }
 
@@ -202,7 +292,19 @@
             </span>
           </td>
           <td>
-            ${subcats.length ? subcats.map(sc => `<span class="section-badge">${htmlEscape(sc.name)}</span>`).join('') : '<span style="color:var(--grey);font-size:11px;font-style:italic;">Sin subcategorías</span>'}
+            <div class="subcat-list">
+              ${subcats.map(sc => `
+                <div class="subcat-chip" data-id="${htmlEscape(sc.id)}">
+                  <span class="subcat-chip-name" onclick="window.openEditSubcategory('${htmlEscape(sc.id)}')" title="Click para editar subcategoría '${htmlEscape(sc.name)}'">
+                    ${htmlEscape(sc.name)} <span style="font-size:10px;opacity:.7;">✎</span>
+                  </span>
+                  <button type="button" class="subcat-chip-del" onclick="window.confirmDeleteSubcategory('${htmlEscape(sc.id)}')" title="Borrar subcategoría '${htmlEscape(sc.name)}'">×</button>
+                </div>
+              `).join('')}
+              <button type="button" class="subcat-add-btn" onclick="window.openCreateSubcategory('${htmlEscape(sec.id)}')" title="Agregar subcategoría a ${htmlEscape(sec.name)}">
+                + Subcat
+              </button>
+            </div>
           </td>
           <td style="text-align:right;white-space:nowrap;">
             <button type="button" class="button secondary" style="width:auto;padding:6px 12px;font-size:12px;margin-right:6px;" onclick="window.editSection('${htmlEscape(sec.id)}')">
@@ -215,6 +317,35 @@
         </tr>
       `;
     }).join('');
+  }
+
+  function renderModalSubcategories(section) {
+    const group = document.getElementById('sectionModalSubcatsGroup');
+    const container = document.getElementById('sectionModalSubcatsList');
+    if (!group || !container) return;
+
+    if (!section || !section.id) {
+      group.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+
+    group.style.display = 'block';
+    const subcats = Array.isArray(section.subcategories) ? section.subcategories : [];
+
+    if (!subcats.length) {
+      container.innerHTML = '<span style="color:var(--grey);font-size:12px;font-style:italic;">Esta sección todavía no tiene subcategorías.</span>';
+      return;
+    }
+
+    container.innerHTML = subcats.map((sc) => `
+      <div class="subcat-chip" data-id="${htmlEscape(sc.id)}">
+        <span class="subcat-chip-name" onclick="window.openEditSubcategory('${htmlEscape(sc.id)}')" title="Click para editar subcategoría '${htmlEscape(sc.name)}'">
+          ${htmlEscape(sc.name)} <span style="font-size:10px;opacity:.7;">✎</span>
+        </span>
+        <button type="button" class="subcat-chip-del" onclick="window.confirmDeleteSubcategory('${htmlEscape(sc.id)}')" title="Borrar subcategoría '${htmlEscape(sc.name)}'">×</button>
+      </div>
+    `).join('');
   }
 
   function openSectionModal(section = null) {
@@ -241,6 +372,7 @@
       subtitleInput.value = section.subtitle !== undefined ? section.subtitle : 'CARGADO DESDE PANEL ADMIN';
       sortOrderInput.value = section.sort_order || 1;
       if (urlPreview) urlPreview.textContent = `/${section.slug || 'seccion'}`;
+      renderModalSubcategories(section);
     } else {
       title.textContent = 'Nueva Sección';
       desc.textContent = 'Creá una nueva sección en la tienda con su propia URL y pie de encabezado.';
@@ -250,6 +382,7 @@
       subtitleInput.value = 'CARGADO DESDE PANEL ADMIN';
       sortOrderInput.value = sectionsList.length + 1;
       if (urlPreview) urlPreview.textContent = '/seccion';
+      renderModalSubcategories(null);
     }
 
     if (modal) modal.style.display = 'flex';
@@ -298,13 +431,11 @@
     try {
       let res;
       if (id) {
-        // Edit existing section
         res = await window.auth.apiFetch(`/api/admin/categories/${id}`, {
           method: 'PUT',
           body: JSON.stringify({ name, slug, subtitle, sort_order }),
         });
       } else {
-        // Create new section
         res = await window.auth.apiFetch('/api/admin/categories', {
           method: 'POST',
           body: JSON.stringify({ name, slug, subtitle, sort_order }),
@@ -385,6 +516,215 @@
       if (confirmBtn) {
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'ELIMINAR SECCIÓN';
+      }
+    }
+  }
+
+  // ================= ACCIONES DE SUBCATEGORÍAS =================
+
+  window.openCreateSubcategory = function (categoryId) {
+    const sec = sectionsList.find((s) => String(s.id) === String(categoryId));
+    if (!sec) return;
+
+    subcatSlugTouchedManually = false;
+    const modal = document.getElementById('subcatModal');
+    const title = document.getElementById('subcatModalTitle');
+    const desc = document.getElementById('subcatModalDesc');
+    const idInput = document.getElementById('subcatId');
+    const catIdInput = document.getElementById('subcatCategoryId');
+    const parentNameEl = document.getElementById('subcatParentSectionName');
+    const nameInput = document.getElementById('subcatName');
+    const slugInput = document.getElementById('subcatSlug');
+    const previewEl = document.getElementById('subcatUrlPreviewText');
+    const alertEl = document.getElementById('subcatModalAlert');
+
+    if (alertEl) alertEl.style.display = 'none';
+    title.textContent = `Nueva Subcategoría en "${sec.name}"`;
+    desc.textContent = `Ingresá el nombre de la subcategoría que se agregará a la sección "${sec.name}".`;
+    idInput.value = '';
+    catIdInput.value = sec.id;
+    parentNameEl.textContent = `${sec.name.toUpperCase()} (/${sec.slug})`;
+    nameInput.value = '';
+    slugInput.value = '';
+    if (previewEl) previewEl.textContent = `/${sec.slug}/subcategoria`;
+
+    if (modal) modal.style.display = 'flex';
+    setTimeout(() => { if (nameInput) nameInput.focus(); }, 100);
+  };
+
+  window.openEditSubcategory = function (subcatId) {
+    let parentSec = null;
+    let targetSub = null;
+
+    for (const sec of sectionsList) {
+      const found = (sec.subcategories || []).find((sc) => String(sc.id) === String(subcatId));
+      if (found) {
+        parentSec = sec;
+        targetSub = found;
+        break;
+      }
+    }
+
+    if (!targetSub || !parentSec) return;
+
+    subcatSlugTouchedManually = true;
+    const modal = document.getElementById('subcatModal');
+    const title = document.getElementById('subcatModalTitle');
+    const desc = document.getElementById('subcatModalDesc');
+    const idInput = document.getElementById('subcatId');
+    const catIdInput = document.getElementById('subcatCategoryId');
+    const parentNameEl = document.getElementById('subcatParentSectionName');
+    const nameInput = document.getElementById('subcatName');
+    const slugInput = document.getElementById('subcatSlug');
+    const previewEl = document.getElementById('subcatUrlPreviewText');
+    const alertEl = document.getElementById('subcatModalAlert');
+
+    if (alertEl) alertEl.style.display = 'none';
+    title.textContent = `Editar Subcategoría: ${targetSub.name}`;
+    desc.textContent = `Modificá el nombre o identificador de la subcategoría. Los productos asignados se actualizarán automáticamente.`;
+    idInput.value = targetSub.id;
+    catIdInput.value = parentSec.id;
+    parentNameEl.textContent = `${parentSec.name.toUpperCase()} (/${parentSec.slug})`;
+    nameInput.value = targetSub.name || '';
+    slugInput.value = targetSub.slug || '';
+    if (previewEl) previewEl.textContent = `/${parentSec.slug}/${targetSub.slug || 'subcategoria'}`;
+
+    if (modal) modal.style.display = 'flex';
+    setTimeout(() => { if (nameInput) nameInput.focus(); }, 100);
+  };
+
+  function closeSubcatModal() {
+    const modal = document.getElementById('subcatModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function handleSubcatFormSubmit(e) {
+    e.preventDefault();
+    const alertEl = document.getElementById('subcatModalAlert');
+    const saveBtn = document.getElementById('subcatModalSaveBtn');
+
+    const id = document.getElementById('subcatId').value.trim();
+    const categoryId = document.getElementById('subcatCategoryId').value.trim();
+    const name = document.getElementById('subcatName').value.trim();
+    const slug = slugify(document.getElementById('subcatSlug').value.trim() || name);
+
+    if (!name || name.length < 2) {
+      if (alertEl) {
+        alertEl.className = 'alert error';
+        alertEl.textContent = 'El nombre de la subcategoría debe tener al menos 2 caracteres.';
+        alertEl.style.display = 'block';
+      }
+      return;
+    }
+
+    if (!slug) {
+      if (alertEl) {
+        alertEl.className = 'alert error';
+        alertEl.textContent = 'El identificador/URL no es válido.';
+        alertEl.style.display = 'block';
+      }
+      return;
+    }
+
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'GUARDANDO...';
+    }
+
+    try {
+      let res;
+      if (id) {
+        // Editar subcategoría
+        res = await window.auth.apiFetch(`/api/admin/categories/subcategories/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ name, slug }),
+        });
+      } else {
+        // Crear subcategoría
+        res = await window.auth.apiFetch('/api/admin/categories/subcategories', {
+          method: 'POST',
+          body: JSON.stringify({ category_id: categoryId, name, slug }),
+        });
+      }
+
+      if (!res || !res.ok) {
+        throw new Error(res && res.message ? res.message : 'Error al guardar la subcategoría');
+      }
+
+      closeSubcatModal();
+      showPageMessage(res.message || 'Subcategoría guardada exitosamente');
+      await loadSections();
+    } catch (err) {
+      if (alertEl) {
+        alertEl.className = 'alert error';
+        alertEl.textContent = err.message || 'Error al guardar la subcategoría';
+        alertEl.style.display = 'block';
+      }
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'GUARDAR SUBCATEGORÍA';
+      }
+    }
+  }
+
+  window.confirmDeleteSubcategory = function (subcatId) {
+    let parentSec = null;
+    let targetSub = null;
+
+    for (const sec of sectionsList) {
+      const found = (sec.subcategories || []).find((sc) => String(sc.id) === String(subcatId));
+      if (found) {
+        parentSec = sec;
+        targetSub = found;
+        break;
+      }
+    }
+
+    if (!targetSub || !parentSec) return;
+
+    pendingDeleteSubcatId = subcatId;
+    const modal = document.getElementById('deleteSubcatModal');
+    const desc = document.getElementById('deleteSubcatText');
+    if (desc) {
+      desc.textContent = `¿Estás seguro de que deseas eliminar la subcategoría "${targetSub.name}" de la sección "${parentSec.name}"?`;
+    }
+    if (modal) modal.style.display = 'flex';
+  };
+
+  function closeDeleteSubcatModal() {
+    pendingDeleteSubcatId = null;
+    const modal = document.getElementById('deleteSubcatModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function executeDeleteSubcat() {
+    if (!pendingDeleteSubcatId) return;
+
+    const confirmBtn = document.getElementById('deleteSubcatConfirmBtn');
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'ELIMINANDO...';
+    }
+
+    try {
+      const res = await window.auth.apiFetch(`/api/admin/categories/subcategories/${pendingDeleteSubcatId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res || !res.ok) {
+        throw new Error(res && res.message ? res.message : 'Error al eliminar la subcategoría');
+      }
+
+      closeDeleteSubcatModal();
+      showPageMessage(res.message || 'Subcategoría eliminada exitosamente');
+      await loadSections();
+    } catch (err) {
+      alert(`Error al eliminar subcategoría: ${err.message}`);
+    } finally {
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'ELIMINAR SUBCATEGORÍA';
       }
     }
   }

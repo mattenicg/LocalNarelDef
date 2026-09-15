@@ -259,4 +259,184 @@ router.delete('/:id', [param('id').trim().notEmpty()], async (req, res) => {
   }
 });
 
+// ================= SUBCATEGORÍAS (CRUD PARA ADMIN) =================
+
+// POST /api/admin/categories/subcategories - Crear subcategoría
+router.post(
+  '/subcategories',
+  [
+    body('name').trim().isLength({ min: 2 }).withMessage('El nombre de la subcategoría debe tener al menos 2 caracteres'),
+    body('category_id').optional({ checkFalsy: true }).trim(),
+    body('category_slug').optional({ checkFalsy: true }).trim(),
+    body('slug').optional({ checkFalsy: true }).trim(),
+  ],
+  async (req, res) => {
+    if (fail(req, res)) return;
+    try {
+      const rawName = req.body.name.trim();
+      const catId = req.body.category_id || null;
+      const catSlugInput = req.body.category_slug ? slugify(req.body.category_slug) : null;
+
+      let catQuery;
+      let catParams;
+      if (catId) {
+        catQuery = 'SELECT id, name, slug FROM categories WHERE id = $1';
+        catParams = [catId];
+      } else if (catSlugInput) {
+        catQuery = 'SELECT id, name, slug FROM categories WHERE slug = $1';
+        catParams = [catSlugInput];
+      } else {
+        return res.status(400).json({ ok: false, message: 'Debes indicar a qué sección pertenece la subcategoría' });
+      }
+
+      const catRes = await query(catQuery, catParams);
+      if (!catRes.rows || !catRes.rows[0]) {
+        return res.status(404).json({ ok: false, message: 'Sección no encontrada' });
+      }
+
+      const cat = catRes.rows[0];
+      const subSlug = req.body.slug ? slugify(req.body.slug) : slugify(rawName);
+
+      if (!subSlug) {
+        return res.status(400).json({ ok: false, message: 'El identificador/URL de la subcategoría no es válido' });
+      }
+
+      // Check if subcategory already exists under this category
+      const existing = await query(
+        'SELECT id, category_id, category_slug, name, slug FROM subcategories WHERE (category_id = $1 OR category_slug = $2) AND slug = $3',
+        [cat.id, cat.slug, subSlug]
+      );
+
+      if (existing.rows && existing.rows[0]) {
+        return res.status(400).json({
+          ok: false,
+          message: `Ya existe la subcategoría "${rawName}" en la sección "${cat.name}"`,
+          data: existing.rows[0],
+        });
+      }
+
+      const newSub = await query(
+        'INSERT INTO subcategories(category_id, category_slug, name, slug) VALUES($1, $2, $3, $4) RETURNING id, category_id, category_slug, name, slug, created_at, updated_at',
+        [cat.id, cat.slug, rawName, subSlug]
+      );
+
+      return res.status(201).json({
+        ok: true,
+        message: 'Subcategoría creada con éxito',
+        data: newSub.rows[0],
+      });
+    } catch (err) {
+      console.error('[admin/subcategories-create] error:', err);
+      return res.status(500).json({ ok: false, message: 'Error al crear subcategoría' });
+    }
+  }
+);
+
+// PUT /api/admin/categories/subcategories/:id - Editar subcategoría y propagar cambios a productos
+router.put(
+  '/subcategories/:id',
+  [
+    param('id').trim().notEmpty().withMessage('ID inválido'),
+    body('name').trim().isLength({ min: 2 }).withMessage('El nombre debe tener al menos 2 caracteres'),
+    body('slug').optional({ checkFalsy: true }).trim(),
+  ],
+  async (req, res) => {
+    if (fail(req, res)) return;
+    try {
+      const existing = await query(
+        'SELECT id, category_id, category_slug, name, slug FROM subcategories WHERE id = $1',
+        [req.params.id]
+      );
+
+      if (!existing.rows || !existing.rows[0]) {
+        return res.status(404).json({ ok: false, message: 'Subcategoría no encontrada' });
+      }
+
+      const oldSub = existing.rows[0];
+      const newName = req.body.name.trim();
+      const newSlug = req.body.slug ? slugify(req.body.slug) : slugify(newName);
+
+      if (!newSlug) {
+        return res.status(400).json({ ok: false, message: 'Identificador no válido' });
+      }
+
+      // Check conflict with another subcategory in the same category
+      const dup = await query(
+        'SELECT id FROM subcategories WHERE category_id = $1 AND slug = $2 AND id != $3',
+        [oldSub.category_id, newSlug, oldSub.id]
+      );
+      if (dup.rows && dup.rows.length > 0) {
+        return res.status(400).json({ ok: false, message: `Ya existe otra subcategoría con la URL "${newSlug}" en esta sección` });
+      }
+
+      const updated = await query(
+        'UPDATE subcategories SET name = $1, slug = $2, updated_at = now() WHERE id = $3 RETURNING id, category_id, category_slug, name, slug, created_at, updated_at',
+        [newName, newSlug, oldSub.id]
+      );
+
+      // PROPAGATION: If slug changed, update products
+      let productsUpdated = 0;
+      if (newSlug !== oldSub.slug) {
+        try {
+          const prodsUpdate = await query(
+            'UPDATE products SET subcategory = $1 WHERE subcategory_id = $2 OR (category = $3 AND (subcategory = $4 OR subcategory = $5))',
+            [newSlug, oldSub.id, oldSub.category_slug, oldSub.slug, oldSub.name.toLowerCase()]
+          );
+          productsUpdated = prodsUpdate.rowCount || 0;
+        } catch (_prodErr) {
+          console.warn('[subcategories-put] Warning updating products:', _prodErr.message);
+        }
+      }
+
+      return res.json({
+        ok: true,
+        message: 'Subcategoría actualizada exitosamente',
+        data: updated.rows[0],
+        products_affected: productsUpdated,
+      });
+    } catch (err) {
+      console.error('[admin/subcategories-update] error:', err);
+      return res.status(500).json({ ok: false, message: 'Error al actualizar la subcategoría' });
+    }
+  }
+);
+
+// DELETE /api/admin/categories/subcategories/:id - Eliminar subcategoría y desvincular productos
+router.delete('/subcategories/:id', [param('id').trim().notEmpty()], async (req, res) => {
+  if (fail(req, res)) return;
+  try {
+    const existing = await query(
+      'SELECT id, category_id, category_slug, name, slug FROM subcategories WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (!existing.rows || !existing.rows[0]) {
+      return res.status(404).json({ ok: false, message: 'Subcategoría no encontrada' });
+    }
+
+    const sub = existing.rows[0];
+
+    // Unlink products that used this subcategory
+    try {
+      await query(
+        'UPDATE products SET subcategory = NULL, subcategory_id = NULL WHERE subcategory_id = $1 OR (category = $2 AND subcategory = $3)',
+        [sub.id, sub.category_slug, sub.slug]
+      );
+    } catch (_prodErr) {
+      console.warn('[subcategories-delete] Warning unlinking products:', _prodErr.message);
+    }
+
+    // Delete subcategory record
+    await query('DELETE FROM subcategories WHERE id = $1', [sub.id]);
+
+    return res.json({
+      ok: true,
+      message: `Subcategoría "${sub.name}" eliminada exitosamente`,
+    });
+  } catch (err) {
+    console.error('[admin/subcategories-delete] error:', err);
+    return res.status(500).json({ ok: false, message: 'Error al eliminar la subcategoría' });
+  }
+});
+
 module.exports = router;
