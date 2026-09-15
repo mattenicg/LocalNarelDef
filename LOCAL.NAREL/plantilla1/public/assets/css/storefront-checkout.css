@@ -228,7 +228,7 @@
 }
 .checkout-confirmation .order-code{
   color:var(--yellow);
-  font:700 26px 'Bebas Neue',sans-serif;
+  font:700 26px 'Bangers',cursive,sans-serif;
   letter-spacing:.12em;
 }
 .checkout-confirmation .confirmation-actions{

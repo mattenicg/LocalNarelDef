@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "npm --prefix LOCAL.NAREL/plantilla1 run dev",
     "build": "npm --prefix LOCAL.NAREL/plantilla1 run build",
-    "start": "npm --prefix LOCAL.NAREL/plantilla1 run start"
+    "start": "npm --prefix LOCAL.NAREL/plantilla1 run start",
+    "lint": "npm --prefix LOCAL.NAREL/plantilla1 run lint"
   }
 }

@@ -54,7 +54,7 @@
               <div style="font:700 11px 'DM Mono',monospace;color:#ffffff;letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px;">
                 ⚡ GESTIÓN DE ENLACE Y TIEMPO
               </div>
-              <h2 style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.05em;color:#fff;margin:0;">
+              <h2 style="font-family:'Bangers',cursive,sans-serif;font-size:28px;letter-spacing:.05em;color:#fff;margin:0;">
                 CONTADOR DE ENVÍOS GRATIS
               </h2>
               <p style="font-size:13px;color:#b0b0b0;margin-top:4px;font-family:'DM Mono',monospace;">
@@ -125,7 +125,7 @@
               </div>
 
               <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-                <button type="submit" id="spSaveBtn" class="button primary" style="padding:12px 24px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em;background:#ffffff;color:#0a0a0a;cursor:pointer;border-radius:4px;">
+                <button type="submit" id="spSaveBtn" class="button primary" style="padding:12px 24px;font-family:'Bangers',cursive,sans-serif;font-size:18px;letter-spacing:.1em;background:#ffffff;color:#0a0a0a;cursor:pointer;border-radius:4px;">
                   💾 GUARDAR CAMBIOS
                 </button>
                 <a href="/" target="_blank" class="button secondary" style="padding:10px 16px;border:1px solid #333;color:#b0b0b0;border-radius:4px;font:700 11px 'DM Mono',monospace;display:inline-flex;align-items:center;gap:6px;">
@@ -154,17 +154,17 @@
 
                   <div style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;">
                     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:50px;padding:6px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:4px;">
-                      <span id="prevDays" style="font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:#fff;">00</span>
+                      <span id="prevDays" style="font-family:'Bangers',cursive,sans-serif;font-size:26px;line-height:1;color:#fff;">00</span>
                       <span style="font:600 9px 'DM Mono',monospace;letter-spacing:.15em;color:#b0b0b0;margin-top:3px;">DÍAS</span>
                     </div>
-                    <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;color:#fff;padding-bottom:8px;">:</span>
+                    <span style="font-family:'Bangers',cursive,sans-serif;font-size:22px;line-height:1;color:#fff;padding-bottom:8px;">:</span>
                     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:50px;padding:6px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:4px;">
-                      <span id="prevHours" style="font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:#fff;">00</span>
+                      <span id="prevHours" style="font-family:'Bangers',cursive,sans-serif;font-size:26px;line-height:1;color:#fff;">00</span>
                       <span style="font:600 9px 'DM Mono',monospace;letter-spacing:.15em;color:#b0b0b0;margin-top:3px;">HORAS</span>
                     </div>
-                    <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;color:#fff;padding-bottom:8px;">:</span>
+                    <span style="font-family:'Bangers',cursive,sans-serif;font-size:22px;line-height:1;color:#fff;padding-bottom:8px;">:</span>
                     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:50px;padding:6px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:4px;">
-                      <span id="prevMins" style="font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:#fff;">00</span>
+                      <span id="prevMins" style="font-family:'Bangers',cursive,sans-serif;font-size:26px;line-height:1;color:#fff;">00</span>
                       <span style="font:600 9px 'DM Mono',monospace;letter-spacing:.15em;color:#b0b0b0;margin-top:3px;">MIN</span>
                     </div>
                   </div>
@@ -180,7 +180,7 @@
                 <div style="font:600 10px 'DM Mono',monospace;color:#666;letter-spacing:.1em;margin-bottom:6px;text-transform:uppercase;">
                   Encabezado en tienda:
                 </div>
-                <div id="prevMainText" style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.03em;color:#fff;line-height:1.2;">
+                <div id="prevMainText" style="font-family:'Bangers',cursive,sans-serif;font-size:16px;letter-spacing:.03em;color:#fff;line-height:1.2;">
                   —
                 </div>
                 <div id="prevSubText" style="margin-top:6px;font-size:11px;color:#b0b0b0;font-family:'DM Mono',monospace;">

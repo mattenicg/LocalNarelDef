@@ -119,8 +119,12 @@ const paymentRules = [
   body('shipping.notes').optional({ nullable: true }).isString().isLength({ max: 500 }).withMessage('Notas inválidas.'),
   body('payment.token').optional({ nullable: true }).isString().trim().isLength({ min: 10, max: 500 }).withMessage('Token de tarjeta inválido.'),
   body('payment.payment_method_id').isString().trim().isLength({ min: 1, max: 60 }).withMessage('Método de pago inválido.'),
-  body('payment.installments').optional({ nullable: true }).isInt({ min: 1, max: 24 }).withMessage('Cantidad de cuotas inválida.'),
-  body('payment.issuer_id').optional({ nullable: true }).isInt().withMessage('Emisor de tarjeta inválido.'),
+  body('payment.installments').optional({ nullable: true, checkFalsy: true }).isInt({ min: 1, max: 24 }).withMessage('Cantidad de cuotas inválida.'),
+  body('payment.issuer_id').optional({ nullable: true, checkFalsy: true }).custom((val) => {
+    if (val === undefined || val === null || val === '') return true;
+    if (!isNaN(Number(val))) return true;
+    throw new Error('Emisor de tarjeta inválido.');
+  }),
   body('payment.payer').optional({ nullable: true }).isObject().withMessage('Datos del pagador inválidos.'),
   body('payment.payer.identification').optional({ nullable: true }).isObject().withMessage('Identificación inválida.'),
   body('payment.payer.identification.type').optional({ nullable: true }).isString().isLength({ min: 1, max: 20 }).withMessage('Tipo de identificación inválido.'),

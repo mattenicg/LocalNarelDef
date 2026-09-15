@@ -216,7 +216,7 @@
 }
 
 .promo-price-new {
-  font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+  font-family: var(--fuente-display, 'Bangers', cursive, sans-serif);
   font-size: 22px;
   line-height: 1;
   letter-spacing: .02em;
@@ -302,7 +302,7 @@
 }
 
 .promo-combo-prices b {
-  font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+  font-family: var(--fuente-display, 'Bangers', cursive, sans-serif);
   font-size: clamp(26px, 2.6vw, 34px);
   line-height: 1;
   color: var(--white);
@@ -427,7 +427,7 @@
 
 .shipping-promo-heading {
   margin: 0;
-  font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+  font-family: var(--fuente-display, 'Bangers', cursive, sans-serif);
   font-size: clamp(20px, 2.2vw, 30px);
   line-height: 1.15;
   color: var(--white);
@@ -534,7 +534,7 @@
 }
 
 .sp-cd-num {
-  font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+  font-family: var(--fuente-display, 'Bangers', cursive, sans-serif);
   font-size: 26px;
   line-height: 1;
   color: var(--white);
@@ -553,7 +553,7 @@
 }
 
 .sp-cd-colon {
-  font-family: var(--fuente-display, 'Bebas Neue', sans-serif);
+  font-family: var(--fuente-display, 'Bangers', cursive, sans-serif);
   font-size: 22px;
   line-height: 1;
   color: var(--yellow);

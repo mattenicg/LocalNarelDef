@@ -98,7 +98,9 @@ async function createPreference({
     } : undefined,
     external_reference: String(externalReference),
     payment_methods: {
-      excluded_payment_methods: [], // NO excluimos ningún medio soportado por MP
+      excluded_payment_methods: [
+        { id: 'gocuotas' },
+      ],
       excluded_payment_types: [],   // Permitimos todos los tipos de pago soportados
       installments: 24,             // Habilitamos hasta 24 cuotas
     },
