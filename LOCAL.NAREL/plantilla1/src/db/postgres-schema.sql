@@ -98,6 +98,14 @@ CREATE TABLE IF NOT EXISTS products (
   direct_purchase BOOLEAN NOT NULL DEFAULT false,
   allowed_payment_methods JSONB NOT NULL DEFAULT '["tarjeta_credito","tarjeta_debito","transferencia","efectivo"]'::jsonb,
   allowed_installments JSONB NOT NULL DEFAULT '[1,3,6]'::jsonb,
+  direct_discount_percent NUMERIC(5,2) NOT NULL DEFAULT 25.00,
+  direct_discount_text VARCHAR(100) NOT NULL DEFAULT 'con transferencia',
+  direct_show_promo_badge BOOLEAN NOT NULL DEFAULT true,
+  direct_promo_badge_text VARCHAR(60) NOT NULL DEFAULT 'PROMO ACTIVA',
+  direct_installments_count INTEGER NOT NULL DEFAULT 6,
+  direct_installments_text VARCHAR(60) NOT NULL DEFAULT 'sin interés',
+  direct_custom_transfer_price NUMERIC(12,2) DEFAULT NULL,
+  direct_transfer_text VARCHAR(60) NOT NULL DEFAULT 'con Transferencia',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -106,6 +114,14 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory_id UUID REFERENCES sub
 ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_purchase BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS allowed_payment_methods JSONB NOT NULL DEFAULT '["tarjeta_credito","tarjeta_debito","transferencia","efectivo"]'::jsonb;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS allowed_installments JSONB NOT NULL DEFAULT '[1,3,6]'::jsonb;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_discount_percent NUMERIC(5,2) NOT NULL DEFAULT 25.00;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_discount_text VARCHAR(100) NOT NULL DEFAULT 'con transferencia';
+ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_show_promo_badge BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_promo_badge_text VARCHAR(60) NOT NULL DEFAULT 'PROMO ACTIVA';
+ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_installments_count INTEGER NOT NULL DEFAULT 6;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_installments_text VARCHAR(60) NOT NULL DEFAULT 'sin interés';
+ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_custom_transfer_price NUMERIC(12,2) DEFAULT NULL;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_transfer_text VARCHAR(60) NOT NULL DEFAULT 'con Transferencia';
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_products_cat_subcat ON products(category, subcategory);
 CREATE INDEX IF NOT EXISTS idx_products_active ON products(active);

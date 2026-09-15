@@ -20,7 +20,7 @@ function fail(req, res) {
   return e.isEmpty() ? null : res.status(400).json({ ok: false, message: e.array()[0].msg });
 }
 
-const fields = 'id,name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,created_at,updated_at';
+const fields = 'id,name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at';
 
 router.use(authenticate, requireAdmin);
 
@@ -133,7 +133,24 @@ router.get('/:id', [param('id').isUUID()], async (req, res) => {
   try {
     const r = await query(`SELECT ${fields} FROM products WHERE id=$1`, [req.params.id]);
     if (!r.rows[0]) return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
-    res.json({ ok: true, data: r.rows[0] });
+    const product = r.rows[0];
+
+    // Check if there is an existing promotion linked to this product (in promotions / promotion_products)
+    try {
+      const promoRes = await query(
+        `SELECT p.id AS promo_id, p.title AS promo_title, p.discount_type, p.discount_value, p.badge_label, pp.override_price, pp.discount_percentage
+         FROM promotion_products pp
+         JOIN promotions p ON p.id = pp.promotion_id
+         WHERE pp.product_id = $1 AND p.active = true
+         ORDER BY p.created_at DESC LIMIT 1`,
+        [req.params.id]
+      );
+      if (promoRes && promoRes.rows && promoRes.rows[0]) {
+        product.active_promotion = promoRes.rows[0];
+      }
+    } catch (_pErr) {}
+
+    res.json({ ok: true, data: product });
   } catch (err) {
     console.error('[admin/product-get] error:', err);
     res.status(500).json({ ok: false, message: 'Error al buscar producto' });
@@ -160,6 +177,14 @@ const rules = [
   body('direct_purchase').optional().isBoolean(),
   body('allowed_payment_methods').optional().isArray(),
   body('allowed_installments').optional().isArray(),
+  body('direct_discount_percent').optional(),
+  body('direct_discount_text').optional().isString(),
+  body('direct_show_promo_badge').optional().isBoolean(),
+  body('direct_promo_badge_text').optional().isString(),
+  body('direct_installments_count').optional(),
+  body('direct_installments_text').optional().isString(),
+  body('direct_custom_transfer_price').optional({ nullable: true }),
+  body('direct_transfer_text').optional().isString(),
 ];
 
 router.post('/', rules, async (req, res) => {
@@ -193,8 +218,21 @@ router.post('/', rules, async (req, res) => {
       ? JSON.stringify(req.body.allowed_installments.map(Number).filter((n) => Number.isInteger(n) && n > 0))
       : JSON.stringify([1, 3, 6]);
 
+    const directDiscountPercent = req.body.direct_discount_percent !== undefined && req.body.direct_discount_percent !== '' && req.body.direct_discount_percent !== null
+      ? Number(req.body.direct_discount_percent)
+      : 25.00;
+    const directDiscountText = req.body.direct_discount_text ? String(req.body.direct_discount_text).trim() : 'con transferencia';
+    const directShowPromoBadge = req.body.direct_show_promo_badge !== false;
+    const directPromoBadgeText = req.body.direct_promo_badge_text ? String(req.body.direct_promo_badge_text).trim() : 'PROMO ACTIVA';
+    const directInstallmentsCount = Number(req.body.direct_installments_count) > 0 ? Number(req.body.direct_installments_count) : 6;
+    const directInstallmentsText = req.body.direct_installments_text ? String(req.body.direct_installments_text).trim() : 'sin interés';
+    const directCustomTransferPrice = req.body.direct_custom_transfer_price !== undefined && req.body.direct_custom_transfer_price !== '' && req.body.direct_custom_transfer_price !== null && Number(req.body.direct_custom_transfer_price) > 0
+      ? Number(req.body.direct_custom_transfer_price)
+      : null;
+    const directTransferText = req.body.direct_transfer_text ? String(req.body.direct_transfer_text).trim() : 'con Transferencia';
+
     const r = await query(
-      `INSERT INTO products(name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING ${fields}`,
+      `INSERT INTO products(name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING ${fields}`,
       [
         req.body.name.trim(),
         req.body.description || '',
@@ -210,6 +248,14 @@ router.post('/', rules, async (req, res) => {
         directPurchase,
         allowedPaymentMethods,
         allowedInstallments,
+        directDiscountPercent,
+        directDiscountText,
+        directShowPromoBadge,
+        directPromoBadgeText,
+        directInstallmentsCount,
+        directInstallmentsText,
+        directCustomTransferPrice,
+        directTransferText,
       ]
     );
     res.status(201).json({ ok: true, message: 'Producto creado correctamente', data: r.rows[0] });
@@ -222,7 +268,7 @@ router.post('/', rules, async (req, res) => {
 router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
   if (fail(req, res)) return;
   try {
-    const existing = await query('SELECT id, category, subcategory, subcategory_id, direct_purchase, allowed_payment_methods, allowed_installments FROM products WHERE id=$1', [req.params.id]);
+    const existing = await query('SELECT id, category, subcategory, subcategory_id, direct_purchase, allowed_payment_methods, allowed_installments, direct_discount_percent, direct_discount_text, direct_show_promo_badge, direct_promo_badge_text, direct_installments_count, direct_installments_text, direct_custom_transfer_price, direct_transfer_text FROM products WHERE id=$1', [req.params.id]);
     if (!existing.rows[0]) return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
 
     const currentProd = existing.rows[0];
@@ -258,8 +304,33 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
           : JSON.stringify([1, 3, 6]))
       : (currentProd.allowed_installments ? JSON.stringify(currentProd.allowed_installments) : JSON.stringify([1, 3, 6]));
 
+    const directDiscountPercent = req.body.direct_discount_percent !== undefined && req.body.direct_discount_percent !== '' && req.body.direct_discount_percent !== null
+      ? Number(req.body.direct_discount_percent)
+      : (currentProd.direct_discount_percent !== undefined && currentProd.direct_discount_percent !== null ? Number(currentProd.direct_discount_percent) : 25.00);
+    const directDiscountText = req.body.direct_discount_text !== undefined
+      ? String(req.body.direct_discount_text).trim()
+      : (currentProd.direct_discount_text || 'con transferencia');
+    const directShowPromoBadge = req.body.direct_show_promo_badge !== undefined
+      ? req.body.direct_show_promo_badge === true
+      : (currentProd.direct_show_promo_badge !== false);
+    const directPromoBadgeText = req.body.direct_promo_badge_text !== undefined
+      ? String(req.body.direct_promo_badge_text).trim()
+      : (currentProd.direct_promo_badge_text || 'PROMO ACTIVA');
+    const directInstallmentsCount = req.body.direct_installments_count !== undefined && Number(req.body.direct_installments_count) > 0
+      ? Number(req.body.direct_installments_count)
+      : (Number(currentProd.direct_installments_count) || 6);
+    const directInstallmentsText = req.body.direct_installments_text !== undefined
+      ? String(req.body.direct_installments_text).trim()
+      : (currentProd.direct_installments_text || 'sin interés');
+    const directCustomTransferPrice = req.body.direct_custom_transfer_price !== undefined
+      ? (req.body.direct_custom_transfer_price !== '' && req.body.direct_custom_transfer_price !== null && Number(req.body.direct_custom_transfer_price) > 0 ? Number(req.body.direct_custom_transfer_price) : null)
+      : (currentProd.direct_custom_transfer_price ? Number(currentProd.direct_custom_transfer_price) : null);
+    const directTransferText = req.body.direct_transfer_text !== undefined
+      ? String(req.body.direct_transfer_text).trim()
+      : (currentProd.direct_transfer_text || 'con Transferencia');
+
     const r = await query(
-      `UPDATE products SET name=$1,description=$2,price=$3,sizes=$4,stock=$5,image_url=COALESCE($6,image_url),category=$7,subcategory=$8,subcategory_id=$9,active=COALESCE($10,active),featured=COALESCE($11,featured),direct_purchase=$12,allowed_payment_methods=$13,allowed_installments=$14,updated_at=now() WHERE id=$15 RETURNING ${fields}`,
+      `UPDATE products SET name=$1,description=$2,price=$3,sizes=$4,stock=$5,image_url=COALESCE($6,image_url),category=$7,subcategory=$8,subcategory_id=$9,active=COALESCE($10,active),featured=COALESCE($11,featured),direct_purchase=$12,allowed_payment_methods=$13,allowed_installments=$14,direct_discount_percent=$15,direct_discount_text=$16,direct_show_promo_badge=$17,direct_promo_badge_text=$18,direct_installments_count=$19,direct_installments_text=$20,direct_custom_transfer_price=$21,direct_transfer_text=$22,updated_at=now() WHERE id=$23 RETURNING ${fields}`,
       [
         req.body.name.trim(),
         req.body.description || '',
@@ -275,6 +346,14 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
         directPurchase,
         allowedPaymentMethods,
         allowedInstallments,
+        directDiscountPercent,
+        directDiscountText,
+        directShowPromoBadge,
+        directPromoBadgeText,
+        directInstallmentsCount,
+        directInstallmentsText,
+        directCustomTransferPrice,
+        directTransferText,
         req.params.id,
       ]
     );

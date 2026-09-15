@@ -126,20 +126,28 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
     },
     {
       id: 'a3333333-3333-4333-8333-333333333333',
-      name: 'Pantalón Cargo Wide Leg Black',
-      description: 'Pantalón cargo relaxed fit en gabardina pesada con 6 bolsillos utilitarios.',
-      price: 42000,
+      name: 'Pantalón Baggy Igor Pink',
+      description: 'Pantalón baggy fit Igor Pink en denim premium con proceso exclusivo.',
+      price: 112500,
       sizes: '38,40,42,44,46',
       stock: 18,
       image_url: '/assets/img/logo-ngl-diamond.jpeg',
       category: 'pantalones',
-      subcategory: 'cargo',
+      subcategory: 'baggy',
       subcategory_id: 's1111111-1111-4111-8111-111111111111',
       active: true,
       featured: true,
-      direct_purchase: false,
+      direct_purchase: true,
       allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
       allowed_installments: [1, 3, 6],
+      direct_discount_percent: 25,
+      direct_discount_text: 'con transferencia',
+      direct_show_promo_badge: true,
+      direct_promo_badge_text: 'PROMO ACTIVA',
+      direct_installments_count: 6,
+      direct_installments_text: 'sin interés',
+      direct_custom_transfer_price: null,
+      direct_transfer_text: 'con Transferencia',
       created_at: now,
       updated_at: now,
     },
@@ -787,6 +795,14 @@ function executeMemoryQuery(rawText, params = []) {
       direct_purchase: hasDirect ? params[11] === true : false,
       allowed_payment_methods: hasDirect && params[12] ? (typeof params[12] === 'string' ? JSON.parse(params[12]) : params[12]) : ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
       allowed_installments: hasDirect && params[13] ? (typeof params[13] === 'string' ? JSON.parse(params[13]) : params[13]) : [1, 3, 6],
+      direct_discount_percent: hasDirect && params[14] !== undefined && params[14] !== null ? Number(params[14]) : 25,
+      direct_discount_text: hasDirect && params[15] ? String(params[15]) : 'con transferencia',
+      direct_show_promo_badge: hasDirect && params[16] !== undefined ? params[16] === true : true,
+      direct_promo_badge_text: hasDirect && params[17] ? String(params[17]) : 'PROMO ACTIVA',
+      direct_installments_count: hasDirect && params[18] ? Number(params[18]) : 6,
+      direct_installments_text: hasDirect && params[19] ? String(params[19]) : 'sin interés',
+      direct_custom_transfer_price: hasDirect && params[20] !== undefined && params[20] !== null && params[20] !== '' ? Number(params[20]) : null,
+      direct_transfer_text: hasDirect && params[21] ? String(params[21]) : 'con Transferencia',
       created_at: now,
       updated_at: now,
     };
@@ -795,6 +811,34 @@ function executeMemoryQuery(rawText, params = []) {
   }
 
   if (lowerSql.startsWith('update products')) {
+    if (lowerSql.includes('where id=$23')) {
+      const p = data.products.find((x) => x.id === params[22]);
+      if (!p) return { rows: [], rowCount: 0 };
+      p.name = params[0];
+      p.description = params[1] || '';
+      p.price = Number(params[2]) || 0;
+      p.sizes = params[3] || '';
+      p.stock = Number(params[4]) || 0;
+      if (params[5] !== null && params[5] !== undefined) p.image_url = params[5];
+      if (params[6]) p.category = params[6];
+      p.subcategory = params[7] || null;
+      p.subcategory_id = params[8] || null;
+      if (params[9] !== null && params[9] !== undefined) p.active = params[9];
+      if (params[10] !== null && params[10] !== undefined) p.featured = params[10];
+      if (params[11] !== null && params[11] !== undefined) p.direct_purchase = params[11] === true;
+      if (params[12]) p.allowed_payment_methods = typeof params[12] === 'string' ? JSON.parse(params[12]) : params[12];
+      if (params[13]) p.allowed_installments = typeof params[13] === 'string' ? JSON.parse(params[13]) : params[13];
+      if (params[14] !== undefined && params[14] !== null) p.direct_discount_percent = Number(params[14]);
+      if (params[15] !== undefined) p.direct_discount_text = String(params[15] || 'con transferencia');
+      if (params[16] !== undefined) p.direct_show_promo_badge = params[16] === true;
+      if (params[17] !== undefined) p.direct_promo_badge_text = String(params[17] || 'PROMO ACTIVA');
+      if (params[18] !== undefined) p.direct_installments_count = Number(params[18]) || 6;
+      if (params[19] !== undefined) p.direct_installments_text = String(params[19] || 'sin interés');
+      if (params[20] !== undefined) p.direct_custom_transfer_price = params[20] ? Number(params[20]) : null;
+      if (params[21] !== undefined) p.direct_transfer_text = String(params[21] || 'con Transferencia');
+      p.updated_at = nowIso();
+      return { rows: [{ ...p }], rowCount: 1 };
+    }
     if (lowerSql.includes('set category = $1') || lowerSql.includes('set category=$1')) {
       const newCat = String(params[0] || '').toLowerCase().trim();
       const oldCat = String(params[1] || '').toLowerCase().trim();
