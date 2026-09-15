@@ -73,7 +73,8 @@ async function createOrderWithStock(payload, options = {}) {
         throw orderError(`Stock insuficiente para: ${product.name}`, 409);
       }
 
-      // Validar COMPRA DIRECTA en el backend
+      // Validar COMPRA DIRECTA en el backend y calcular precio según el método de pago elegido
+      let unitPrice = Number(product.price);
       if (product.direct_purchase) {
         if ((payload.items || []).length > 1) {
           throw orderError(`El producto "${product.name}" utiliza compra directa y debe adquirirse de forma individual.`, 400);
@@ -99,10 +100,24 @@ async function createOrderWithStock(payload, options = {}) {
         if (paymentMethod === 'efectivo' && !cashAllowed) {
           throw orderError(`El producto "${product.name}" no admite pago en efectivo.`, 400);
         }
+
+        if (paymentMethod === 'transferencia') {
+          if (product.direct_custom_transfer_price !== undefined && product.direct_custom_transfer_price !== null && Number(product.direct_custom_transfer_price) > 0) {
+            unitPrice = Number(product.direct_custom_transfer_price);
+          } else {
+            const discountPercent = product.direct_discount_percent !== undefined && product.direct_discount_percent !== null ? Number(product.direct_discount_percent) : 25;
+            if (discountPercent > 0) {
+              unitPrice = Math.round(Number(product.price) * (1 - (discountPercent / 100)) * 100) / 100;
+            }
+          }
+        }
+      } else {
+        const promoPrice = await resolvePromoPrice(client, item.banner_id, item.product_id);
+        if (promoPrice != null) {
+          unitPrice = promoPrice;
+        }
       }
 
-      const promoPrice = await resolvePromoPrice(client, item.banner_id, item.product_id);
-      const unitPrice = promoPrice == null ? Number(product.price) : promoPrice;
       subtotal += unitPrice * quantity;
       rows.push({ product, item, quantity, unitPrice });
     }

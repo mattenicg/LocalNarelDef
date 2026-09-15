@@ -80,8 +80,6 @@
     const price = Math.max(0, Number(item && item.price) || 0);
     const promoType = String(item && (item.promo_type || item.promoType) || '').toLowerCase();
     return {
-      // Un mismo producto puede estar en el catálogo y en una promo con otro precio:
-      // la clave compuesta mantiene esas líneas separadas en el carrito.
       key: bannerId ? `${bannerId}::${id}` : id,
       id,
       banner_id: bannerId,
@@ -96,17 +94,47 @@
       qty: Math.max(1, Math.min(99, Number(item && (item.qty || item.quantity)) || 1)),
       size: String(item && item.size || '').trim().slice(0, 40),
       direct_purchase: !!(item && (item.direct_purchase === true || item.direct_purchase === 1 || item.direct_purchase === 'true' || item.directPurchase)),
+      direct_discount_percent: item && item.direct_discount_percent !== undefined && item.direct_discount_percent !== null ? Number(item.direct_discount_percent) : 25,
+      direct_discount_text: (item && (item.direct_discount_text || item.directDiscountText)) || 'con transferencia',
+      direct_custom_transfer_price: item && item.direct_custom_transfer_price !== undefined && item.direct_custom_transfer_price !== null && Number(item.direct_custom_transfer_price) > 0 ? Number(item.direct_custom_transfer_price) : null,
+      direct_transfer_price: item && item.direct_transfer_price !== undefined && item.direct_transfer_price !== null && Number(item.direct_transfer_price) > 0 ? Number(item.direct_transfer_price) : null,
+      direct_installments_count: item && item.direct_installments_count ? Number(item.direct_installments_count) : 6,
+      direct_installments_text: (item && (item.direct_installments_text || item.directInstallmentsText)) || 'sin interés',
+      direct_show_promo_badge: item && item.direct_show_promo_badge !== undefined ? Boolean(item.direct_show_promo_badge) : true,
+      direct_promo_badge_text: (item && item.direct_promo_badge_text) || 'PROMO ACTIVA',
       allowed_payment_methods: (item && (item.allowed_payment_methods || item.allowedPaymentMethods)) || null,
       allowed_installments: (item && (item.allowed_installments || item.allowedInstallments)) || null,
     };
+  }
+
+  function getItemTransferPrice(item) {
+    if (!item) return 0;
+    if (item.direct_custom_transfer_price !== null && item.direct_custom_transfer_price !== undefined && Number(item.direct_custom_transfer_price) > 0) {
+      return Number(item.direct_custom_transfer_price);
+    }
+    if (item.direct_transfer_price !== null && item.direct_transfer_price !== undefined && Number(item.direct_transfer_price) > 0) {
+      return Number(item.direct_transfer_price);
+    }
+    const discountPercent = item.direct_discount_percent !== null && item.direct_discount_percent !== undefined ? Number(item.direct_discount_percent) : 25;
+    if (discountPercent > 0) {
+      return Math.round(item.price * (1 - (discountPercent / 100)) * 100) / 100;
+    }
+    return item.price;
   }
 
   function totalQuantity() {
     return state.items.reduce((sum, item) => sum + item.qty, 0);
   }
 
-  function totalPrice() {
-    return state.items.reduce((sum, item) => sum + item.qty * item.price, 0);
+  function totalPrice(method) {
+    const effectiveMethod = method || state.selectedPaymentMethod || 'tarjeta';
+    return state.items.reduce((sum, item) => {
+      let p = item.price;
+      if (item.direct_purchase && effectiveMethod === 'transferencia') {
+        p = getItemTransferPrice(item);
+      }
+      return sum + item.qty * p;
+    }, 0);
   }
 
   function replaceWithFreshElement(id) {
@@ -497,17 +525,27 @@
   function renderCheckoutSummary() {
     const summary = get('checkoutSummary');
     if (!summary) return;
+    const directItem = state.items.find((i) => i.direct_purchase) || (state.isDirectPurchase ? state.items[0] : null);
+    const method = state.selectedPaymentMethod || 'tarjeta';
+    const baseSubtotal = state.items.reduce((sum, item) => sum + item.qty * item.price, 0);
+    const effectiveTotal = totalPrice(method);
     const savings = promoSavings();
-    const subtotal = totalPrice();
     const isDelivery = get('shippingMethodEnvio')?.checked;
     const cityInput = get('checkoutCity');
     const city = cityInput ? cityInput.value : '';
-    const eligible = isEligibleForFreeShipping(subtotal, city, isDelivery);
+    const eligible = isEligibleForFreeShipping(effectiveTotal, city, isDelivery);
     const isSfe = isSantaFeCapital(city);
 
-    const savingsRow = savings > 0
-      ? `<div class="row"><span>Descuento promos</span><strong>- ${formatCurrency(savings)}</strong></div>`
-      : '';
+    let discountRows = '';
+    if (savings > 0) {
+      discountRows += `<div class="row"><span>Descuento promos</span><strong>- ${formatCurrency(savings)}</strong></div>`;
+    }
+    if (directItem && method === 'transferencia') {
+      const transferDiscount = (directItem.price - getItemTransferPrice(directItem)) * directItem.qty;
+      if (transferDiscount > 0) {
+        discountRows += `<div class="row" style="color:#f43f5e;font-weight:700;"><span>Descuento Transferencia (${directItem.direct_discount_percent || 25}% OFF)</span><strong>- ${formatCurrency(transferDiscount)}</strong></div>`;
+      }
+    }
 
     let shippingRowHtml = '';
     let promoCalloutHtml = '';
@@ -524,9 +562,9 @@
           </div>
           <p>Tu compra es a partir de $40.000 con entrega en Santa Fe Capital. ¡El costo de envío es $0!</p>
         </div>`;
-    } else if (isSfe && subtotal < 40000) {
+    } else if (isSfe && effectiveTotal < 40000) {
       shippingRowHtml = `<div class="row"><span>Envío</span><strong>A coordinar</strong></div>`;
-      const diff = 40000 - subtotal;
+      const diff = 40000 - effectiveTotal;
       promoCalloutHtml = `
         <div class="checkout-promo-box">
           <div class="checkout-promo-box-head">
@@ -539,17 +577,21 @@
       shippingRowHtml = `<div class="row"><span>Envío</span><strong>A coordinar</strong></div>`;
     }
 
+    const methodLabel = method === 'transferencia' ? 'TRANSFERENCIA' : method === 'efectivo' ? 'EFECTIVO' : 'TARJETA';
+    const totalColor = method === 'transferencia' ? '#f43f5e' : 'var(--yellow,#fff)';
+
     summary.innerHTML = `
       <div class="row"><span>Productos</span><strong>${totalQuantity()}</strong></div>
-      <div class="row"><span>Subtotal</span><strong>${formatCurrency(subtotal)}</strong></div>
-      ${savingsRow}
+      <div class="row"><span>Subtotal base</span><strong>${formatCurrency(baseSubtotal)}</strong></div>
+      ${discountRows}
       ${shippingRowHtml}
       ${promoCalloutHtml}
-      <div class="row total-row"><span>TOTAL A PAGAR</span><strong>${formatCurrency(subtotal)}</strong></div>`;
+      <div class="row total-row"><span>TOTAL A PAGAR (${methodLabel})</span><strong style="font-size:19px;color:${totalColor};">${formatCurrency(effectiveTotal)}</strong></div>`;
   }
 
   function buildOrderPayload(form) {
-    const subtotal = totalPrice();
+    const method = state.selectedPaymentMethod || 'tarjeta';
+    const subtotal = totalPrice(method);
     const city = form.elements.city?.value.trim() || '';
     const isDelivery = form.elements.shipping_method?.value === 'envio';
     const isFree = isEligibleForFreeShipping(subtotal, city, isDelivery);
@@ -577,7 +619,7 @@
         postal_code: form.elements.postal_code?.value.trim() || '',
         notes: notes,
       },
-      payment_method: 'mercadopago_card',
+      payment_method: method === 'transferencia' ? 'transferencia' : method === 'efectivo' ? 'efectivo' : 'mercadopago_card',
     };
   }
 
@@ -819,6 +861,8 @@
     get('closeSuccessBtn')?.addEventListener('click', () => setPaymentOpen(false));
   }
 
+  const processOfflineOrder = processManualPayment;
+
   function renderCheckout() {
     const paymentContent = get('paymentContent');
     if (!paymentContent) return;
@@ -851,10 +895,21 @@
     const allowsTransfer = allowedMethods.includes('transferencia');
     const allowsCash = allowedMethods.includes('efectivo');
 
+    // Inicializar método de pago por defecto si no es válido
+    if (!state.selectedPaymentMethod || (state.selectedPaymentMethod === 'tarjeta' && !allowsCard) || (state.selectedPaymentMethod === 'transferencia' && !allowsTransfer) || (state.selectedPaymentMethod === 'efectivo' && !allowsCash)) {
+      if (allowsTransfer) {
+        state.selectedPaymentMethod = 'transferencia';
+      } else if (allowsCard) {
+        state.selectedPaymentMethod = 'tarjeta';
+      } else if (allowsCash) {
+        state.selectedPaymentMethod = 'efectivo';
+      }
+    }
+
     let directCalloutHTML = '';
     if (directItem) {
       directCalloutHTML = `
-        <div class="checkout-direct-callout" style="margin-bottom:14px;padding:12px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.18);">
+        <div class="checkout-direct-callout" style="margin-bottom:14px;padding:12px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.18);border-radius:6px;">
           <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--yellow,#fff);margin-bottom:4px;">⚡ COMPRA DIRECTA</div>
           <p style="font-size:12px;color:#fff;margin:0;line-height:1.4;">Estás adquiriendo individualmente <strong>${escapeHtml(directItem.name)}</strong>${directItem.size ? ' (Talle ' + escapeHtml(directItem.size) + ')' : ''}.</p>
         </div>`;
@@ -865,6 +920,40 @@
       paymentSubtitle = `Cuotas habilitadas por el comercio: ${allowedInstallments.join(', ')} cuota${allowedInstallments.length > 1 ? 's' : ''} · Mercado Pago`;
     }
 
+    const cardPriceFormatted = formatCurrency(totalPrice('tarjeta'));
+    const transferPriceFormatted = formatCurrency(totalPrice('transferencia'));
+    const cashPriceFormatted = formatCurrency(totalPrice('efectivo'));
+
+    const tabCardActive = state.selectedPaymentMethod === 'tarjeta';
+    const tabTransferActive = state.selectedPaymentMethod === 'transferencia';
+    const tabCashActive = state.selectedPaymentMethod === 'efectivo';
+
+    // Tabs selector
+    const tabsHTML = `
+      <div class="checkout-pay-tabs" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px;margin-bottom:16px;">
+        ${allowsTransfer ? `
+          <button type="button" class="btn-pay-tab ${tabTransferActive ? 'active' : ''}" data-method="transferencia" style="padding:10px 8px;border-radius:8px;border:2px solid ${tabTransferActive ? '#f43f5e' : '#333'};background:${tabTransferActive ? 'rgba(244,63,94,0.15)' : '#18181b'};color:${tabTransferActive ? '#fff' : '#aaa'};cursor:pointer;text-align:center;transition:all .15s ease;">
+            <div style="font-size:12px;font-weight:800;color:${tabTransferActive ? '#fff' : '#eee'};">🏦 TRANSFERENCIA</div>
+            <div style="font-size:13px;font-weight:800;color:#f43f5e;margin-top:2px;">${transferPriceFormatted}</div>
+            ${directItem ? `<div style="font-size:10px;font-weight:700;color:#f43f5e;margin-top:1px;">${directItem.direct_discount_percent || 25}% OFF</div>` : ''}
+          </button>
+        ` : ''}
+        ${allowsCard ? `
+          <button type="button" class="btn-pay-tab ${tabCardActive ? 'active' : ''}" data-method="tarjeta" style="padding:10px 8px;border-radius:8px;border:2px solid ${tabCardActive ? '#fff' : '#333'};background:${tabCardActive ? '#27272a' : '#18181b'};color:${tabCardActive ? '#fff' : '#aaa'};cursor:pointer;text-align:center;transition:all .15s ease;">
+            <div style="font-size:12px;font-weight:800;color:${tabCardActive ? '#fff' : '#eee'};">💳 TARJETA</div>
+            <div style="font-size:13px;font-weight:800;color:#fff;margin-top:2px;">${cardPriceFormatted}</div>
+            ${directItem && directItem.direct_installments_count ? `<div style="font-size:10px;color:#9ca3af;margin-top:1px;">${directItem.direct_installments_count} cuotas</div>` : ''}
+          </button>
+        ` : ''}
+        ${allowsCash ? `
+          <button type="button" class="btn-pay-tab ${tabCashActive ? 'active' : ''}" data-method="efectivo" style="padding:10px 8px;border-radius:8px;border:2px solid ${tabCashActive ? '#fff' : '#333'};background:${tabCashActive ? '#27272a' : '#18181b'};color:${tabCashActive ? '#fff' : '#aaa'};cursor:pointer;text-align:center;transition:all .15s ease;">
+            <div style="font-size:12px;font-weight:800;color:${tabCashActive ? '#fff' : '#eee'};">💵 EFECTIVO</div>
+            <div style="font-size:13px;font-weight:800;color:#fff;margin-top:2px;">${cashPriceFormatted}</div>
+            <div style="font-size:10px;color:#9ca3af;margin-top:1px;">en local</div>
+          </button>
+        ` : ''}
+      </div>`;
+
     let cardSectionHTML = '';
     if (allowsCard) {
       const cardGatewayMarkup = mercadoPagoEnabled()
@@ -872,36 +961,38 @@
         : '<p class="checkout-instructions">El pago con tarjeta no está disponible en este momento. Podés optar por los otros medios habilitados.</p>';
 
       cardSectionHTML = `
-        <div class="checkout-payment-info-banner" aria-label="Información de medios de pago soportados">
-          <div class="checkout-payment-info-text">
-            <span class="checkout-payment-info-title">Pagá con tarjeta ${allowedMethods.includes('tarjeta_credito') ? 'de crédito' : ''}${allowedMethods.includes('tarjeta_credito') && allowedMethods.includes('tarjeta_debito') ? ', débito y prepagas' : allowedMethods.includes('tarjeta_debito') ? 'de débito y prepagas' : ''}</span>
-            <span class="checkout-payment-info-subtitle">${escapeHtml(paymentSubtitle)}</span>
+        <div id="payMethodCardBox" class="checkout-pay-box ${tabCardActive ? '' : 'checkout-hidden'}" style="${tabCardActive ? '' : 'display:none;'}">
+          <div class="checkout-payment-info-banner" aria-label="Información de medios de pago soportados">
+            <div class="checkout-payment-info-text">
+              <span class="checkout-payment-info-title">Pagá con tarjeta ${allowedMethods.includes('tarjeta_credito') ? 'de crédito' : ''}${allowedMethods.includes('tarjeta_credito') && allowedMethods.includes('tarjeta_debito') ? ', débito y prepagas' : allowedMethods.includes('tarjeta_debito') ? 'de débito y prepagas' : ''}</span>
+              <span class="checkout-payment-info-subtitle">${escapeHtml(paymentSubtitle)}</span>
+            </div>
+            <div class="checkout-payment-badges" aria-hidden="true">
+              <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1A1F71"/><text x="16" y="14" fill="#FFFFFF" font-family="sans-serif" font-size="9" font-weight="800" text-anchor="middle" font-style="italic">VISA</text></svg><span>Visa</span></span>
+              <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1e1e1e"/><circle cx="12" cy="10" r="6" fill="#EB001B"/><circle cx="20" cy="10" r="6" fill="#F79E1B" fill-opacity="0.85"/></svg><span>Mastercard</span></span>
+              <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#006FCF"/><text x="16" y="13" fill="#FFFFFF" font-family="sans-serif" font-size="7" font-weight="900" text-anchor="middle">AMEX</text></svg><span>American Express</span></span>
+              <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#009EE3"/><path d="M10 11.5c.8-1 2.2-1 3 0l3 3c.8 1 2.2 1 3 0l3-3" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Mercado Pago</span></span>
+            </div>
           </div>
-          <div class="checkout-payment-badges" aria-hidden="true">
-            <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1A1F71"/><text x="16" y="14" fill="#FFFFFF" font-family="sans-serif" font-size="9" font-weight="800" text-anchor="middle" font-style="italic">VISA</text></svg><span>Visa</span></span>
-            <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1e1e1e"/><circle cx="12" cy="10" r="6" fill="#EB001B"/><circle cx="20" cy="10" r="6" fill="#F79E1B" fill-opacity="0.85"/></svg><span>Mastercard</span></span>
-            <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#006FCF"/><text x="16" y="13" fill="#FFFFFF" font-family="sans-serif" font-size="7" font-weight="900" text-anchor="middle">AMEX</text></svg><span>American Express</span></span>
-            <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#009EE3"/><path d="M10 11.5c.8-1 2.2-1 3 0l3 3c.8 1 2.2 1 3 0l3-3" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Mercado Pago</span></span>
-          </div>
-        </div>
-        ${cardGatewayMarkup}`;
+          ${cardGatewayMarkup}
+        </div>`;
     }
 
     let offlineSectionHTML = '';
     if (allowsTransfer) {
       offlineSectionHTML += `
-        <div class="checkout-offline-option" style="margin-top:14px;padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);">
-          <div style="font-weight:700;font-size:12px;letter-spacing:.06em;color:#fff;margin-bottom:4px;">TRANSFERENCIA BANCARIA DIRECTA</div>
-          <p style="font-size:12px;color:var(--grey,#aaa);margin-bottom:10px;line-height:1.4;">Confirmá tu pedido y te enviamos los datos de CBU/Alias para transferir. Verificación rápida por WhatsApp.</p>
-          <button type="button" class="btn" id="btnConfirmTransfer" style="width:100%;font-weight:700;">CONFIRMAR POR TRANSFERENCIA</button>
+        <div id="payMethodTransferBox" class="checkout-pay-box ${tabTransferActive ? '' : 'checkout-hidden'}" style="padding:14px;background:rgba(244,63,94,0.06);border:1px solid rgba(244,63,94,0.3);border-radius:8px;margin-top:6px;${tabTransferActive ? '' : 'display:none;'}">
+          <div style="font-weight:800;font-size:13px;letter-spacing:.04em;color:#f43f5e;margin-bottom:4px;">TRANSFERENCIA BANCARIA DIRECTA</div>
+          <p style="font-size:12.5px;color:#eee;margin-bottom:8px;line-height:1.4;">Abonás el precio promocional con descuento de <strong style="color:#f43f5e;">${transferPriceFormatted}</strong>. Al confirmar te enviamos los datos de CBU/Alias y verificamos tu pago inmediatamente por WhatsApp.</p>
+          <button type="button" class="btn" id="btnConfirmTransfer" style="width:100%;font-weight:800;background:#f43f5e;border-color:#f43f5e;color:#fff;padding:12px;font-size:13.5px;letter-spacing:.02em;">CONFIRMAR POR TRANSFERENCIA (${transferPriceFormatted})</button>
         </div>`;
     }
     if (allowsCash) {
       offlineSectionHTML += `
-        <div class="checkout-offline-option" style="margin-top:12px;padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);">
-          <div style="font-weight:700;font-size:12px;letter-spacing:.06em;color:#fff;margin-bottom:4px;">PAGO EN EFECTIVO EN EL LOCAL</div>
-          <p style="font-size:12px;color:var(--grey,#aaa);margin-bottom:10px;line-height:1.4;">Reservá tu prenda y aboná en efectivo al retirar en LA PEATONAL San Martín 2029.</p>
-          <button type="button" class="btn" id="btnConfirmEfectivo" style="width:100%;font-weight:700;">CONFIRMAR PAGO EN EFECTIVO</button>
+        <div id="payMethodCashBox" class="checkout-pay-box ${tabCashActive ? '' : 'checkout-hidden'}" style="padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.18);border-radius:8px;margin-top:6px;${tabCashActive ? '' : 'display:none;'}">
+          <div style="font-weight:800;font-size:13px;letter-spacing:.04em;color:#fff;margin-bottom:4px;">PAGO EN EFECTIVO EN EL LOCAL</div>
+          <p style="font-size:12.5px;color:#aaa;margin-bottom:8px;line-height:1.4;">Total a abonar: <strong style="color:#fff;">${cashPriceFormatted}</strong>. Reservá tu prenda y aboná en efectivo al retirar en LA PEATONAL San Martín 2029.</p>
+          <button type="button" class="btn" id="btnConfirmEfectivo" style="width:100%;font-weight:800;padding:12px;font-size:13.5px;">CONFIRMAR PAGO EN EFECTIVO (${cashPriceFormatted})</button>
         </div>`;
     }
 
@@ -970,6 +1061,7 @@
 
         <fieldset class="checkout-fieldset">
           <legend>MÉTODO DE PAGO</legend>
+          ${tabsHTML}
           ${cardSectionHTML}
           ${offlineSectionHTML}
         </fieldset>
@@ -1018,6 +1110,50 @@
       renderCheckoutSummary();
     };
 
+    // Control de tabs de métodos de pago
+    form.querySelectorAll('.btn-pay-tab').forEach((tabBtn) => {
+      tabBtn.addEventListener('click', () => {
+        const method = tabBtn.dataset.method;
+        if (!method) return;
+        state.selectedPaymentMethod = method;
+
+        // Actualizar estados visuales de los botones de tab
+        form.querySelectorAll('.btn-pay-tab').forEach((b) => {
+          const isAct = b.dataset.method === method;
+          b.classList.toggle('active', isAct);
+          if (b.dataset.method === 'transferencia') {
+            b.style.border = isAct ? '2px solid #f43f5e' : '2px solid #333';
+            b.style.background = isAct ? 'rgba(244,63,94,0.15)' : '#18181b';
+            b.style.color = isAct ? '#fff' : '#aaa';
+          } else {
+            b.style.border = isAct ? '2px solid #fff' : '2px solid #333';
+            b.style.background = isAct ? '#27272a' : '#18181b';
+            b.style.color = isAct ? '#fff' : '#aaa';
+          }
+        });
+
+        // Mostrar / ocultar secciones
+        const cardBox = get('payMethodCardBox');
+        const transferBox = get('payMethodTransferBox');
+        const cashBox = get('payMethodCashBox');
+
+        if (cardBox) {
+          cardBox.style.display = method === 'tarjeta' ? '' : 'none';
+          cardBox.classList.toggle('checkout-hidden', method !== 'tarjeta');
+        }
+        if (transferBox) {
+          transferBox.style.display = method === 'transferencia' ? '' : 'none';
+          transferBox.classList.toggle('checkout-hidden', method !== 'transferencia');
+        }
+        if (cashBox) {
+          cashBox.style.display = method === 'efectivo' ? '' : 'none';
+          cashBox.classList.toggle('checkout-hidden', method !== 'efectivo');
+        }
+
+        renderCheckoutSummary();
+      });
+    });
+
     form.querySelectorAll('input[name="shipping_method"]').forEach((input) => input.addEventListener('change', toggleShipping));
     ['name', 'email', 'phone', 'address', 'city', 'postal_code'].forEach((field) => {
       form.elements[field]?.addEventListener('blur', () => validateCheckoutField(field, form));
@@ -1037,8 +1173,8 @@
       }
     });
 
-    get('btnConfirmTransfer')?.addEventListener('click', () => processOfflineOrder(form, 'transferencia'));
-    get('btnConfirmEfectivo')?.addEventListener('click', () => processOfflineOrder(form, 'efectivo'));
+    get('btnConfirmTransfer')?.addEventListener('click', () => processManualPayment(form, 'transferencia'));
+    get('btnConfirmEfectivo')?.addEventListener('click', () => processManualPayment(form, 'efectivo'));
 
     get('cancelCheckoutBtn')?.addEventListener('click', () => setPaymentOpen(false));
     toggleShipping();
