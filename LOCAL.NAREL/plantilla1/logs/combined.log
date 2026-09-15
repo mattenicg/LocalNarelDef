@@ -157,3 +157,48 @@
 {"level":"info","message":"\u001b[0mGET /pantalones/cargo \u001b[32m200\u001b[0m 80.260 ms - 3158359\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:04:46"}
 {"level":"info","message":"\u001b[0mGET /api/products/public?category=pantalones&subcategory=cargo \u001b[32m200\u001b[0m 4.828 ms - 519\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:04:46"}
 {"level":"info","message":"\u001b[0mGET /api/products/public?category=camperas&subcategory=bomber \u001b[32m200\u001b[0m 1.802 ms - 517\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:04:46"}
+{"timestamp":"2026-09-15T11:05:07.159Z","level":"warn","message":"[postgres] PostgreSQL no disponible (connect ECONNREFUSED 127.0.0.1:5432). Activando almacenamiento en memoria para vista previa."}
+{"level":"info","message":"🚀 Servidor iniciado en puerto 3000 - Entorno: development","service":"saas-comercial","timestamp":"2026-09-15 11:05:07"}
+{"timestamp":"2026-09-15T11:05:07.273Z","level":"info","message":"[postgres] Almacenamiento en memoria inicializado con catálogo y usuario admin."}
+{"level":"info","message":"🛡️  PostgreSQL Auth:           http://0.0.0.0:3000/api/auth/login","service":"saas-comercial","timestamp":"2026-09-15 11:05:07"}
+{"level":"info","message":"👕 Admin Panel Productos:     http://localhost:3000/admin/products.html","service":"saas-comercial","timestamp":"2026-09-15 11:05:07"}
+{"level":"info","message":"🔥 Admin Panel Promociones:   http://localhost:3000/admin/promos.html","service":"saas-comercial","timestamp":"2026-09-15 11:05:07"}
+{"level":"info","message":"🛍️  Tienda Plantilla Narel:   http://localhost:3000/","service":"saas-comercial","timestamp":"2026-09-15 11:05:07"}
+{"level":"info","message":"===========================================================","service":"saas-comercial","timestamp":"2026-09-15 11:05:07"}
+{"level":"info","message":"\u001b[0mGET / \u001b[32m200\u001b[0m 72.213 ms - 3158153\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:07"}
+{"level":"info","message":"\u001b[0mGET / \u001b[32m200\u001b[0m 78.064 ms - 3158153\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:11"}
+{"level":"info","message":"\u001b[0mGET /assets/css/storefront-promo-banners.css?v=20260914-2 \u001b[36m304\u001b[0m 1.270 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:11"}
+{"level":"info","message":"\u001b[0mGET /assets/css/storefront-checkout.css?v=20260914-2 \u001b[36m304\u001b[0m 0.430 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:11"}
+{"level":"info","message":"\u001b[0mGET /assets/css/storefront-how-to-buy.css?v=20260914-2 \u001b[36m304\u001b[0m 0.715 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:11"}
+{"level":"info","message":"\u001b[0mGET /assets/css/storefront-sections-menu.css?v=20260914-2 \u001b[36m304\u001b[0m 0.624 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:11"}
+{"level":"info","message":"\u001b[0mGET /assets/img/logo-ngl-diamond.jpeg \u001b[36m304\u001b[0m 0.554 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /assets/img/hero-title-aca-no-vestimos-tibios.png \u001b[36m304\u001b[0m 0.471 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /logo_1.jpeg \u001b[36m304\u001b[0m 0.778 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /assets/js/supabaseClientBrowser.js \u001b[36m304\u001b[0m 1.500 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /assets/js/authGuard.js \u001b[36m304\u001b[0m 0.811 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /components/narel-card-payment.js \u001b[36m304\u001b[0m 0.692 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /assets/js/storefrontCheckout.js \u001b[36m304\u001b[0m 0.513 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /assets/js/storefrontPromoBanners.js \u001b[36m304\u001b[0m 0.544 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /assets/js/shippingPromo.js?v=20260914-2 \u001b[36m304\u001b[0m 0.492 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /api/auth/me \u001b[33m401\u001b[0m 3.710 ms - 75\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /api/shipping-promo/public \u001b[36m304\u001b[0m 4.859 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /api/categories/public \u001b[32m200\u001b[0m 12.232 ms - 2919\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /api/banners/public?limit=10 \u001b[32m200\u001b[0m 17.796 ms - 1542\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /api/config/public \u001b[32m200\u001b[0m 1.145 ms - 360\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /api/products/public?limit=200 \u001b[32m200\u001b[0m 1.076 ms - 2918\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:05:13"}
+{"level":"info","message":"\u001b[0mGET /api/shipping-promo/public \u001b[36m304\u001b[0m 1.858 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:08:00"}
+{"level":"info","message":"\u001b[0mGET /assets/img/promo-title-promos-exclusivas-removebg.png \u001b[32m200\u001b[0m 2.492 ms - 279276\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:08:18"}
+{"timestamp":"2026-09-15T11:09:19.409Z","level":"warn","message":"[postgres] PostgreSQL no disponible (connect ECONNREFUSED 127.0.0.1:5432). Activando almacenamiento en memoria para vista previa."}
+{"level":"info","message":"🚀 Servidor iniciado en puerto 3000 - Entorno: development","service":"saas-comercial","timestamp":"2026-09-15 11:09:19"}
+{"timestamp":"2026-09-15T11:09:19.524Z","level":"info","message":"[postgres] Almacenamiento en memoria inicializado con catálogo y usuario admin."}
+{"level":"info","message":"🛡️  PostgreSQL Auth:           http://0.0.0.0:3000/api/auth/login","service":"saas-comercial","timestamp":"2026-09-15 11:09:19"}
+{"level":"info","message":"👕 Admin Panel Productos:     http://localhost:3000/admin/products.html","service":"saas-comercial","timestamp":"2026-09-15 11:09:19"}
+{"level":"info","message":"🔥 Admin Panel Promociones:   http://localhost:3000/admin/promos.html","service":"saas-comercial","timestamp":"2026-09-15 11:09:19"}
+{"level":"info","message":"🛍️  Tienda Plantilla Narel:   http://localhost:3000/","service":"saas-comercial","timestamp":"2026-09-15 11:09:19"}
+{"level":"info","message":"===========================================================","service":"saas-comercial","timestamp":"2026-09-15 11:09:19"}
+{"level":"info","message":"\u001b[0mGET / \u001b[32m200\u001b[0m 84.977 ms - 3158132\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:09:20"}
+{"level":"info","message":"\u001b[0mGET /api/shipping-promo/public \u001b[36m304\u001b[0m 3.366 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:12:12"}
+{"level":"info","message":"\u001b[0mGET /api/shipping-promo/public \u001b[36m304\u001b[0m 1.245 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:13:15"}
+{"level":"info","message":"\u001b[0mGET /api/shipping-promo/public \u001b[36m304\u001b[0m 1.330 ms - -\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:14:58"}
+{"level":"info","message":"\u001b[0mGET /api/products/categories \u001b[32m200\u001b[0m 18.591 ms - 2919\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:15:10"}
+{"level":"info","message":"\u001b[0mGET /api/categories/public \u001b[32m200\u001b[0m 1.561 ms - 2919\u001b[0m","service":"saas-comercial","timestamp":"2026-09-15 11:15:10"}

@@ -33,18 +33,58 @@
     await cargarProducto();
   }
 
+  const DEFAULT_CATEGORIES = [
+    { slug: 'pantalones', name: 'Pantalones', subcategories: [{ name: 'Cargo', slug: 'cargo' }, { name: 'Jeans', slug: 'jeans' }, { name: 'Joggers', slug: 'joggers' }] },
+    { slug: 'camperas', name: 'Camperas', subcategories: [{ name: 'Bomber', slug: 'bomber' }, { name: 'Puffer', slug: 'puffer' }] },
+    { slug: 'buzos', name: 'Buzos', subcategories: [{ name: 'Hoodies', slug: 'hoodies' }] },
+    { slug: 'remeras', name: 'Remeras', subcategories: [{ name: 'Oversized', slug: 'oversized' }] },
+    { slug: 'accesorios', name: 'Accesorios', subcategories: [{ name: 'Gorras', slug: 'gorras' }] },
+  ];
+
   async function loadCategories(selectedCatSlug = null, selectedSubSlug = null) {
     const categoryEl = document.getElementById('category');
+    categoriesList = [];
+
+    // 1. Try authenticated admin endpoint
     try {
-      const res = await window.auth.apiFetch('/api/products/categories');
-      if (res && res.ok && Array.isArray(res.data)) {
+      const res = await window.auth.apiFetch('/api/admin/products/categories');
+      if (res && res.ok && Array.isArray(res.data) && res.data.length > 0) {
         categoriesList = res.data;
-      } else {
-        categoriesList = [];
       }
-    } catch (err) {
-      console.warn('Error loading categories:', err);
-      categoriesList = [];
+    } catch (_err) {
+      // ignore and try next
+    }
+
+    // 2. Try alias endpoint if first didn't return
+    if (!categoriesList.length) {
+      try {
+        const res = await window.auth.apiFetch('/api/products/categories');
+        if (res && res.ok && Array.isArray(res.data) && res.data.length > 0) {
+          categoriesList = res.data;
+        }
+      } catch (_err) {
+        // ignore and try next
+      }
+    }
+
+    // 3. Try public categories endpoint
+    if (!categoriesList.length) {
+      try {
+        const pubRes = await fetch('/api/categories/public', { headers: { Accept: 'application/json' } });
+        if (pubRes.ok) {
+          const pubJson = await pubRes.json();
+          if (pubJson && pubJson.ok && Array.isArray(pubJson.data) && pubJson.data.length > 0) {
+            categoriesList = pubJson.data;
+          }
+        }
+      } catch (_err) {
+        // ignore and fallback
+      }
+    }
+
+    // 4. Fallback if empty to ensure dropdown is NEVER blank
+    if (!categoriesList.length) {
+      categoriesList = DEFAULT_CATEGORIES;
     }
 
     if (!categoryEl) return;
@@ -157,10 +197,17 @@
         if (errEl) errEl.style.display = 'none';
 
         try {
-          const res = await window.auth.apiFetch('/api/products/subcategories', {
+          let res = await window.auth.apiFetch('/api/admin/products/subcategories', {
             method: 'POST',
             body: { category_slug: catSlug, name },
           });
+
+          if (!res || !res.ok) {
+            res = await window.auth.apiFetch('/api/products/subcategories', {
+              method: 'POST',
+              body: { category_slug: catSlug, name },
+            });
+          }
 
           if (!res || !res.ok) {
             throw new Error((res && res.message) || 'Error al crear la subcategoría');

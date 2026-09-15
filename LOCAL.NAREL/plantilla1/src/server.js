@@ -183,26 +183,29 @@ app.get('/api/products/public', async (req, res) => {
 });
 
 // ================= CATEGORIAS PÚBLICO (tienda - sin login) =================
-app.get('/api/categories/public', async (_req, res) => {
+async function getCategoriesHierarchy() {
+  const catsRes = await query('SELECT id, name, slug, sort_order FROM categories ORDER BY sort_order ASC, name ASC');
+  const subcatsRes = await query('SELECT id, category_id, category_slug, name, slug FROM subcategories ORDER BY name ASC');
+
+  const subcatsByCat = new Map();
+  catsRes.rows.forEach((c) => subcatsByCat.set(c.slug, []));
+  subcatsRes.rows.forEach((s) => {
+    const list = subcatsByCat.get(s.category_slug);
+    if (list) list.push(s);
+  });
+
+  return catsRes.rows.map((c) => ({
+    ...c,
+    subcategories: subcatsByCat.get(c.slug) || [],
+  }));
+}
+
+app.get(['/api/categories/public', '/api/products/categories'], async (_req, res) => {
   try {
-    const catsRes = await query('SELECT id, name, slug, sort_order FROM categories ORDER BY sort_order ASC, name ASC');
-    const subcatsRes = await query('SELECT id, category_id, category_slug, name, slug FROM subcategories ORDER BY name ASC');
-
-    const subcatsByCat = new Map();
-    catsRes.rows.forEach((c) => subcatsByCat.set(c.slug, []));
-    subcatsRes.rows.forEach((s) => {
-      const list = subcatsByCat.get(s.category_slug);
-      if (list) list.push(s);
-    });
-
-    const data = catsRes.rows.map((c) => ({
-      ...c,
-      subcategories: subcatsByCat.get(c.slug) || [],
-    }));
-
+    const data = await getCategoriesHierarchy();
     return res.status(200).json({ ok: true, count: data.length, data });
   } catch (err) {
-    console.error('[categories-public] error:', err.message || err);
+    console.error('[categories] error:', err.message || err);
     return res.status(500).json({ ok: false, message: 'Error al listar categorías' });
   }
 });
