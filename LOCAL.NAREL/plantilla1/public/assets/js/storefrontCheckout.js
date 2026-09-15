@@ -875,6 +875,46 @@
 
         <fieldset class="checkout-fieldset">
           <legend>MÉTODO DE PAGO</legend>
+          <div class="checkout-payment-info-banner" aria-label="Información de medios de pago soportados">
+            <div class="checkout-payment-info-text">
+              <span class="checkout-payment-info-title">Pagá con tarjetas de crédito, débito y prepagas</span>
+              <span class="checkout-payment-info-subtitle">Cuotas disponibles según tarjeta y banco · Procesado de forma segura por Mercado Pago</span>
+            </div>
+            <div class="checkout-payment-badges" aria-hidden="true">
+              <span class="checkout-pay-badge">
+                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1A1F71"/><text x="16" y="14" fill="#FFFFFF" font-family="sans-serif" font-size="9" font-weight="800" text-anchor="middle" font-style="italic">VISA</text></svg>
+                <span>Visa</span>
+              </span>
+              <span class="checkout-pay-badge">
+                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1e1e1e"/><circle cx="12" cy="10" r="6" fill="#EB001B"/><circle cx="20" cy="10" r="6" fill="#F79E1B" fill-opacity="0.85"/></svg>
+                <span>Mastercard</span>
+              </span>
+              <span class="checkout-pay-badge">
+                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#006FCF"/><text x="16" y="13" fill="#FFFFFF" font-family="sans-serif" font-size="7" font-weight="900" text-anchor="middle">AMEX</text></svg>
+                <span>American Express</span>
+              </span>
+              <span class="checkout-pay-badge">
+                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#FF5500"/><text x="16" y="14" fill="#FFFFFF" font-family="sans-serif" font-size="8" font-weight="900" text-anchor="middle">NX</text></svg>
+                <span>Naranja X</span>
+              </span>
+              <span class="checkout-pay-badge">
+                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#0E3B68"/><circle cx="10" cy="10" r="4" fill="#E30613"/><text x="21" y="13" fill="#FFFFFF" font-family="sans-serif" font-size="6.5" font-weight="700" text-anchor="middle">CABAL</text></svg>
+                <span>Cabal</span>
+              </span>
+              <span class="checkout-pay-badge">
+                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1e1e1e"/><circle cx="12" cy="10" r="6" fill="#EB001B"/><circle cx="20" cy="10" r="6" fill="#00A1DE" fill-opacity="0.85"/></svg>
+                <span>Maestro</span>
+              </span>
+              <span class="checkout-pay-badge">
+                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#2B1A4A"/><path d="M7 7h18v2H7zm0 4h12v2H7z" fill="#9D65C9"/><circle cx="23" cy="13" r="2" fill="#00E5FF"/></svg>
+                <span>Tarjetas prepagas</span>
+              </span>
+              <span class="checkout-pay-badge">
+                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#009EE3"/><path d="M10 11.5c.8-1 2.2-1 3 0l3 3c.8 1 2.2 1 3 0l3-3" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Mercado Pago</span>
+              </span>
+            </div>
+          </div>
           ${cardGatewayMarkup}
         </fieldset>
 
