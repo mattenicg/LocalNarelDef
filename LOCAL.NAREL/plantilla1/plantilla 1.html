@@ -6566,6 +6566,153 @@
       text-transform: uppercase;
     }
 
+    /* ===== DYNAMIC CATEGORY & SUBCATEGORY STYLES ===== */
+    .dynamic-category-banner {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 36px 30px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dynamic-cat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .dynamic-cat-breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font: 500 11px 'DM Mono', monospace;
+      letter-spacing: .1em;
+      color: var(--grey);
+      text-transform: uppercase;
+    }
+    .dynamic-cat-breadcrumbs a {
+      color: var(--grey);
+      transition: color .2s;
+      text-decoration: none;
+    }
+    .dynamic-cat-breadcrumbs a:hover {
+      color: var(--white);
+    }
+    .dynamic-cat-breadcrumbs .sep {
+      opacity: 0.4;
+    }
+    .dynamic-cat-breadcrumbs .curr {
+      color: var(--white);
+      font-weight: 700;
+    }
+    .dynamic-cat-back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font: 600 11px 'DM Mono', monospace;
+      letter-spacing: .1em;
+      color: var(--yellow);
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: opacity .2s;
+    }
+    .dynamic-cat-back-link:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+    .dynamic-cat-header {
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    .dynamic-cat-title {
+      font-family: 'Bangers', cursive, sans-serif;
+      font-size: clamp(34px, 5vw, 52px);
+      letter-spacing: .08em;
+      margin: 0;
+      line-height: 1;
+      color: var(--white);
+    }
+    .dynamic-cat-badge {
+      font: 500 11px 'DM Mono', monospace;
+      letter-spacing: .12em;
+      color: var(--grey);
+      padding: 4px 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+    .dynamic-subcat-pills-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+    }
+    .dynamic-subcat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      background: var(--dark2, #141414);
+      border: 1px solid var(--border);
+      border-radius: 0;
+      color: var(--grey);
+      font: 600 11px 'DM Mono', monospace;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .dynamic-subcat-pill:hover {
+      border-color: rgba(255,255,255,0.4);
+      color: var(--white);
+      transform: translateY(-1px);
+    }
+    .dynamic-subcat-pill.active {
+      background: var(--white);
+      border-color: var(--white);
+      color: var(--black);
+      font-weight: 700;
+    }
+    .dynamic-subcat-pill .pill-count {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+    .dynamic-empty-subcat {
+      width: 100%;
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--grey);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: .08em;
+    }
+    .dynamic-empty-subcat h4 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 20px;
+      letter-spacing: .15em;
+      color: var(--white);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+    .dynamic-empty-subcat a {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 10px 20px;
+      background: var(--yellow);
+      color: var(--black);
+      font: 700 12px 'Oswald', sans-serif;
+      letter-spacing: .15em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
     @media (max-width: 900px) {
       .shipping-promo-inner {
         flex-direction: column;
@@ -6921,6 +7068,9 @@
     <section class="promo-banner-section" id="promo-banner" hidden>
       <div class="promo-banners-root" id="promoBannersRoot"></div>
     </section>
+
+    <!-- ===== DYNAMIC CATEGORY & SUBCATEGORY BANNER ===== -->
+    <section id="dynamicCategoryBanner" class="dynamic-category-banner" style="display: none;" aria-label="Filtro de Categoría y Subcategoría"></section>
 
     <!-- ===== SECCIÓN: PANTALONES ===== -->
     <section class="catalog-section" id="pantalones">
@@ -8446,11 +8596,290 @@
         });
       }
 
-      async function renderProducts() {
-        const containers = document.querySelectorAll('.products[data-category]');
-        if (!containers.length) return;
+      let allCatalogProducts = [];
+      let allCategoriesData = [];
 
+      function getActiveRoute(categories) {
+        if (window.__DYNAMIC_ROUTE__ && window.__DYNAMIC_ROUTE__.category) {
+          return {
+            category: String(window.__DYNAMIC_ROUTE__.category).toLowerCase().trim(),
+            categoryName: window.__DYNAMIC_ROUTE__.categoryName || null,
+            subcategory: window.__DYNAMIC_ROUTE__.subcategory ? String(window.__DYNAMIC_ROUTE__.subcategory).toLowerCase().trim() : null,
+            subcategoryName: window.__DYNAMIC_ROUTE__.subcategoryName || null,
+          };
+        }
+
+        const pathname = window.location.pathname.replace(/^\/|\/$/g, '');
+        if (!pathname || pathname === 'index.html') return null;
+
+        const parts = pathname.split('/');
+        const first = parts[0] ? parts[0].toLowerCase() : '';
+        const second = parts[1] ? parts[1].toLowerCase() : null;
+
+        if (['admin', 'api', 'assets', 'components', 'login', 'register'].includes(first)) return null;
+
+        const catExists = categories.find((c) => c.slug.toLowerCase() === first);
+        if (catExists) {
+          const subExists = second && catExists.subcategories ? catExists.subcategories.find((s) => s.slug.toLowerCase() === second) : null;
+          return {
+            category: catExists.slug,
+            categoryName: catExists.name,
+            subcategory: subExists ? subExists.slug : (second || null),
+            subcategoryName: subExists ? subExists.name : null,
+          };
+        }
+
+        return null;
+      }
+
+      function renderDynamicBanner(activeRoute, catObj, catItems, filteredItems) {
+        const banner = document.getElementById('dynamicCategoryBanner');
+        if (!banner) return;
+
+        const catName = (catObj && catObj.name) || activeRoute.categoryName || activeRoute.category.toUpperCase();
+        const catSlug = (catObj && catObj.slug) || activeRoute.category;
+        const subSlug = activeRoute.subcategory;
+
+        let subName = activeRoute.subcategoryName;
+        if (!subName && subSlug && catObj && Array.isArray(catObj.subcategories)) {
+          const foundSub = catObj.subcategories.find((s) => s.slug.toLowerCase() === subSlug);
+          if (foundSub) subName = foundSub.name;
+        }
+        if (!subName && subSlug) subName = subSlug.toUpperCase();
+
+        const countText = `${filteredItems.length} PRODUCTO${filteredItems.length === 1 ? '' : 'S'}`;
+
+        // Build breadcrumbs
+        const breadcrumbsHtml = `
+          <div class="dynamic-cat-breadcrumbs">
+            <a href="/" data-nav-home="true">INICIO</a>
+            <span class="sep">/</span>
+            <a href="/${htmlEscape(catSlug)}" data-nav-cat="${htmlEscape(catSlug)}" class="${!subSlug ? 'curr' : ''}">${htmlEscape(catName.toUpperCase())}</a>
+            ${subSlug ? `<span class="sep">/</span><span class="curr">${htmlEscape(subName.toUpperCase())}</span>` : ''}
+          </div>
+          <a href="/" data-nav-home="true" class="dynamic-cat-back-link">← VOLVER A LA TIENDA COMPLETA</a>
+        `;
+
+        // Build title and badge
+        const titleText = subSlug ? `${catName} · ${subName}` : catName;
+        const headerHtml = `
+          <div class="dynamic-cat-header">
+            <h2 class="dynamic-cat-title">${htmlEscape(titleText.toUpperCase())}</h2>
+            <span class="dynamic-cat-badge">${countText}</span>
+          </div>
+        `;
+
+        // Build subcategory pills
+        const subcategories = (catObj && Array.isArray(catObj.subcategories)) ? catObj.subcategories : [];
+        let pillsHtml = '';
+        if (subcategories.length > 0) {
+          const allPill = `
+            <a href="/${htmlEscape(catSlug)}" data-nav-cat="${htmlEscape(catSlug)}" class="dynamic-subcat-pill ${!subSlug ? 'active' : ''}">
+              TODOS <span class="pill-count">(${catItems.length})</span>
+            </a>
+          `;
+          const subPills = subcategories.map((sub) => {
+            const subCount = catItems.filter((p) => String(p.subcategory || '').toLowerCase() === sub.slug.toLowerCase()).length;
+            const isSubActive = subSlug && subSlug.toLowerCase() === sub.slug.toLowerCase();
+            return `
+              <a href="/${htmlEscape(catSlug)}/${htmlEscape(sub.slug)}" data-nav-cat="${htmlEscape(catSlug)}" data-nav-sub="${htmlEscape(sub.slug)}" class="dynamic-subcat-pill ${isSubActive ? 'active' : ''}">
+                ${htmlEscape(sub.name.toUpperCase())} <span class="pill-count">(${subCount})</span>
+              </a>
+            `;
+          }).join('');
+          pillsHtml = `<div class="dynamic-subcat-pills-bar">${allPill}${subPills}</div>`;
+        }
+
+        banner.innerHTML = `
+          <div class="dynamic-cat-top">${breadcrumbsHtml}</div>
+          ${headerHtml}
+          ${pillsHtml}
+        `;
+        banner.style.display = 'block';
+
+        // Bind clicks on banner links for smooth pushState navigation
+        banner.querySelectorAll('a[data-nav-cat], a[data-nav-home]').forEach((link) => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            if (link.dataset.navHome) {
+              window.__DYNAMIC_ROUTE__ = null;
+              history.pushState(null, '', href);
+              applyRouteView();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+              const targetCat = link.dataset.navCat;
+              const targetSub = link.dataset.navSub || null;
+              window.__DYNAMIC_ROUTE__ = { category: targetCat, subcategory: targetSub };
+              history.pushState(null, '', href);
+              applyRouteView();
+              const bannerEl = document.getElementById('dynamicCategoryBanner');
+              if (bannerEl) bannerEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          });
+        });
+      }
+
+      function ensureCategorySection(catSlug, catName) {
+        let sec = document.getElementById(catSlug);
+        if (sec) return sec;
+
+        // Si es una categoría nueva agregada dinámicamente, la creamos antes de otros-servicios
+        sec = document.createElement('section');
+        sec.className = 'catalog-section';
+        sec.id = catSlug;
+        sec.innerHTML = `
+          <div class="section-label scroll-reveal">
+            <span class="bar"></span>
+            <div>
+              <h3>${htmlEscape(catName.toUpperCase())}</h3>
+              <small>· CARGADO DESDE PANEL ADMIN</small>
+            </div>
+          </div>
+          <div class="products" data-category="${htmlEscape(catSlug)}"></div>
+        `;
+        const refSection = document.getElementById('otros-servicios') || document.getElementById('como-comprar');
+        if (refSection && refSection.parentElement) {
+          refSection.parentElement.insertBefore(sec, refSection);
+        } else {
+          const main = document.querySelector('main');
+          if (main) main.appendChild(sec);
+        }
+        return sec;
+      }
+
+      function applyRouteView() {
+        const activeRoute = getActiveRoute(allCategoriesData);
+        const banner = document.getElementById('dynamicCategoryBanner');
+        const heroEl = document.getElementById('inicio');
+        const categoriesGrid = document.querySelector('.categories');
+        const promoBannerSec = document.getElementById('promo-banner');
+        const otherServices = document.getElementById('otros-servicios');
+
+        if (activeRoute && activeRoute.category) {
+          const catSlug = activeRoute.category.toLowerCase();
+          const subSlug = activeRoute.subcategory ? activeRoute.subcategory.toLowerCase() : null;
+
+          const catObj = allCategoriesData.find((c) => c.slug.toLowerCase() === catSlug) || {
+            slug: catSlug,
+            name: activeRoute.categoryName || catSlug,
+            subcategories: [],
+          };
+
+          ensureCategorySection(catSlug, catObj.name);
+
+          // Update Document Title
+          let pageTitle = catObj.name.toUpperCase();
+          if (subSlug) {
+            const foundSub = catObj.subcategories ? catObj.subcategories.find((s) => s.slug.toLowerCase() === subSlug) : null;
+            const subTitle = foundSub ? foundSub.name : subSlug;
+            pageTitle += ` · ${subTitle.toUpperCase()}`;
+          }
+          document.title = `${pageTitle} | NAREL LOCAL`;
+
+          // Filter items
+          const catItems = allCatalogProducts.filter((p) => String(p.category || '').toLowerCase() === catSlug);
+          const filteredItems = subSlug
+            ? catItems.filter((p) => String(p.subcategory || '').toLowerCase() === subSlug)
+            : catItems;
+
+          // Render dynamic banner
+          renderDynamicBanner(activeRoute, catObj, catItems, filteredItems);
+
+          // Adapt other page elements for a dedicated category view
+          if (heroEl) heroEl.style.display = 'none';
+          if (categoriesGrid) categoriesGrid.style.display = 'none';
+          if (promoBannerSec) promoBannerSec.style.display = 'none';
+          if (otherServices) otherServices.style.display = 'none';
+
+          // Show only target category section and hide all other catalog sections
+          document.querySelectorAll('.catalog-section').forEach((sec) => {
+            if (sec.id.toLowerCase() === catSlug) {
+              sec.style.display = 'block';
+              const label = sec.querySelector('.section-label');
+              if (label) label.style.display = 'none'; // Header already in banner
+
+              const container = sec.querySelector('.products[data-category]');
+              if (container) {
+                if (filteredItems.length === 0) {
+                  const subLabel = activeRoute.subcategoryName || (subSlug ? subSlug.toUpperCase() : 'esta sección');
+                  container.innerHTML = `
+                    <div class="dynamic-empty-subcat">
+                      <h4>No hay productos disponibles en ${htmlEscape(subLabel)}</h4>
+                      <p>Podés explorar todos los modelos de ${htmlEscape(catObj.name)} o escribirnos para consultar ingresos.</p>
+                      <a href="/${htmlEscape(catSlug)}" data-nav-cat="${htmlEscape(catSlug)}">VER TODOS LOS ${htmlEscape(catObj.name).toUpperCase()}</a>
+                    </div>
+                  `;
+                  const backBtn = container.querySelector('a[data-nav-cat]');
+                  if (backBtn) {
+                    backBtn.addEventListener('click', (e) => {
+                      e.preventDefault();
+                      window.__DYNAMIC_ROUTE__ = { category: catSlug, subcategory: null };
+                      history.pushState(null, '', `/${catSlug}`);
+                      applyRouteView();
+                    });
+                  }
+                } else {
+                  container.innerHTML = filteredItems.map(productCardHTML).join('');
+                  mountAddToCart(container);
+                  mountProductCardClicks(container);
+                }
+              }
+            } else {
+              sec.style.display = 'none';
+            }
+          });
+        } else {
+          // Home / Full store view
+          document.title = 'NAREL LOCAL | STREETWEAR & CULTURE';
+          if (banner) banner.style.display = 'none';
+          if (heroEl) heroEl.style.display = '';
+          if (categoriesGrid) categoriesGrid.style.display = '';
+          if (otherServices) otherServices.style.display = '';
+
+          allCategoriesData.forEach((c) => {
+            ensureCategorySection(c.slug, c.name);
+          });
+
+          document.querySelectorAll('.catalog-section').forEach((sec) => {
+            sec.style.display = '';
+            const label = sec.querySelector('.section-label');
+            if (label) label.style.display = '';
+
+            const cat = sec.id.toLowerCase();
+            const container = sec.querySelector('.products[data-category]');
+            if (container) {
+              const items = allCatalogProducts.filter((p) => String(p.category || '').toLowerCase() === cat);
+              if (!items.length) {
+                container.innerHTML = '';
+              } else {
+                container.innerHTML = items.map(productCardHTML).join('');
+                mountAddToCart(container);
+                mountProductCardClicks(container);
+              }
+            }
+          });
+        }
+      }
+
+      async function renderProducts() {
         try {
+          // Fetch categories hierarchy
+          try {
+            const catRes = await fetch('/api/categories/public', {
+              headers: { 'Accept': 'application/json' },
+            });
+            if (catRes.ok) {
+              const catJson = await catRes.json();
+              if (catJson && catJson.ok && Array.isArray(catJson.data)) {
+                allCategoriesData = catJson.data;
+              }
+            }
+          } catch (_catErr) {
+            console.warn('No se pudieron cargar categorías dinámicas:', _catErr);
+          }
+
+          // Fetch products
           const res = await fetch('/api/products/public?limit=200', {
             method: 'GET',
             credentials: 'same-origin',
@@ -8463,18 +8892,26 @@
 
           list.forEach(p => { if (!p.category) p.category = guessCategory(p.name, p.description); });
 
-          // Expose to window for cross-selling & checkout modules
+          allCatalogProducts = list;
           window.__CATALOG_PRODUCTS__ = list;
           window.dispatchEvent(new CustomEvent('catalog:loaded', { detail: list }));
 
-          // Render each container
-          containers.forEach(container => {
-            const cat = String(container.dataset.category || '').toLowerCase();
-            const items = list.filter(p => String(p.category || '').toLowerCase() === cat);
-            if (!items.length) { container.innerHTML = ''; return; }
-            container.innerHTML = items.map(productCardHTML).join('');
-            mountAddToCart(container);
-            mountProductCardClicks(container);
+          // Render view according to current route
+          applyRouteView();
+
+          // Intercept category navigation links across header and categories grid
+          document.querySelectorAll('a[href^="#pantalones"], a[href^="#camperas"], a[href^="#buzos"], a[href^="#remeras"], a[href^="#accesorios"]').forEach((a) => {
+            const hash = a.getAttribute('href');
+            const catSlug = hash.replace('#', '').toLowerCase();
+            a.addEventListener('click', (e) => {
+              if (window.__DYNAMIC_ROUTE__ || window.location.pathname !== '/') {
+                e.preventDefault();
+                window.__DYNAMIC_ROUTE__ = { category: catSlug, subcategory: null };
+                history.pushState(null, '', `/${catSlug}`);
+                applyRouteView();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            });
           });
 
           // Check if URL opened with a product hash
@@ -8487,6 +8924,11 @@
           console.warn('[render-products] No se pudieron cargar productos:', err.message || err);
         }
       }
+
+      window.addEventListener('popstate', () => {
+        window.__DYNAMIC_ROUTE__ = null;
+        applyRouteView();
+      });
 
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', renderProducts);

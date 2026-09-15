@@ -31,6 +31,54 @@ CREATE INDEX IF NOT EXISTS idx_user_sessions_user_active ON user_sessions(user_i
 CREATE INDEX IF NOT EXISTS idx_user_sessions_session_id ON user_sessions(session_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_token_hash ON user_sessions(token_hash);
 
+-- Tablas dinámicas de Categorías y Subcategorías
+CREATE TABLE IF NOT EXISTS categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
+
+INSERT INTO categories (name, slug, sort_order) VALUES
+  ('Pantalones', 'pantalones', 1),
+  ('Camperas', 'camperas', 2),
+  ('Buzos', 'buzos', 3),
+  ('Remeras', 'remeras', 4),
+  ('Accesorios', 'accesorios', 5)
+ON CONFLICT (slug) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS subcategories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  category_slug TEXT NOT NULL,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT uq_category_subcategory_slug UNIQUE (category_slug, slug)
+);
+CREATE INDEX IF NOT EXISTS idx_subcategories_category_slug ON subcategories(category_slug);
+CREATE INDEX IF NOT EXISTS idx_subcategories_slug ON subcategories(slug);
+
+INSERT INTO subcategories (category_id, category_slug, name, slug)
+SELECT c.id, c.slug, s.name, s.slug
+FROM categories c
+CROSS JOIN (VALUES
+  ('pantalones', 'Cargo', 'cargo'),
+  ('pantalones', 'Jeans', 'jeans'),
+  ('pantalones', 'Joggers', 'joggers'),
+  ('camperas', 'Bomber', 'bomber'),
+  ('camperas', 'Puffer', 'puffer'),
+  ('buzos', 'Hoodies', 'hoodies'),
+  ('remeras', 'Oversized', 'oversized'),
+  ('accesorios', 'Gorras', 'gorras')
+) AS s(cat_slug, name, slug)
+WHERE c.slug = s.cat_slug
+ON CONFLICT (category_slug, slug) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -40,12 +88,17 @@ CREATE TABLE IF NOT EXISTS products (
   stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
   image_url TEXT,
   category TEXT NOT NULL DEFAULT 'remeras',
+  subcategory TEXT DEFAULT NULL,
+  subcategory_id UUID REFERENCES subcategories(id) ON DELETE SET NULL,
   active BOOLEAN NOT NULL DEFAULT true,
   featured BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory TEXT DEFAULT NULL;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory_id UUID REFERENCES subcategories(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_cat_subcat ON products(category, subcategory);
 CREATE INDEX IF NOT EXISTS idx_products_active ON products(active);
 CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured DESC);
 

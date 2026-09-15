@@ -10,6 +10,8 @@ let initialized = false;
 const data = {
   profiles: [],
   user_sessions: [],
+  categories: [],
+  subcategories: [],
   products: [],
   promo_banners: [],
   promo_banner_items: [],
@@ -60,6 +62,28 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
     updated_at: now,
   });
 
+  // Seed Categories & Subcategories
+  const seedCategories = [
+    { id: 'c1111111-1111-4111-8111-111111111111', name: 'Pantalones', slug: 'pantalones', sort_order: 1, created_at: now, updated_at: now },
+    { id: 'c2222222-2222-4222-8222-222222222222', name: 'Camperas', slug: 'camperas', sort_order: 2, created_at: now, updated_at: now },
+    { id: 'c3333333-3333-4333-8333-333333333333', name: 'Buzos', slug: 'buzos', sort_order: 3, created_at: now, updated_at: now },
+    { id: 'c4444444-4444-4444-8444-444444444444', name: 'Remeras', slug: 'remeras', sort_order: 4, created_at: now, updated_at: now },
+    { id: 'c5555555-5555-4555-8555-555555555555', name: 'Accesorios', slug: 'accesorios', sort_order: 5, created_at: now, updated_at: now },
+  ];
+  data.categories.push(...seedCategories);
+
+  const seedSubcategories = [
+    { id: 's1111111-1111-4111-8111-111111111111', category_id: 'c1111111-1111-4111-8111-111111111111', category_slug: 'pantalones', name: 'Cargo', slug: 'cargo', created_at: now, updated_at: now },
+    { id: 's1111111-1111-4111-8111-222222222222', category_id: 'c1111111-1111-4111-8111-111111111111', category_slug: 'pantalones', name: 'Jeans', slug: 'jeans', created_at: now, updated_at: now },
+    { id: 's1111111-1111-4111-8111-333333333333', category_id: 'c1111111-1111-4111-8111-111111111111', category_slug: 'pantalones', name: 'Joggers', slug: 'joggers', created_at: now, updated_at: now },
+    { id: 's2222222-2222-4222-8222-111111111111', category_id: 'c2222222-2222-4222-8222-222222222222', category_slug: 'camperas', name: 'Bomber', slug: 'bomber', created_at: now, updated_at: now },
+    { id: 's2222222-2222-4222-8222-222222222222', category_id: 'c2222222-2222-4222-8222-222222222222', category_slug: 'camperas', name: 'Puffer', slug: 'puffer', created_at: now, updated_at: now },
+    { id: 's3333333-3333-4333-8333-111111111111', category_id: 'c3333333-3333-4333-8333-333333333333', category_slug: 'buzos', name: 'Hoodies', slug: 'hoodies', created_at: now, updated_at: now },
+    { id: 's4444444-4444-4444-8444-111111111111', category_id: 'c4444444-4444-4444-8444-444444444444', category_slug: 'remeras', name: 'Oversized', slug: 'oversized', created_at: now, updated_at: now },
+    { id: 's5555555-5555-4555-8555-111111111111', category_id: 'c5555555-5555-4555-8555-555555555555', category_slug: 'accesorios', name: 'Gorras', slug: 'gorras', created_at: now, updated_at: now },
+  ];
+  data.subcategories.push(...seedSubcategories);
+
   // Seed Products
   const seedProducts = [
     {
@@ -71,6 +95,8 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       stock: 25,
       image_url: '/assets/img/logo-ngl-diamond.jpeg',
       category: 'remeras',
+      subcategory: 'oversized',
+      subcategory_id: 's4444444-4444-4444-8444-111111111111',
       active: true,
       featured: true,
       created_at: now,
@@ -85,6 +111,8 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       stock: 15,
       image_url: '/assets/img/logo-ngl-diamond.jpeg',
       category: 'buzos',
+      subcategory: 'hoodies',
+      subcategory_id: 's3333333-3333-4333-8333-111111111111',
       active: true,
       featured: true,
       created_at: now,
@@ -99,6 +127,8 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       stock: 18,
       image_url: '/assets/img/logo-ngl-diamond.jpeg',
       category: 'pantalones',
+      subcategory: 'cargo',
+      subcategory_id: 's1111111-1111-4111-8111-111111111111',
       active: true,
       featured: true,
       created_at: now,
@@ -113,6 +143,8 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       stock: 10,
       image_url: '/assets/img/logo-ngl-diamond.jpeg',
       category: 'camperas',
+      subcategory: 'bomber',
+      subcategory_id: 's2222222-2222-4222-8222-111111111111',
       active: true,
       featured: false,
       created_at: now,
@@ -127,6 +159,8 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       stock: 30,
       image_url: '/assets/img/logo-ngl-diamond.jpeg',
       category: 'accesorios',
+      subcategory: 'gorras',
+      subcategory_id: 's5555555-5555-4555-8555-111111111111',
       active: true,
       featured: true,
       created_at: now,
@@ -141,6 +175,8 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       stock: 20,
       image_url: '/assets/img/logo-ngl-diamond.jpeg',
       category: 'remeras',
+      subcategory: null,
+      subcategory_id: null,
       active: true,
       featured: false,
       created_at: now,
@@ -464,6 +500,77 @@ function executeMemoryQuery(rawText, params = []) {
     };
   }
 
+  // 2b. CATEGORIES & SUBCATEGORIES
+  if (lowerSql.startsWith('select') && lowerSql.includes('from categories')) {
+    let list = [...data.categories];
+    if (/where\s+slug\s*=\s*\$1/.test(lowerSql)) {
+      const cat = list.find((c) => String(c.slug).toLowerCase() === String(params[0] || '').toLowerCase().trim());
+      return { rows: cat ? [{ ...cat }] : [], rowCount: cat ? 1 : 0 };
+    }
+    list.sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
+    return { rows: list.map((c) => ({ ...c })), rowCount: list.length };
+  }
+
+  if (lowerSql.startsWith('insert into categories')) {
+    const id = uuid();
+    const now = nowIso();
+    const name = String(params[0] || '').trim();
+    const slug = String(params[1] || '').toLowerCase().trim();
+    const sort_order = Number(params[2]) || 0;
+    const existing = data.categories.find((c) => c.slug === slug);
+    if (existing) {
+      return { rows: [{ ...existing }], rowCount: 1 };
+    }
+    const newCat = { id, name, slug, sort_order, created_at: now, updated_at: now };
+    data.categories.push(newCat);
+    return { rows: [{ ...newCat }], rowCount: 1 };
+  }
+
+  if (lowerSql.startsWith('select') && lowerSql.includes('from subcategories')) {
+    let list = [...data.subcategories];
+    if (/where\s+category_slug\s*=\s*\$1\s+and\s+slug\s*=\s*\$2/.test(lowerSql)) {
+      const catSlug = String(params[0] || '').toLowerCase().trim();
+      const subSlug = String(params[1] || '').toLowerCase().trim();
+      const found = list.find((s) => s.category_slug.toLowerCase() === catSlug && s.slug.toLowerCase() === subSlug);
+      return { rows: found ? [{ ...found }] : [], rowCount: found ? 1 : 0 };
+    }
+    if (/where\s+category_slug\s*=\s*\$1/.test(lowerSql)) {
+      const catSlug = String(params[0] || '').toLowerCase().trim();
+      list = list.filter((s) => s.category_slug.toLowerCase() === catSlug);
+      return { rows: list.map((s) => ({ ...s })), rowCount: list.length };
+    }
+    list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    return { rows: list.map((s) => ({ ...s })), rowCount: list.length };
+  }
+
+  if (lowerSql.startsWith('insert into subcategories')) {
+    const id = uuid();
+    const now = nowIso();
+    const category_id = params[0] || null;
+    const category_slug = String(params[1] || '').toLowerCase().trim();
+    const name = String(params[2] || '').trim();
+    const slug = String(params[3] || '').toLowerCase().trim();
+
+    const existing = data.subcategories.find(
+      (s) => s.category_slug === category_slug && (s.slug === slug || s.name.toLowerCase() === name.toLowerCase())
+    );
+    if (existing) {
+      return { rows: [{ ...existing }], rowCount: 1 };
+    }
+
+    const newSub = {
+      id,
+      category_id,
+      category_slug,
+      name,
+      slug,
+      created_at: now,
+      updated_at: now,
+    };
+    data.subcategories.push(newSub);
+    return { rows: [{ ...newSub }], rowCount: 1 };
+  }
+
   // 3. PRODUCTS (Public & Admin)
   if (lowerSql.includes('from products') && lowerSql.includes('count(*) filter')) {
     const total = data.products.length;
@@ -486,9 +593,16 @@ function executeMemoryQuery(rawText, params = []) {
 
   if (lowerSql.startsWith('select') && lowerSql.includes('from products') && lowerSql.includes('active=true')) {
     let list = data.products.filter((p) => p.active);
-    if (lowerSql.includes('and category=$1')) {
+    if (lowerSql.includes('category=$1') || lowerSql.includes('category = $1')) {
       const cat = String(params[0] || '').toLowerCase();
       list = list.filter((p) => String(p.category || '').toLowerCase() === cat);
+      if (lowerSql.includes('subcategory=$2') || lowerSql.includes('subcategory = $2')) {
+        const sub = String(params[1] || '').toLowerCase();
+        list = list.filter((p) => String(p.subcategory || '').toLowerCase() === sub);
+      }
+    } else if (lowerSql.includes('subcategory=$1') || lowerSql.includes('subcategory = $1')) {
+      const sub = String(params[0] || '').toLowerCase();
+      list = list.filter((p) => String(p.subcategory || '').toLowerCase() === sub);
     }
     // order by featured desc, updated_at desc
     list.sort((a, b) => {
@@ -513,6 +627,7 @@ function executeMemoryQuery(rawText, params = []) {
   if (lowerSql.startsWith('insert into products')) {
     const id = uuid();
     const now = nowIso();
+    const isExtended = lowerSql.includes('subcategory');
     const newProduct = {
       id,
       name: params[0],
@@ -522,8 +637,10 @@ function executeMemoryQuery(rawText, params = []) {
       stock: Number(params[4]) || 0,
       image_url: params[5] || null,
       category: params[6] || 'remeras',
-      active: params[7] !== false,
-      featured: params[8] === true,
+      subcategory: isExtended ? (params[7] || null) : null,
+      subcategory_id: isExtended ? (params[8] || null) : null,
+      active: (isExtended ? params[9] : params[7]) !== false,
+      featured: (isExtended ? params[10] : params[8]) === true,
       created_at: now,
       updated_at: now,
     };
@@ -541,6 +658,23 @@ function executeMemoryQuery(rawText, params = []) {
         return { rows: [{ ...p }], rowCount: 1 };
       }
       return { rows: [], rowCount: 0 };
+    }
+    if (lowerSql.includes('where id=$12')) {
+      const p = data.products.find((x) => x.id === params[11]);
+      if (!p) return { rows: [], rowCount: 0 };
+      p.name = params[0];
+      p.description = params[1] || '';
+      p.price = Number(params[2]) || 0;
+      p.sizes = params[3] || '';
+      p.stock = Number(params[4]) || 0;
+      if (params[5] !== null && params[5] !== undefined) p.image_url = params[5];
+      if (params[6]) p.category = params[6];
+      p.subcategory = params[7] || null;
+      p.subcategory_id = params[8] || null;
+      if (params[9] !== null && params[9] !== undefined) p.active = params[9];
+      if (params[10] !== null && params[10] !== undefined) p.featured = params[10];
+      p.updated_at = nowIso();
+      return { rows: [{ ...p }], rowCount: 1 };
     }
     if (lowerSql.includes('where id=$10')) {
       const p = data.products.find((x) => x.id === params[9]);

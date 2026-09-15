@@ -148,20 +148,62 @@ app.get('/api/config/public', (req, res) => {
 // ================= PRODUCTS PÚBLICO (tienda - sin login) =================
 app.get('/api/products/public', async (req, res) => {
   try {
-    const category = typeof req.query.category === 'string' ? req.query.category : null;
+    const category = typeof req.query.category === 'string' && req.query.category.trim() ? req.query.category.trim().toLowerCase() : null;
+    const subcategory = typeof req.query.subcategory === 'string' && req.query.subcategory.trim() ? req.query.subcategory.trim().toLowerCase() : null;
     const limit = Math.min(Number(req.query.limit) || 100, 200);
-    const params = category ? [String(category).toLowerCase(), limit] : [limit];
-    const condition = category ? 'AND category=$1' : '';
-    const result = await query(`SELECT id,name,description,price,sizes,stock,image_url,category,active,featured,created_at,updated_at FROM products WHERE active=true ${condition} ORDER BY featured DESC,updated_at DESC LIMIT $${category ? 2 : 1}`, params);
-    const mapped = result.rows.map(p => ({
+
+    const params = [];
+    let conditions = 'WHERE active=true';
+
+    if (category) {
+      params.push(category);
+      conditions += ` AND category=$${params.length}`;
+    }
+
+    if (subcategory) {
+      params.push(subcategory);
+      conditions += ` AND (subcategory=$${params.length} OR subcategory_id::text=$${params.length})`;
+    }
+
+    params.push(limit);
+    const querySql = `SELECT id,name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,created_at,updated_at FROM products ${conditions} ORDER BY featured DESC,updated_at DESC LIMIT $${params.length}`;
+
+    const result = await query(querySql, params);
+    const mapped = result.rows.map((p) => ({
       ...p,
-      category: String(p.category || guessCategoryFallback(p.name, p.description) || 'remeras').toLowerCase()
+      category: String(p.category || guessCategoryFallback(p.name, p.description) || 'remeras').toLowerCase(),
+      subcategory: p.subcategory ? String(p.subcategory).toLowerCase() : null,
     }));
 
     return res.status(200).json({ ok: true, count: mapped.length, data: mapped });
   } catch (err) {
     console.error('[products-public] error:', err.message || err);
     return res.status(500).json({ ok: false, message: 'Error al listar productos' });
+  }
+});
+
+// ================= CATEGORIAS PÚBLICO (tienda - sin login) =================
+app.get('/api/categories/public', async (_req, res) => {
+  try {
+    const catsRes = await query('SELECT id, name, slug, sort_order FROM categories ORDER BY sort_order ASC, name ASC');
+    const subcatsRes = await query('SELECT id, category_id, category_slug, name, slug FROM subcategories ORDER BY name ASC');
+
+    const subcatsByCat = new Map();
+    catsRes.rows.forEach((c) => subcatsByCat.set(c.slug, []));
+    subcatsRes.rows.forEach((s) => {
+      const list = subcatsByCat.get(s.category_slug);
+      if (list) list.push(s);
+    });
+
+    const data = catsRes.rows.map((c) => ({
+      ...c,
+      subcategories: subcatsByCat.get(c.slug) || [],
+    }));
+
+    return res.status(200).json({ ok: true, count: data.length, data });
+  } catch (err) {
+    console.error('[categories-public] error:', err.message || err);
+    return res.status(500).json({ ok: false, message: 'Error al listar categorías' });
   }
 });
 
@@ -393,6 +435,77 @@ app.get('/admin*', (req, res) => {
   if (fs.existsSync(oldIndex)) return res.sendFile(oldIndex);
   return res.status(404).send('Admin no disponible');
 });
+
+// ================= CATEGORÍAS Y SUBCATEGORÍAS DINÁMICAS (Storefront) =================
+async function servirCategoriaOTienda(req, res, next) {
+  const categoryParam = (req.params.category || '').toLowerCase().trim();
+  const subcategoryParam = (req.params.subcategory || '').toLowerCase().trim();
+
+  // Evitar interceptar archivos con extensión o rutas reservadas
+  if (
+    !categoryParam ||
+    categoryParam.includes('.') ||
+    ['api', 'admin', 'assets', 'components', 'dashboard', 'login', 'register', 'forgot-password', 'reset-password'].includes(categoryParam)
+  ) {
+    return next();
+  }
+
+  try {
+    const catRes = await query('SELECT id, name, slug FROM categories WHERE slug = $1', [categoryParam]);
+    if (!catRes.rows || !catRes.rows[0]) {
+      return next();
+    }
+
+    const cat = catRes.rows[0];
+    let sub = null;
+
+    if (subcategoryParam) {
+      if (subcategoryParam.includes('.')) return next();
+      const subRes = await query('SELECT id, name, slug FROM subcategories WHERE category_slug = $1 AND slug = $2', [cat.slug, subcategoryParam]);
+      if (!subRes.rows || !subRes.rows[0]) {
+        return res.status(404).send(`Subcategoría '${subcategoryParam}' no encontrada en la categoría ${cat.name}`);
+      }
+      sub = subRes.rows[0];
+    }
+
+    if (!fs.existsSync(storefrontFile)) {
+      return res.status(404).send('Tienda no disponible');
+    }
+
+    const promoConfig = await getShippingPromoConfig();
+    let html = fs.readFileSync(storefrontFile, 'utf8');
+    const safeConfig = JSON.stringify(promoConfig).replace(/<\/script/gi, '<\\/script');
+    const routeState = JSON.stringify({
+      category: cat.slug,
+      categoryName: cat.name,
+      subcategory: sub ? sub.slug : null,
+      subcategoryName: sub ? sub.name : null,
+    }).replace(/<\/script/gi, '<\\/script');
+
+    const injection = `
+    <script id="__promo_config_injected">window.__SHIPPING_PROMO_CONFIG__ = ${safeConfig};</script>
+    <script id="__route_state_injected">window.__DYNAMIC_ROUTE__ = ${routeState};</script>`;
+
+    const pageTitle = sub
+      ? `${cat.name} · ${sub.name} | NAREL LOCAL`
+      : `${cat.name} | NAREL LOCAL`;
+    html = html.replace(/<title>.*?<\/title>/i, `<title>${pageTitle}</title>`);
+
+    if (html.includes('</head>')) {
+      html = html.replace('</head>', `${injection}\n</head>`);
+    } else {
+      html = injection + html;
+    }
+
+    return res.type('html').send(html);
+  } catch (err) {
+    logger.error('[servirCategoriaOTienda] error:', err);
+    return next();
+  }
+}
+
+app.get('/:category', servirCategoriaOTienda);
+app.get('/:category/:subcategory', servirCategoriaOTienda);
 
 function servirFrontendTenant(req, res) {
   try {
