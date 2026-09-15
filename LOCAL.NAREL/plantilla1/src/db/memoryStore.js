@@ -40,268 +40,333 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+const dbStoreFile = path.join(__dirname, '..', '..', 'data', 'memory-store.json');
+
+function saveMemoryDbToFile() {
+  try {
+    const dir = path.dirname(dbStoreFile);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const payload = {
+      products: data.products,
+      categories: data.categories,
+      subcategories: data.subcategories,
+      promotions: data.promotions,
+      promotion_products: data.promotion_products,
+      promo_banners: data.promo_banners,
+      promo_banner_items: data.promo_banner_items,
+      orders: data.orders,
+      order_items: data.order_items,
+      profiles: data.profiles,
+      orderSequence: data.orderSequence,
+    };
+    fs.writeFileSync(dbStoreFile, JSON.stringify(payload, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[memoryStore] Error al guardar memoria a disco:', err.message);
+  }
+}
+
+function loadMemoryDbFromFile() {
+  if (!fs.existsSync(dbStoreFile)) return false;
+  try {
+    const content = fs.readFileSync(dbStoreFile, 'utf8');
+    const parsed = JSON.parse(content);
+    if (parsed && typeof parsed === 'object') {
+      if (Array.isArray(parsed.products) && parsed.products.length > 0) data.products = parsed.products;
+      if (Array.isArray(parsed.categories) && parsed.categories.length > 0) data.categories = parsed.categories;
+      if (Array.isArray(parsed.subcategories) && parsed.subcategories.length > 0) data.subcategories = parsed.subcategories;
+      if (Array.isArray(parsed.promotions)) data.promotions = parsed.promotions;
+      if (Array.isArray(parsed.promotion_products)) data.promotion_products = parsed.promotion_products;
+      if (Array.isArray(parsed.promo_banners)) data.promo_banners = parsed.promo_banners;
+      if (Array.isArray(parsed.promo_banner_items)) data.promo_banner_items = parsed.promo_banner_items;
+      if (Array.isArray(parsed.orders)) data.orders = parsed.orders;
+      if (Array.isArray(parsed.order_items)) data.order_items = parsed.order_items;
+      if (Array.isArray(parsed.profiles) && parsed.profiles.length > 0) data.profiles = parsed.profiles;
+      if (parsed.orderSequence) data.orderSequence = parsed.orderSequence;
+      return true;
+    }
+  } catch (err) {
+    console.error('[memoryStore] Error al cargar memoria desde disco:', err.message);
+  }
+  return false;
+}
+
 function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin1234!') {
   if (initialized) return;
 
+  const loadedFromDisk = loadMemoryDbFromFile();
   const now = nowIso();
   const future7d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const future14d = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
   // Admin Profile
   const adminHash = bcrypt.hashSync(adminPassword || 'Admin1234!', 10);
-  data.profiles.push({
-    id: 'b8c4d29e-47f2-4e08-9b87-4e782d2f7a01',
-    first_name: 'Administrador',
-    last_name: '',
-    email: (adminEmail || 'admin@narel.local').toLowerCase(),
-    password_hash: adminHash,
-    role: 'admin',
-    reset_token_hash: null,
-    reset_token_expires_at: null,
-    created_at: now,
-    updated_at: now,
-  });
+  const existingAdmin = data.profiles.find(p => p.role === 'admin');
+  if (!existingAdmin) {
+    data.profiles.push({
+      id: 'b8c4d29e-47f2-4e08-9b87-4e782d2f7a01',
+      first_name: 'Administrador',
+      last_name: '',
+      email: (adminEmail || 'admin@narel.local').toLowerCase(),
+      password_hash: adminHash,
+      role: 'admin',
+      reset_token_hash: null,
+      reset_token_expires_at: null,
+      created_at: now,
+      updated_at: now,
+    });
+  }
 
-  // Seed Categories & Subcategories
-  const seedCategories = [
-    { id: 'c1111111-1111-4111-8111-111111111111', name: 'Pantalones', slug: 'pantalones', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 1, created_at: now, updated_at: now },
-    { id: 'c2222222-2222-4222-8222-222222222222', name: 'Camperas', slug: 'camperas', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 2, created_at: now, updated_at: now },
-    { id: 'c3333333-3333-4333-8333-333333333333', name: 'Buzos', slug: 'buzos', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 3, created_at: now, updated_at: now },
-    { id: 'c4444444-4444-4444-8444-444444444444', name: 'Remeras', slug: 'remeras', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 4, created_at: now, updated_at: now },
-    { id: 'c5555555-5555-4555-8555-555555555555', name: 'Accesorios', slug: 'accesorios', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 5, created_at: now, updated_at: now },
-  ];
-  data.categories.push(...seedCategories);
+  if (!loadedFromDisk) {
+    // Seed Categories & Subcategories
+    const seedCategories = [
+      { id: 'c1111111-1111-4111-8111-111111111111', name: 'Pantalones', slug: 'pantalones', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 1, created_at: now, updated_at: now },
+      { id: 'c2222222-2222-4222-8222-222222222222', name: 'Camperas', slug: 'camperas', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 2, created_at: now, updated_at: now },
+      { id: 'c3333333-3333-4333-8333-333333333333', name: 'Buzos', slug: 'buzos', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 3, created_at: now, updated_at: now },
+      { id: 'c4444444-4444-4444-8444-444444444444', name: 'Remeras', slug: 'remeras', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 4, created_at: now, updated_at: now },
+      { id: 'c5555555-5555-4555-8555-555555555555', name: 'Accesorios', slug: 'accesorios', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 5, created_at: now, updated_at: now },
+    ];
+    data.categories.push(...seedCategories);
 
-  const seedSubcategories = [
-    { id: 's1111111-1111-4111-8111-111111111111', category_id: 'c1111111-1111-4111-8111-111111111111', category_slug: 'pantalones', name: 'Cargo', slug: 'cargo', created_at: now, updated_at: now },
-    { id: 's1111111-1111-4111-8111-222222222222', category_id: 'c1111111-1111-4111-8111-111111111111', category_slug: 'pantalones', name: 'Jeans', slug: 'jeans', created_at: now, updated_at: now },
-    { id: 's1111111-1111-4111-8111-333333333333', category_id: 'c1111111-1111-4111-8111-111111111111', category_slug: 'pantalones', name: 'Joggers', slug: 'joggers', created_at: now, updated_at: now },
-    { id: 's2222222-2222-4222-8222-111111111111', category_id: 'c2222222-2222-4222-8222-222222222222', category_slug: 'camperas', name: 'Bomber', slug: 'bomber', created_at: now, updated_at: now },
-    { id: 's2222222-2222-4222-8222-222222222222', category_id: 'c2222222-2222-4222-8222-222222222222', category_slug: 'camperas', name: 'Puffer', slug: 'puffer', created_at: now, updated_at: now },
-    { id: 's3333333-3333-4333-8333-111111111111', category_id: 'c3333333-3333-4333-8333-333333333333', category_slug: 'buzos', name: 'Hoodies', slug: 'hoodies', created_at: now, updated_at: now },
-    { id: 's4444444-4444-4444-8444-111111111111', category_id: 'c4444444-4444-4444-8444-444444444444', category_slug: 'remeras', name: 'Oversized', slug: 'oversized', created_at: now, updated_at: now },
-    { id: 's5555555-5555-4555-8555-111111111111', category_id: 'c5555555-5555-4555-8555-555555555555', category_slug: 'accesorios', name: 'Gorras', slug: 'gorras', created_at: now, updated_at: now },
-  ];
-  data.subcategories.push(...seedSubcategories);
+    const seedSubcategories = [
+      { id: 's1111111-1111-4111-8111-111111111111', category_id: 'c1111111-1111-4111-8111-111111111111', category_slug: 'pantalones', name: 'Cargo', slug: 'cargo', created_at: now, updated_at: now },
+      { id: 's1111111-1111-4111-8111-222222222222', category_id: 'c1111111-1111-4111-8111-111111111111', category_slug: 'pantalones', name: 'Jeans', slug: 'jeans', created_at: now, updated_at: now },
+      { id: 's1111111-1111-4111-8111-333333333333', category_id: 'c1111111-1111-4111-8111-111111111111', category_slug: 'pantalones', name: 'Joggers', slug: 'joggers', created_at: now, updated_at: now },
+      { id: 's2222222-2222-4222-8222-111111111111', category_id: 'c2222222-2222-4222-8222-222222222222', category_slug: 'camperas', name: 'Bomber', slug: 'bomber', created_at: now, updated_at: now },
+      { id: 's2222222-2222-4222-8222-222222222222', category_id: 'c2222222-2222-4222-8222-222222222222', category_slug: 'camperas', name: 'Puffer', slug: 'puffer', created_at: now, updated_at: now },
+      { id: 's3333333-3333-4333-8333-111111111111', category_id: 'c3333333-3333-4333-8333-333333333333', category_slug: 'buzos', name: 'Hoodies', slug: 'hoodies', created_at: now, updated_at: now },
+      { id: 's4444444-4444-4444-8444-111111111111', category_id: 'c4444444-4444-4444-8444-444444444444', category_slug: 'remeras', name: 'Oversized', slug: 'oversized', created_at: now, updated_at: now },
+      { id: 's5555555-5555-4555-8555-111111111111', category_id: 'c5555555-5555-4555-8555-555555555555', category_slug: 'accesorios', name: 'Gorras', slug: 'gorras', created_at: now, updated_at: now },
+    ];
+    data.subcategories.push(...seedSubcategories);
 
-  // Seed Products
-  const seedProducts = [
-    {
-      id: 'a1111111-1111-4111-8111-111111111111',
-      name: 'Remera Oversized NGL Diamond',
-      description: 'Remera corte oversized de algodón premium 24/1 peinado con estampa frontal en serigrafía.',
-      price: 28500,
-      sizes: 'S,M,L,XL',
-      stock: 25,
-      image_url: '/assets/img/logo-ngl-diamond.jpeg',
-      images: ['/assets/img/logo-ngl-diamond.jpeg', '/assets/img/bg-remeras.png'],
-      category: 'remeras',
-      subcategory: 'oversized',
-      subcategory_id: 's4444444-4444-4444-8444-111111111111',
+    // Seed Products
+    const seedProducts = [
+      {
+        id: 'a1111111-1111-4111-8111-111111111111',
+        name: 'Remera Oversized NGL Diamond',
+        description: 'Remera corte oversized de algodón premium 24/1 peinado con estampa frontal en serigrafía.',
+        price: 28500,
+        sizes: 'S,M,L,XL',
+        stock: 25,
+        image_url: '/assets/img/logo-ngl-diamond.jpeg',
+        images: ['/assets/img/logo-ngl-diamond.jpeg', '/assets/img/bg-remeras.png'],
+        category: 'remeras',
+        subcategory: 'oversized',
+        subcategory_id: 's4444444-4444-4444-8444-111111111111',
+        active: true,
+        featured: true,
+        direct_purchase: false,
+        allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+        allowed_installments: [1, 3, 6],
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 'a2222222-2222-4222-8222-222222222222',
+        name: 'Buzo Hoodie Gothic Heavyweight',
+        description: 'Buzo hoodie con friza pesada, bordado gótico en pecho y capucha forrada doble.',
+        price: 49900,
+        sizes: 'M,L,XL,XXL',
+        stock: 15,
+        image_url: '/assets/img/logo-ngl-diamond.jpeg',
+        images: ['/assets/img/logo-ngl-diamond.jpeg', '/assets/img/bg-buzos.png'],
+        category: 'buzos',
+        subcategory: 'hoodies',
+        subcategory_id: 's3333333-3333-4333-8333-111111111111',
+        active: true,
+        featured: true,
+        direct_purchase: false,
+        allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+        allowed_installments: [1, 3, 6],
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 'a3333333-3333-4333-8333-333333333333',
+        name: 'Pantalón Cargo Tactical Black',
+        description: 'Pantalón cargo ripstop técnico con 6 bolsillos funcionales y ajuste regulable en tobillos.',
+        price: 42000,
+        sizes: '38,40,42,44',
+        stock: 18,
+        image_url: '/assets/img/logo-ngl-diamond.jpeg',
+        images: ['/assets/img/logo-ngl-diamond.jpeg', '/assets/img/bg-pantalones.png'],
+        category: 'pantalones',
+        subcategory: 'cargo',
+        subcategory_id: 's1111111-1111-4111-8111-111111111111',
+        active: true,
+        featured: true,
+        direct_purchase: false,
+        allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+        allowed_installments: [1, 3, 6],
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 'a4444444-4444-4444-8444-444444444444',
+        name: 'Campera Bomber Oversized Leather',
+        description: 'Campera bomber de ecocuero importado con forrería matelasseada y cierre metálico YKK.',
+        price: 68000,
+        sizes: 'M,L,XL',
+        stock: 8,
+        image_url: '/assets/img/logo-ngl-diamond.jpeg',
+        images: ['/assets/img/logo-ngl-diamond.jpeg', '/assets/img/bg-camperas.png'],
+        category: 'camperas',
+        subcategory: 'bomber',
+        subcategory_id: 's2222222-2222-4222-8222-111111111111',
+        active: true,
+        featured: false,
+        direct_purchase: false,
+        allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+        allowed_installments: [1, 3, 6],
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 'a5555555-5555-4555-8555-555555555555',
+        name: 'Gorra Trucker Gothic Patch',
+        description: 'Gorra trucker con frente de gabardina, parche en relieve y red microperforada trasera.',
+        price: 16500,
+        sizes: 'Único',
+        stock: 30,
+        image_url: '/assets/img/logo-ngl-diamond.jpeg',
+        images: ['/assets/img/logo-ngl-diamond.jpeg', '/assets/img/bg-accesorios.png'],
+        category: 'accesorios',
+        subcategory: 'gorras',
+        subcategory_id: 's5555555-5555-4555-8555-111111111111',
+        active: true,
+        featured: true,
+        direct_purchase: false,
+        allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+        allowed_installments: [1, 3, 6],
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: 'a6666666-6666-4666-8666-666666666666',
+        name: 'Remera Acid Wash Raw Cut',
+        description: 'Remera con proceso acid wash artesanal, terminaciones al corte y corte boxy fit.',
+        price: 31000,
+        sizes: 'S,M,L,XL',
+        stock: 20,
+        image_url: '/assets/img/logo-ngl-diamond.jpeg',
+        images: ['/assets/img/logo-ngl-diamond.jpeg'],
+        category: 'remeras',
+        subcategory: null,
+        subcategory_id: null,
+        active: true,
+        featured: false,
+        direct_purchase: false,
+        allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+        allowed_installments: [1, 3, 6],
+        created_at: now,
+        updated_at: now,
+      },
+    ];
+
+    data.products.push(...seedProducts);
+
+    // Seed Banner
+    const bannerId = 'b1111111-1111-4111-8111-111111111111';
+    data.promo_banners.push({
+      id: bannerId,
+      title: 'PROMOS EXCLUSIVAS',
+      subtitle: 'Prendas seleccionadas con descuento especial por tiempo limitado.',
+      cta_text: 'VER LAS PROMOS',
+      link: '#pantalones',
+      image_url: '/assets/img/promo-title-promos-exclusivas-removebg.png',
+      active: true,
+      banner_type: 'oferta',
+      short_description: 'Prendas urbanas con precio exclusivo',
+      description: 'Promoción válida en catálogo online hasta agotar stock.',
+      terms_and_conditions: 'No acumulable con otros cupones.',
+      discount_type: 'override_products',
+      discount_value: 20,
+      badge_label: 'OFERTA',
+      badge_color: '#ef4444',
+      start_date: now,
+      end_date: future14d,
+      sort_order: 0,
+      featured: true,
+      created_at: now,
+      updated_at: now,
+    });
+
+    data.promo_banner_items.push({
+      id: uuid(),
+      banner_id: bannerId,
+      product_id: seedProducts[0].id,
+      promo_price: 24200,
+      sort_order: 0,
+      created_at: now,
+      updated_at: now,
+    });
+
+    data.promo_banner_items.push({
+      id: uuid(),
+      banner_id: bannerId,
+      product_id: seedProducts[1].id,
+      promo_price: 42400,
+      sort_order: 1,
+      created_at: now,
+      updated_at: now,
+    });
+
+    // Seed Promotion
+    const promoId = 'p1111111-1111-4111-8111-111111111111';
+    data.promotions.push({
+      id: promoId,
+      title: 'COMBO STREETWEAR TEMPORADA',
+      slug: 'combo-streetwear-temporada',
+      short_description: 'Precios especiales llevando conjuntos',
+      description: 'Llevate remera y buzo con descuento directo en el checkout.',
+      terms_and_conditions: 'Hasta agotar stock de talles disponibles.',
+      discount_type: 'override_products',
+      discount_value: 15,
+      banner_image_url: '/assets/img/promo-title-promos-exclusivas-removebg.png',
+      cta_text: 'APROVECHAR',
+      cta_link: '#remeras',
+      badge_label: 'COMBO',
+      badge_color: '#6366f1',
+      start_date: now,
+      end_date: future7d,
       active: true,
       featured: true,
-      direct_purchase: false,
-      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
-      allowed_installments: [1, 3, 6],
+      sort_order: 0,
+      created_by: data.profiles[0].id,
       created_at: now,
       updated_at: now,
-    },
-    {
-      id: 'a2222222-2222-4222-8222-222222222222',
-      name: 'Buzo Hoodie Gothic Heavyweight',
-      description: 'Buzo hoodie con friza pesada, bordado gótico en pecho y capucha forrada doble.',
-      price: 49900,
-      sizes: 'M,L,XL,XXL',
-      stock: 15,
-      image_url: '/assets/img/logo-ngl-diamond.jpeg',
-      images: ['/assets/img/logo-ngl-diamond.jpeg', '/assets/img/bg-buzos.png'],
-      category: 'buzos',
-      subcategory: 'hoodies',
-      subcategory_id: 's3333333-3333-4333-8333-111111111111',
+    });
+
+    data.promotion_products.push({
+      id: uuid(),
+      promotion_id: promoId,
+      product_id: seedProducts[0].id,
+      override_price: null,
+      discount_percentage: 15,
+      product_note: 'Descuento especial combo',
+      sort_order: 0,
       active: true,
-      featured: true,
-      direct_purchase: false,
-      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
-      allowed_installments: [1, 3, 6],
       created_at: now,
       updated_at: now,
-    },
-    {
-      id: 'a3333333-3333-4333-8333-333333333333',
-      name: 'Pantalón Baggy Igor Pink',
-      description: 'Pantalón baggy fit Igor Pink en denim premium con proceso exclusivo.',
-      price: 112500,
-      sizes: '38,40,42,44,46',
-      stock: 18,
-      image_url: '/assets/img/logo-ngl-diamond.jpeg',
-      images: ['/assets/img/logo-ngl-diamond.jpeg', '/assets/img/bg-pantalones.png'],
-      category: 'pantalones',
-      subcategory: 'baggy',
-      subcategory_id: 's1111111-1111-4111-8111-111111111111',
+    });
+
+    data.promotion_products.push({
+      id: uuid(),
+      promotion_id: promoId,
+      product_id: seedProducts[1].id,
+      override_price: null,
+      discount_percentage: 15,
+      product_note: 'Descuento especial combo',
+      sort_order: 1,
       active: true,
-      featured: true,
-      direct_purchase: true,
-      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
-      allowed_installments: [1, 3, 6],
-      direct_discount_percent: 25,
-      direct_discount_text: 'con transferencia',
-      direct_show_promo_badge: true,
-      direct_promo_badge_text: 'PROMO ACTIVA',
-      direct_installments_count: 6,
-      direct_installments_text: 'sin interés',
-      direct_custom_transfer_price: null,
-      direct_transfer_text: 'con Transferencia',
       created_at: now,
       updated_at: now,
-    },
-    {
-      id: 'a4444444-4444-4444-8444-444444444444',
-      name: 'Campera Bomber NGL Street',
-      description: 'Campera bomber con interior matelaseado, cierre metálico reforzado y parches bordados.',
-      price: 68000,
-      sizes: 'M,L,XL',
-      stock: 10,
-      image_url: '/assets/img/logo-ngl-diamond.jpeg',
-      images: ['/assets/img/logo-ngl-diamond.jpeg', '/assets/img/bg-camperas.png'],
-      category: 'camperas',
-      subcategory: 'bomber',
-      subcategory_id: 's2222222-2222-4222-8222-111111111111',
-      active: true,
-      featured: false,
-      direct_purchase: false,
-      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
-      allowed_installments: [1, 3, 6],
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: 'a5555555-5555-4555-8555-555555555555',
-      name: 'Gorra Trucker Gothic Patch',
-      description: 'Gorra trucker con frente de gabardina, parche en relieve y red microperforada trasera.',
-      price: 16500,
-      sizes: 'Único',
-      stock: 30,
-      image_url: '/assets/img/logo-ngl-diamond.jpeg',
-      images: ['/assets/img/logo-ngl-diamond.jpeg', '/assets/img/bg-accesorios.png'],
-      category: 'accesorios',
-      subcategory: 'gorras',
-      subcategory_id: 's5555555-5555-4555-8555-111111111111',
-      active: true,
-      featured: true,
-      direct_purchase: false,
-      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
-      allowed_installments: [1, 3, 6],
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: 'a6666666-6666-4666-8666-666666666666',
-      name: 'Remera Acid Wash Raw Cut',
-      description: 'Remera con proceso acid wash artesanal, terminaciones al corte y corte boxy fit.',
-      price: 31000,
-      sizes: 'S,M,L,XL',
-      stock: 20,
-      image_url: '/assets/img/logo-ngl-diamond.jpeg',
-      images: ['/assets/img/logo-ngl-diamond.jpeg'],
-      category: 'remeras',
-      subcategory: null,
-      subcategory_id: null,
-      active: true,
-      featured: false,
-      direct_purchase: false,
-      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
-      allowed_installments: [1, 3, 6],
-      created_at: now,
-      updated_at: now,
-    },
-  ];
+    });
 
-  data.products.push(...seedProducts);
+    saveMemoryDbToFile();
+  }
 
-  // Seed Banner
-  const bannerId = 'b1111111-1111-4111-8111-111111111111';
-  data.promo_banners.push({
-    id: bannerId,
-    title: 'PROMOS EXCLUSIVAS',
-    subtitle: 'Prendas seleccionadas con descuento especial por tiempo limitado.',
-    cta_text: 'VER LAS PROMOS',
-    link: '#pantalones',
-    image_url: '/assets/img/promo-title-promos-exclusivas-removebg.png',
-    active: true,
-    banner_type: 'oferta',
-    short_description: 'Prendas urbanas con precio exclusivo',
-    description: 'Promoción válida en catálogo online hasta agotar stock.',
-    terms_and_conditions: 'No acumulable con otros cupones.',
-    discount_type: 'override_products',
-    discount_value: 20,
-    badge_label: 'OFERTA',
-    badge_color: '#ef4444',
-    start_date: now,
-    end_date: future14d,
-    sort_order: 0,
-    featured: true,
-    created_at: now,
-    updated_at: now,
-  });
 
-  data.promo_banner_items.push({
-    id: uuid(),
-    banner_id: bannerId,
-    product_id: seedProducts[0].id,
-    promo_price: 24200,
-    sort_order: 0,
-    created_at: now,
-    updated_at: now,
-  });
-
-  data.promo_banner_items.push({
-    id: uuid(),
-    banner_id: bannerId,
-    product_id: seedProducts[1].id,
-    promo_price: 42400,
-    sort_order: 1,
-    created_at: now,
-    updated_at: now,
-  });
-
-  // Seed Promotion
-  const promoId = 'p1111111-1111-4111-8111-111111111111';
-  data.promotions.push({
-    id: promoId,
-    title: 'COMBO STREETWEAR TEMPORADA',
-    slug: 'combo-streetwear-temporada',
-    short_description: 'Precios especiales llevando conjuntos',
-    description: 'Llevate remera y buzo con descuento directo en el checkout.',
-    terms_and_conditions: 'Hasta agotar stock de talles disponibles.',
-    discount_type: 'override_products',
-    discount_value: 15,
-    banner_image_url: '/assets/img/promo-title-promos-exclusivas-removebg.png',
-    cta_text: 'APROVECHAR',
-    cta_link: '#remeras',
-    badge_label: 'COMBO',
-    badge_color: '#6366f1',
-    start_date: now,
-    end_date: future7d,
-    active: true,
-    featured: true,
-    sort_order: 0,
-    created_by: data.profiles[0].id,
-    created_at: now,
-    updated_at: now,
-  });
-
-  data.promotion_products.push({
-    id: uuid(),
-    promotion_id: promoId,
-    product_id: seedProducts[0].id,
-    override_price: 24200,
-    discount_percentage: 15,
-    product_note: 'Remera en promo',
-    sort_order: 0,
-    active: true,
-    created_at: now,
-    updated_at: now,
-  });
 
   // Default Store Settings (Shipping Promo Countdown)
   const promoFile = path.join(__dirname, '..', '..', 'data', 'shipping-promo.json');
