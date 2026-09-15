@@ -8027,27 +8027,34 @@
     }
 
     // ===== Scroll Reveal Animations =====
-    (function initScrollReveal() {
-      const revealEls = document.querySelectorAll('.scroll-reveal');
+    window.initScrollReveal = function(scope) {
+      const targetScope = scope || document;
+      const revealEls = targetScope.querySelectorAll('.scroll-reveal:not(.is-visible)');
       if (!revealEls.length) return;
       if (!('IntersectionObserver' in window)) {
         revealEls.forEach(el => el.classList.add('is-visible'));
         return;
       }
-      const revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry, i) => {
-          if (entry.isIntersecting) {
-            const delayMs = Math.min((entry.target.dataset.revealDelay || 0), 500);
-            const stagger = entry.target.parentElement ?
-              Array.from(entry.target.parentElement.children).indexOf(entry.target) : 0;
-            const totalDelay = delayMs + (Math.max(0, stagger) * 70);
-            setTimeout(() => entry.target.classList.add('is-visible'), totalDelay);
-            revealObserver.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-      revealEls.forEach(el => revealObserver.observe(el));
-    })();
+      if (!window.__revealObserver) {
+        window.__revealObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const delayMs = Math.min(Number(entry.target.dataset.revealDelay || 0), 300);
+              const stagger = entry.target.parentElement ?
+                Array.from(entry.target.parentElement.children).indexOf(entry.target) : 0;
+              const totalDelay = delayMs + (Math.max(0, stagger) * 40);
+              setTimeout(() => entry.target.classList.add('is-visible'), totalDelay);
+              window.__revealObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.02, rootMargin: '60px 0px 60px 0px' });
+      }
+      revealEls.forEach(el => window.__revealObserver.observe(el));
+    };
+    window.initScrollReveal();
+    setTimeout(() => {
+      document.querySelectorAll('.scroll-reveal:not(.is-visible)').forEach(el => el.classList.add('is-visible'));
+    }, 1200);
 
     // Nav active link on scroll
     const sections = document.querySelectorAll('.catalog-section, .services-section, .hero, .info-strip');

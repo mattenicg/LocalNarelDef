@@ -8001,27 +8001,34 @@
     }
 
     // ===== Scroll Reveal Animations =====
-    (function initScrollReveal() {
-      const revealEls = document.querySelectorAll('.scroll-reveal');
+    window.initScrollReveal = function(scope) {
+      const targetScope = scope || document;
+      const revealEls = targetScope.querySelectorAll('.scroll-reveal:not(.is-visible)');
       if (!revealEls.length) return;
       if (!('IntersectionObserver' in window)) {
         revealEls.forEach(el => el.classList.add('is-visible'));
         return;
       }
-      const revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry, i) => {
-          if (entry.isIntersecting) {
-            const delayMs = Math.min((entry.target.dataset.revealDelay || 0), 500);
-            const stagger = entry.target.parentElement ?
-              Array.from(entry.target.parentElement.children).indexOf(entry.target) : 0;
-            const totalDelay = delayMs + (Math.max(0, stagger) * 70);
-            setTimeout(() => entry.target.classList.add('is-visible'), totalDelay);
-            revealObserver.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-      revealEls.forEach(el => revealObserver.observe(el));
-    })();
+      if (!window.__revealObserver) {
+        window.__revealObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const delayMs = Math.min(Number(entry.target.dataset.revealDelay || 0), 300);
+              const stagger = entry.target.parentElement ?
+                Array.from(entry.target.parentElement.children).indexOf(entry.target) : 0;
+              const totalDelay = delayMs + (Math.max(0, stagger) * 40);
+              setTimeout(() => entry.target.classList.add('is-visible'), totalDelay);
+              window.__revealObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.02, rootMargin: '60px 0px 60px 0px' });
+      }
+      revealEls.forEach(el => window.__revealObserver.observe(el));
+    };
+    window.initScrollReveal();
+    setTimeout(() => {
+      document.querySelectorAll('.scroll-reveal:not(.is-visible)').forEach(el => el.classList.add('is-visible'));
+    }, 1200);
 
     // Nav active link on scroll
     const sections = document.querySelectorAll('.catalog-section, .services-section, .hero, .info-strip');
@@ -8986,19 +8993,22 @@
           secGrid.innerHTML = categories.map((c, idx) => {
             const num = String(idx + 1).padStart(2, '0');
             return `
-              <a href="/${htmlEscape(c.slug)}" class="category scroll-reveal">
+              <a href="/${htmlEscape(c.slug)}" class="category scroll-reveal is-visible">
                 <span class="num">${num}</span>
                 <h3>${htmlEscape(c.name.toUpperCase())}</h3>
                 <span class="view">VER MÁS <span>↗</span></span>
               </a>
             `;
           }).join('') + `
-            <a href="/#otros-servicios" class="category scroll-reveal" id="cardOtrosServicios">
+            <a href="/#otros-servicios" class="category scroll-reveal is-visible" id="cardOtrosServicios">
               <span class="num">${nextNum}</span>
               <h3>OTROS<br>SERVICIOS</h3>
               <span class="view">VER MÁS <span>↗</span></span>
             </a>
           `;
+          if (typeof window.initScrollReveal === 'function') {
+            window.initScrollReveal(secGrid);
+          }
         }
 
         // 3. Sincronizar menú móvil
