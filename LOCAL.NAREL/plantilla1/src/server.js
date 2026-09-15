@@ -37,6 +37,12 @@ const supabasePromotionsRoutes = require('./routes/promotions.pg.routes');
 const supabaseStorageRoutes = require('./routes/storage.pg.routes');
 const { publicRouter: supabaseOrdersPublicRoutes, adminRouter: supabaseOrdersAdminRoutes } = require('./routes/orders.pg.routes');
 const paymentsRoutes = require('./routes/payments.pg.routes');
+const {
+  shippingPromoPublicRoutes,
+  shippingPromoAdminRoutes,
+  getShippingPromoConfig,
+} = require('./routes/shippingPromo.pg.routes');
+const notificationsAdminRoutes = require('./routes/notifications.pg.routes');
 const env = require('./config/env');
 
 const app = express();
@@ -229,6 +235,11 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/admin/orders', supabaseOrdersAdminRoutes);
 // upload imagen y delete imagen producto
 app.use('/api/admin/products', supabaseStorageRoutes);
+// Promoción de envíos gratis y contador (público y admin)
+app.use('/api/shipping-promo', shippingPromoPublicRoutes);
+app.use('/api/admin/shipping-promo', shippingPromoAdminRoutes);
+// Notificaciones de pedidos (admin)
+app.use('/api/admin/notifications', notificationsAdminRoutes);
 
 // LEGACY routes (SQLite). Se mantienen opt-in para no cargar la dependencia antigua
 // ni interceptar rutas Supabase en el despliegue actual.
@@ -338,11 +349,25 @@ function escapeHtml(s) {
 // fetchOne ya importado al principio del archivo junto con initDB. No re-declarar.
 
 const storefrontFile = path.join(__dirname, '..', 'plantilla 1.html');
-function servirTienda(_req, res) {
+async function servirTienda(_req, res) {
   if (!fs.existsSync(storefrontFile)) {
     return res.status(404).send('Tienda no disponible');
   }
-  return res.sendFile(storefrontFile);
+  try {
+    const promoConfig = await getShippingPromoConfig();
+    let html = fs.readFileSync(storefrontFile, 'utf8');
+    const safeConfig = JSON.stringify(promoConfig).replace(/<\/script/gi, '<\\/script');
+    const injection = `<script id="__promo_config_injected">window.__SHIPPING_PROMO_CONFIG__ = ${safeConfig};</script>`;
+    if (html.includes('</head>')) {
+      html = html.replace('</head>', `${injection}\n</head>`);
+    } else {
+      html = injection + html;
+    }
+    return res.type('html').send(html);
+  } catch (err) {
+    logger.warn(`[servirTienda] Error injecting promo config: ${err.message}`);
+    return res.sendFile(storefrontFile);
+  }
 }
 
 app.get('/', servirTienda);

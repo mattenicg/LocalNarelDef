@@ -20,6 +20,7 @@ const {
   releaseOrderStock,
   updatePaymentResult,
 } = require('../services/order.service');
+const { notifyNewOrder } = require('../services/notification.service');
 
 const router = express.Router();
 
@@ -224,6 +225,9 @@ async function handleMercadoPagoProcess(req, res) {
     }
 
     const responseStatus = status === 'approved' ? 201 : 202;
+    notifyNewOrder(updated || order).catch((err) => {
+      logger.error('[payments.pg.routes] Error enviando notificaciones:', err);
+    });
     return res.status(responseStatus).json({
       ok: true,
       message: paymentMessage(status, payment.status_detail, paymentData.payment_method_id),

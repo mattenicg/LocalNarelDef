@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Notificaciones por Correo — Panel Admin | NAREL LOCAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500;700&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/auth-shared.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <span>CREW N.L.</span><span>·</span><span>NOTIFICACIONES AUTOMÁTICAS</span><span>·</span><span>UNA NUEVA VISIÓN</span>
+  </div>
+
+  <header>
+    <a class="logo" href="/">
+      <div class="logo-circle"><img src="/assets/img/logo-ngl-diamond.jpeg" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;background:#000;" onerror="this.onerror=null;this.src='/logo_1.jpeg';var s2=function(){this.onerror=null;this.src='/logo%20solo.jpeg';this.addEventListener('error',function(){this.style.display='none';});}.bind(this);this.addEventListener('error',s2,{once:true});" /></div>
+      <div class="logo-text">
+        <span class="brand">NAREL LOCAL</span>
+        <span class="tag">@narel_local</span>
+      </div>
+    </a>
+    <nav class="nav-links">
+      <a href="/admin/dashboard.html">DASHBOARD</a>
+      <a href="/admin/notifications.html" class="active">NOTIFICACIONES</a>
+      <a href="/admin/shipping-promo.html">CONTADOR PROMO</a>
+      <a href="/admin/products.html">PRODUCTOS</a>
+      <a href="/admin/orders.html">PEDIDOS</a>
+      <a href="/admin/banners.html">BANNERS</a>
+      <a href="/admin/product-new.html">NUEVO</a>
+      <a href="#" onclick="logout(); return false;">SALIR</a>
+    </nav>
+  </header>
+
+  <main class="page-wrapper" style="max-width:1100px;">
+    <p class="page-kicker">[ SISTEMA TRANSACCIONAL ]</p>
+    <h1 class="page-title">Notificaciones de Pedidos</h1>
+    <p class="page-subtitle" style="margin-bottom:24px;">
+      Administrá el envío de correos cuando ingresa un pedido nuevo. Se notifica a <strong>localnarel@gmail.com</strong> con el detalle completo de la compra y se envía al cliente una verificación indicando que su pedido está en preparación.
+    </p>
+
+    <div id="pageMessage"></div>
+
+    <div id="notificationsAdminContainer"></div>
+
+    <div class="dashboard-actions" style="margin-top:20px;">
+      <a href="/admin/dashboard.html" class="button secondary">← VOLVER AL DASHBOARD</a>
+      <a href="/admin/orders.html" class="button secondary">VER LISTADO DE PEDIDOS</a>
+      <a href="/" target="_blank" class="button primary">PROBAR TIENDA ↗</a>
+    </div>
+  </main>
+
+  <footer class="footer-auth">
+    <strong>NAREL LOCAL</strong> · Panel Administrador · © 2026
+  </footer>
+
+  <script src="/assets/js/supabaseClientBrowser.js"></script>
+  <script src="/assets/js/authGuard.js"></script>
+  <script src="/admin/assets/js/admin/notificationsAdmin.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      window.addEventListener('DOMContentLoaded', async () => {
+        const user = await window.auth.requireAuth({ requireAdmin: true });
+        if (!user) return;
+        if (typeof window.NotificationsAdmin === 'function') {
+          const notifAdmin = new window.NotificationsAdmin({ containerId: 'notificationsAdminContainer' });
+          notifAdmin.init();
+        }
+      });
+    })();
+    async function logout() {
+      try {
+        await window.auth.apiFetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      window.location.replace('/login.html');
+    }
+  </script>
+</body>
+</html>

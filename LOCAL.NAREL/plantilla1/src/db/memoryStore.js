@@ -1,6 +1,8 @@
 'use strict';
 
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const bcrypt = require('bcryptjs');
 
 let initialized = false;
@@ -16,6 +18,8 @@ const data = {
   orders: [],
   order_items: [],
   stock_movements: [],
+  store_settings: {},
+  notification_logs: [],
   orderSequence: 1,
 };
 
@@ -231,12 +235,88 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
     updated_at: now,
   });
 
+  // Default Store Settings (Shipping Promo Countdown)
+  const promoFile = path.join(__dirname, '..', '..', 'data', 'shipping-promo.json');
+  let defaultShippingPromo = {
+    enabled: true,
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    minAmount: 40000,
+    city: 'Santa Fe Capital',
+    mainText: 'ENVÍOS GRATIS SOLO POR ESTA SEMANA, ¿QUÉ ESPERÁS? ¡ASÍ SE INAUGURA UNA WEB! ⚡',
+    exclusiveLabel: 'EXCLUSIVA PARA SANTA FE CAPITAL',
+    subText: 'Envíos por compras a partir de $40.000.',
+    updatedAt: now,
+  };
+  if (fs.existsSync(promoFile)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(promoFile, 'utf8'));
+      defaultShippingPromo = Object.assign(defaultShippingPromo, parsed);
+    } catch (_) {}
+  } else {
+    try {
+      const dir = path.dirname(promoFile);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(promoFile, JSON.stringify(defaultShippingPromo, null, 2), 'utf8');
+    } catch (_) {}
+  }
+  data.store_settings['shipping_promo'] = defaultShippingPromo;
+
   initialized = true;
 }
 
 function executeMemoryQuery(rawText, params = []) {
   const sql = String(rawText || '').trim();
   const lowerSql = sql.toLowerCase();
+
+  // 0. STORE SETTINGS
+  if (lowerSql.includes('from store_settings') && lowerSql.includes('where key=$1')) {
+    const key = params[0];
+    const val = data.store_settings[key];
+    return { rows: val ? [{ key, value: val, updated_at: nowIso() }] : [], rowCount: val ? 1 : 0 };
+  }
+
+  if (lowerSql.includes('store_settings') && (lowerSql.startsWith('insert') || lowerSql.startsWith('update'))) {
+    const key = params[0];
+    let val = params[1];
+    if (typeof val === 'string') {
+      try { val = JSON.parse(val); } catch (_) {}
+    }
+    data.store_settings[key] = val;
+    if (key === 'shipping_promo') {
+      try {
+        const promoFile = path.join(__dirname, '..', '..', 'data', 'shipping-promo.json');
+        const dir = path.dirname(promoFile);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(promoFile, JSON.stringify(val, null, 2), 'utf8');
+      } catch (_) {}
+    }
+    return { rows: [{ key, value: val, updated_at: nowIso() }], rowCount: 1 };
+  }
+
+  // 0.1 NOTIFICATION LOGS
+  if (lowerSql.includes('from notification_logs')) {
+    const sorted = [...data.notification_logs].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const limit = Number(params[0]) || 50;
+    return { rows: sorted.slice(0, limit), rowCount: sorted.length };
+  }
+
+  if (lowerSql.startsWith('insert into notification_logs')) {
+    const id = uuid();
+    const now = nowIso();
+    const newLog = {
+      id,
+      type: params[0] || 'order_notification',
+      recipient: params[1] || '',
+      subject: params[2] || '',
+      order_number: params[3] || null,
+      status: params[4] || 'sent',
+      error_message: params[5] || null,
+      payload: typeof params[6] === 'string' ? JSON.parse(params[6]) : params[6],
+      created_at: now,
+    };
+    data.notification_logs.push(newLog);
+    return { rows: [newLog], rowCount: 1 };
+  }
 
   // 1. PROFILES (Auth)
   if (lowerSql.includes('from profiles') && lowerSql.includes('where id=$1')) {
@@ -688,6 +768,11 @@ function executeMemoryQuery(rawText, params = []) {
   }
 
   // 6. ORDERS, ORDER ITEMS, STOCK MOVEMENTS
+  if (lowerSql.includes('nextval')) {
+    const seq = data.orderSequence++;
+    return { rows: [{ n: seq }], rowCount: 1 };
+  }
+
   if (lowerSql.includes('from orders') && lowerSql.includes('count(*)')) {
     return { rows: [{ count: data.orders.length }], rowCount: 1 };
   }
@@ -712,27 +797,34 @@ function executeMemoryQuery(rawText, params = []) {
 
   if (lowerSql.startsWith('insert into orders')) {
     const id = uuid();
-    const orderNum = `NL-${String(data.orderSequence++).padStart(4, '0')}`;
     const now = nowIso();
+    let orderNum = params[0];
+    let offset = 0;
+    if (!orderNum || !String(orderNum).startsWith('NL-')) {
+      orderNum = `NL-${String(data.orderSequence++).padStart(4, '0')}`;
+    } else {
+      offset = 1;
+    }
+
     const newOrder = {
       id,
       order_number: orderNum,
-      customer_name: params[0] || 'Cliente',
-      customer_email: params[1] || 'cliente@narel.local',
-      customer_phone: params[2] || '',
-      shipping_method: params[3] || 'retiro',
-      shipping_address: params[4] || null,
-      shipping_city: params[5] || null,
-      shipping_postal_code: params[6] || null,
-      notes: params[7] || null,
-      payment_method: params[8] || 'transferencia',
-      status: params[9] || 'pendiente',
-      payment_status: params[10] || 'pendiente',
-      subtotal: Number(params[11]) || 0,
-      shipping_cost: Number(params[12]) || 0,
-      total: Number(params[13]) || 0,
-      mp_external_reference: params[14] || null,
-      mp_idempotency_key: params[15] || null,
+      customer_name: params[offset] || 'Cliente',
+      customer_email: params[offset + 1] || 'cliente@narel.local',
+      customer_phone: params[offset + 2] || '',
+      shipping_method: params[offset + 3] || 'retiro',
+      shipping_address: params[offset + 4] || null,
+      shipping_city: params[offset + 5] || null,
+      shipping_postal_code: params[offset + 6] || null,
+      notes: params[offset + 7] || null,
+      payment_method: params[offset + 8] || 'transferencia',
+      status: 'pendiente',
+      payment_status: 'pendiente',
+      mp_external_reference: params[offset + 9] || null,
+      mp_idempotency_key: params[offset + 10] || null,
+      subtotal: Number(params[offset + 11]) || 0,
+      shipping_cost: 0,
+      total: Number(params[offset + 11]) || 0,
       created_at: now,
       updated_at: now,
     };

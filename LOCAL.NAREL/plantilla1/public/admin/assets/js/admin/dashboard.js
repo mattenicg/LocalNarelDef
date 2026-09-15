@@ -12,6 +12,16 @@
     }
 
     cargarStats();
+
+    if (typeof window.NotificationsAdmin === 'function') {
+      const notifAdmin = new window.NotificationsAdmin({ containerId: 'notificationsAdminContainer' });
+      notifAdmin.init();
+    }
+
+    if (typeof window.ShippingPromoAdmin === 'function') {
+      const spAdmin = new window.ShippingPromoAdmin({ containerId: 'shippingPromoAdminContainer' });
+      spAdmin.init();
+    }
   }
 
   async function cargarStats() {

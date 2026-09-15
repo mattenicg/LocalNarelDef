@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Dashboard — Panel Admin | NAREL LOCAL</title>
+  <title>Contador Envíos Gratis — Panel Admin | NAREL LOCAL</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500;700&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/auth-shared.css">
 </head>
 <body>
@@ -25,9 +25,9 @@
       </div>
     </a>
     <nav class="nav-links">
-      <a href="/admin/dashboard.html" class="active">DASHBOARD</a>
+      <a href="/admin/dashboard.html">DASHBOARD</a>
       <a href="/admin/notifications.html">NOTIFICACIONES</a>
-      <a href="/admin/shipping-promo.html">CONTADOR PROMO</a>
+      <a href="/admin/shipping-promo.html" class="active">CONTADOR PROMO</a>
       <a href="/admin/products.html">PRODUCTOS</a>
       <a href="/admin/orders.html">PEDIDOS</a>
       <a href="/admin/banners.html">BANNERS</a>
@@ -36,38 +36,22 @@
     </nav>
   </header>
 
-  <main class="page-wrapper">
-    <p class="page-kicker">[ ADMIN — PANEL PRINCIPAL ]</p>
-    <h1 class="page-title">Panel de Control</h1>
+  <main class="page-wrapper" style="max-width:1100px;">
+    <p class="page-kicker">[ MARKETING & PROMOCIONES ]</p>
+    <h1 class="page-title">Contador de Envíos Gratis</h1>
+    <p class="page-subtitle" style="margin-bottom:24px;">
+      Configurá y administrá el contador regresivo de la barra promocional superior de la tienda. 
+      La fecha se guarda en el servidor de forma persistente, garantizando que no se reinicie cuando los clientes refrescan o abren la página desde cualquier dispositivo.
+    </p>
 
     <div id="pageMessage"></div>
 
-    <div class="grid-cards" id="statsGrid" style="margin-bottom:28px;">
-      <div class="stat-card">
-        <b id="statProducts">—</b>
-        <span>Total Productos</span>
-      </div>
-      <div class="stat-card">
-        <b id="statStock">—</b>
-        <span>Stock Total</span>
-      </div>
-      <div class="stat-card">
-        <b id="statOut">—</b>
-        <span>Sin Stock</span>
-      </div>
-    </div>
-
-    <!-- GESTIÓN DE NOTIFICACIONES POR CORREO -->
-    <div id="notificationsAdminContainer"></div>
-
-    <!-- GESTIÓN DEL CONTADOR DE ENVÍOS GRATIS -->
     <div id="shippingPromoAdminContainer"></div>
 
-    <div class="dashboard-actions">
-      <a href="/admin/orders.html" class="button secondary">VER PEDIDOS</a>
-      <a href="/admin/products.html" class="button secondary">VER PRODUCTOS</a>
-      <a href="/admin/product-new.html" class="button primary">CREAR PRODUCTO</a>
-      <a href="/" class="button secondary">VOLVER A LA TIENDA</a>
+    <div class="dashboard-actions" style="margin-top:20px;">
+      <a href="/admin/dashboard.html" class="button secondary">← VOLVER AL DASHBOARD</a>
+      <a href="/admin/banners.html" class="button secondary">GESTIONAR BANNERS</a>
+      <a href="/" target="_blank" class="button primary">PROBAR EN TIENDA ↗</a>
     </div>
   </main>
 
@@ -78,7 +62,24 @@
   <script src="/assets/js/supabaseClientBrowser.js"></script>
   <script src="/assets/js/authGuard.js"></script>
   <script src="/admin/assets/js/admin/shippingPromoAdmin.js"></script>
-  <script src="/admin/assets/js/admin/notificationsAdmin.js"></script>
-  <script src="/admin/assets/js/admin/dashboard.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      window.addEventListener('DOMContentLoaded', async () => {
+        const user = await window.auth.requireAuth({ requireAdmin: true });
+        if (!user) return;
+        if (typeof window.ShippingPromoAdmin === 'function') {
+          const spAdmin = new window.ShippingPromoAdmin({ containerId: 'shippingPromoAdminContainer' });
+          spAdmin.init();
+        }
+      });
+    })();
+    async function logout() {
+      try {
+        await window.auth.apiFetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      window.location.replace('/login.html');
+    }
+  </script>
 </body>
 </html>

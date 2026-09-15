@@ -6,6 +6,7 @@ const { query } = require('../db/postgres');
 const { authenticate, requireAdmin } = require('../middleware/postgresAuth');
 const env = require('../config/env');
 const { createOrderWithStock } = require('../services/order.service');
+const { notifyNewOrder } = require('../services/notification.service');
 
 const statuses = ['pendiente', 'confirmado', 'preparando', 'enviado', 'entregado', 'cancelado'];
 const manualPayments = ['transferencia', 'efectivo', 'whatsapp'];
@@ -51,6 +52,12 @@ publicRouter.post('/', [
     }
 
     const order = await createOrderWithStock(bodyData, { paymentMethod: bodyData.payment_method });
+
+    // Disparar notificaciones por email (admin localnarel@gmail.com + cliente)
+    notifyNewOrder(order).catch((err) => {
+      console.error('[orders.pg.routes] Error al enviar notificaciones de pedido:', err.message);
+    });
+
     return res.status(201).json({
       ok: true,
       message: 'Pedido creado correctamente.',
