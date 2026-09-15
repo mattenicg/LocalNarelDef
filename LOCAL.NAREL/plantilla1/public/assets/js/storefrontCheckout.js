@@ -30,7 +30,13 @@
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-  const formatCurrency = (value) => '$ ' + Math.round(Number(value) || 0).toLocaleString('es-AR');
+  const formatCurrency = (value) => {
+    const num = Number(value) || 0;
+    if (Math.abs(num % 1) > 0.001) {
+      return '$ ' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return '$ ' + Math.round(num).toLocaleString('es-AR');
+  };
   const formatPhone = (value) => String(value || '').replace(/\D/g, '');
 
   function createIdempotencyKey() {
@@ -130,7 +136,7 @@
     const effectiveMethod = method || state.selectedPaymentMethod || 'tarjeta';
     return state.items.reduce((sum, item) => {
       let p = item.price;
-      if (item.direct_purchase && effectiveMethod === 'transferencia') {
+      if (effectiveMethod === 'transferencia' && (item.direct_purchase || state.isDirectPurchase || item.direct_discount_percent !== undefined)) {
         p = getItemTransferPrice(item);
       }
       return sum + item.qty * p;

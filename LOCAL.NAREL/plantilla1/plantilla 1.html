@@ -8230,7 +8230,7 @@
           }
           const transferPriceStr = fmtPriceAR(transferPrice);
           const transferText = htmlEscape(p.direct_transfer_text || 'con Transferencia');
-          const directAttrs = ` data-direct="1" data-allowed-methods="${htmlEscape(JSON.stringify(p.allowed_payment_methods || []))}" data-allowed-installments="${htmlEscape(JSON.stringify(p.allowed_installments || []))}"`;
+          const directAttrs = ` data-direct="1" data-allowed-methods="${htmlEscape(JSON.stringify(p.allowed_payment_methods || []))}" data-allowed-installments="${htmlEscape(JSON.stringify(p.allowed_installments || []))}" data-discount-percent="${discountPercent}" data-discount-text="${discountText}" data-custom-transfer="${p.direct_custom_transfer_price || ''}" data-installments-count="${installmentsCount}" data-installments-text="${installmentsText}"`;
 
           const promoBadgeHTML = showPromoBadge
             ? `<div class="direct-promo-pill" style="background:#e50914;color:#fff;font-size:10px;font-weight:800;padding:4px 9px;border-radius:12px;letter-spacing:.05em;text-transform:uppercase;line-height:1.1;text-align:center;box-shadow:0 2px 8px rgba(229,9,20,0.3);white-space:nowrap;">${promoBadgeText}</div>`
@@ -8741,6 +8741,9 @@
                 qty: 1,
                 size: sizeList.length === 1 ? sizeList[0] : '',
                 direct_purchase: isDirect,
+                direct_discount_percent: prod.direct_discount_percent !== undefined ? prod.direct_discount_percent : 25,
+                direct_discount_text: prod.direct_discount_text || 'con transferencia',
+                direct_custom_transfer_price: prod.direct_custom_transfer_price || null,
               } : {
                 id: card.dataset.id || ('local-' + Math.random().toString(36).slice(2, 10)),
                 name: card.dataset.name || 'Producto',
@@ -8753,6 +8756,11 @@
                 direct_purchase: isDirect,
                 allowed_payment_methods: allowedMethods,
                 allowed_installments: allowedInstallments,
+                direct_discount_percent: Number(card.dataset.discountPercent || 25),
+                direct_discount_text: card.dataset.discountText || 'con transferencia',
+                direct_custom_transfer_price: card.dataset.customTransfer ? Number(card.dataset.customTransfer) : null,
+                direct_installments_count: Number(card.dataset.installmentsCount || 6),
+                direct_installments_text: card.dataset.installmentsText || 'sin interés',
               };
 
               if (isDirect) {

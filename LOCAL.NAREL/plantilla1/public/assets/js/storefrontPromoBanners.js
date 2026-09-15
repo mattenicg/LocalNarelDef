@@ -43,7 +43,13 @@
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-  const formatCurrency = (value) => '$ ' + Math.round(Number(value) || 0).toLocaleString('es-AR');
+  const formatCurrency = (value) => {
+    const num = Number(value) || 0;
+    if (Math.abs(num % 1) > 0.001) {
+      return '$ ' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return '$ ' + Math.round(num).toLocaleString('es-AR');
+  };
   const pad = (value) => String(value).padStart(2, '0');
 
   function safeUrl(value, allowHash) {

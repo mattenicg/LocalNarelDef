@@ -16,7 +16,13 @@
   const escapeHtml = (value) => String(value == null ? '' : value)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-  const formatCurrency = (value) => '$ ' + Math.round(Number(value) || 0).toLocaleString('es-AR');
+  const formatCurrency = (value) => {
+    const num = Number(value) || 0;
+    if (Math.abs(num % 1) > 0.001) {
+      return '$ ' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return '$ ' + Math.round(num).toLocaleString('es-AR');
+  };
   const formatDate = (value) => {
     if (!value) return '—';
     const date = new Date(value);
