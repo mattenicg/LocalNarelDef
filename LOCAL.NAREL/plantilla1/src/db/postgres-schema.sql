@@ -201,13 +201,15 @@ CREATE TABLE IF NOT EXISTS stock_movements (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_payment_method_check;
-ALTER TABLE orders ADD CONSTRAINT orders_payment_method_check CHECK (payment_method IN ('transferencia','efectivo','whatsapp','mercadopago_card'));
+ALTER TABLE orders ADD CONSTRAINT orders_payment_method_check CHECK (payment_method IN ('transferencia','efectivo','whatsapp','mercadopago_card','mercadopago'));
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_payment_id TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_external_reference TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_idempotency_key TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_status TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_status_detail TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_payment_method_id TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_payment_type_id TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_ticket_url TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_installments INTEGER;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_updated_at TIMESTAMPTZ;
 

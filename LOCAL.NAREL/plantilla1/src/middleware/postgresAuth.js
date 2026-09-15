@@ -3,7 +3,13 @@ const { query } = require('../db/postgres');
 const env = require('../config/env');
 const COOKIE_ACCESS = 'nl_access_token';
 function extractAccessToken(req) { const auth = req.headers.authorization || ''; return auth.startsWith('Bearer ') ? auth.slice(7) : req.cookies?.[COOKIE_ACCESS] || null; }
-function clearAuthCookies(res) { res.clearCookie(COOKIE_ACCESS, { httpOnly:true, sameSite:'lax', secure:env.NODE_ENV==='production', path:'/' }); res.clearCookie('nl_session_id', { httpOnly:true, sameSite:'lax', secure:env.NODE_ENV==='production', path:'/' }); }
+function clearAuthCookies(res) {
+  const isHttps = env.NODE_ENV === 'production' || process.env.HTTPS === 'true' || Boolean(process.env.K_SERVICE);
+  const sameSite = isHttps ? 'none' : 'lax';
+  const secure = isHttps;
+  res.clearCookie(COOKIE_ACCESS, { httpOnly: true, sameSite, secure, path: '/' });
+  res.clearCookie('nl_session_id', { httpOnly: true, sameSite, secure, path: '/' });
+}
 async function authenticate(req,res,next) {
   try {
     const token = extractAccessToken(req); const sessionId = extractSessionCookie(req);

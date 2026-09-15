@@ -151,6 +151,13 @@
                 if (!data?.ok || !data?.user) throw new Error('Respuesta inválida del servidor');
                 if (data.user.role !== 'admin') throw new Error('Tu cuenta no tiene permisos de administrador');
 
+                if (data.user.token) {
+                    try {
+                        localStorage.setItem('nl_token', data.user.token);
+                        if (data.user.session_id) localStorage.setItem('nl_session_id', data.user.session_id);
+                    } catch(e) {}
+                }
+
                 if (remember) {
                     try { localStorage.setItem('admin_remember_email', email); } catch(e) {}
                 } else {

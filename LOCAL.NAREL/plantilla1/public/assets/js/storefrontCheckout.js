@@ -550,9 +550,9 @@
     };
   }
 
-  // handleSubmit local: recibe el pago ya tokenizado por narel-card-payment
+  // handleSubmit local: recibe el pago ya procesado o tokenizado por narel-card-payment
   // (nunca el número de tarjeta ni el CVV) y lo envía al endpoint existente.
-  async function processCardPayment(form, cardFormData) {
+  async function processCardPayment(form, detail) {
     if (state.submitting) throw new Error('Ya estamos procesando tu pago.');
     clearAlert();
     if (!validateCheckoutForm(form)) {
@@ -572,18 +572,31 @@
       throw new Error('Política de cambios no aceptada.');
     }
 
+    const cardFormData = (detail && detail.payment) ? detail.payment : (detail || {});
+    const selectedMethod = (detail && detail.selectedPaymentMethod) || (cardFormData && cardFormData.payment_type_id) || 'credit_card';
+
+    // Si el usuario abona mediante la billetera de Mercado Pago ("wallet_purchase")
+    if (selectedMethod === 'wallet_purchase') {
+      state.items = [];
+      saveCart();
+      renderCart();
+      return { ok: true };
+    }
+
     state.submitting = true;
     const payload = buildOrderPayload(form);
     const payment = {
-      token: cardFormData.token,
-      issuer_id: cardFormData.issuer_id,
+      token: cardFormData.token || undefined,
+      issuer_id: cardFormData.issuer_id || undefined,
       payment_method_id: cardFormData.payment_method_id,
       installments: Number(cardFormData.installments) || 1,
-      payer: cardFormData.payer?.identification ? { identification: cardFormData.payer.identification } : undefined,
+      payer: cardFormData.payer?.identification
+        ? { identification: cardFormData.payer.identification, email: cardFormData.payer?.email }
+        : (cardFormData.payer || undefined),
     };
 
     try {
-      const response = await fetch('/api/payments/mercadopago/card', {
+      const response = await fetch('/api/payments/mercadopago/process', {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -625,13 +638,22 @@
     const paymentContent = get('paymentContent');
     if (!paymentContent) return;
     const pending = paymentState === 'pending';
+    const ticketUrl = order.ticket_url || order.mp_ticket_url;
+    const ticketAction = ticketUrl
+      ? `<a class="btn confirm" href="${escapeHtml(ticketUrl)}" target="_blank" rel="noopener">DESCARGAR / VER CUPÓN DE PAGO</a>`
+      : '';
     const whatsapp = order.whatsapp_url
       ? `<a class="btn confirm" href="${escapeHtml(order.whatsapp_url)}" target="_blank" rel="noopener">ENVIAR DETALLE POR WHATSAPP</a>`
       : '';
-    const title = pending ? 'PEDIDO PENDIENTE' : 'PEDIDO RECIBIDO';
-    const copy = pending
+    let title = pending ? 'PEDIDO PENDIENTE' : 'PEDIDO RECIBIDO';
+    let copy = pending
       ? 'Recibimos tu pedido, pero Mercado Pago todavía no confirmó el cobro. No vuelvas a pagar; te avisaremos cuando cambie el estado.'
       : 'El pago fue aprobado por Mercado Pago y registramos tu pedido correctamente.';
+
+    if (ticketUrl) {
+      title = 'CUPÓN DE PAGO GENERADO';
+      copy = 'Tu pedido fue registrado. Podés pagar con tu cupón en cualquier sucursal antes del vencimiento.';
+    }
 
     // Al reemplazar este HTML, narel-card-payment (si estaba montado) se
     // desconecta del DOM y limpia su propio Brick automáticamente.
@@ -642,6 +664,7 @@
         <div class="order-code">${escapeHtml(order.order_number || 'NL')}</div>
         <p>${copy} El total es <strong style="color:var(--yellow)">${formatCurrency(order.total)}</strong>.</p>
         <div class="confirmation-actions">
+          ${ticketAction}
           ${whatsapp}
           <button type="button" class="btn ghost" id="closeSuccessBtn">CERRAR</button>
         </div>
@@ -813,17 +836,43 @@
     mountCardPaymentGateway(form);
   }
 
-  function mountCardPaymentGateway(form) {
+  async function mountCardPaymentGateway(form) {
     const mount = get('checkoutCardMount');
     if (!mount) return;
 
     const cardEl = document.createElement('narel-card-payment');
     cardEl.setAttribute('amount', String(Number(totalPrice().toFixed(2))));
     cardEl.setAttribute('locale', state.publicConfig.MERCADO_PAGO_LOCALE || 'es-AR');
-    cardEl.setAttribute('max-installments', '1');
+    cardEl.setAttribute('max-installments', '24');
+
+    // Intentamos obtener una preferencia para habilitar Dinero en cuenta / Billetera MP
+    try {
+      const prefResponse = await fetch('/api/payments/mercadopago/preference', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: state.items.map((i) => ({
+            product_id: i.id,
+            product_name: i.name,
+            quantity: i.qty,
+            unit_price: i.price,
+          })),
+          total: Number(totalPrice().toFixed(2)),
+        }),
+      });
+      if (prefResponse.ok) {
+        const prefData = await prefResponse.json();
+        if (prefData.data && prefData.data.preference_id) {
+          cardEl.setAttribute('preference-id', prefData.data.preference_id);
+        }
+      }
+    } catch (_e) {
+      // Si la preferencia falla o no hay credenciales en local, continúa con tarjetas y tickets
+    }
 
     // Gate: si el comprador o el carrito no están listos, cancelamos el
-    // envío del Brick antes de tokenizar (handleSubmit local pedido).
+    // envío del Brick antes de procesar
     cardEl.addEventListener('narel-payment-submit', (event) => {
       if (state.submitting) { event.preventDefault(); return; }
       if (!validateCheckoutForm(form)) {
@@ -847,7 +896,7 @@
       }
     });
 
-    cardEl.onSubmit = (detail) => processCardPayment(form, detail.payment);
+    cardEl.onSubmit = (detail) => processCardPayment(form, detail);
     cardEl.onError = (error) => {
       console.warn('[narel-card-payment]', error);
     };

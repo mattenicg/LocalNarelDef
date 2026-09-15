@@ -81,7 +81,7 @@ async function createOrderWithStock(payload, options = {}) {
 
     const sequence = await client.query("SELECT nextval('order_number_seq') AS n");
     const orderNumber = `NL-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(sequence.rows[0].n).padStart(5, '0')}`;
-    const mpReference = externalReference || (paymentMethod === 'mercadopago_card' ? orderNumber : null);
+    const mpReference = externalReference || (['mercadopago_card', 'mercadopago'].includes(paymentMethod) ? orderNumber : null);
 
     const isSantaFeCapital = (cityName) => {
       if (!cityName) return false;
@@ -182,6 +182,8 @@ async function updatePaymentResult(orderId, payment = {}) {
   const paymentMethodId = payment.payment_method_id ? String(payment.payment_method_id) : null;
   const installments = Number.isInteger(Number(payment.installments)) ? Number(payment.installments) : null;
   const statusDetail = String(payment.status_detail || '').slice(0, 160) || null;
+  const ticketUrl = payment.ticket_url || payment.point_of_interaction?.transaction_data?.ticket_url || null;
+  const paymentTypeId = payment.payment_type_id ? String(payment.payment_type_id) : null;
 
   const result = await query(
     `UPDATE orders
@@ -198,10 +200,12 @@ async function updatePaymentResult(orderId, payment = {}) {
            WHEN $9='approved' THEN 'confirmado'
            WHEN $9='rejected' THEN 'cancelado'
            ELSE status
-         END
+         END,
+         mp_ticket_url=COALESCE($10,mp_ticket_url),
+         mp_payment_type_id=COALESCE($11,mp_payment_type_id)
      WHERE id=$1
      RETURNING *`,
-    [orderId, paymentId, externalReference, String(payment.status || 'pending'), statusDetail, paymentMethodId, installments, paymentStatus, mpStatus],
+    [orderId, paymentId, externalReference, String(payment.status || 'pending'), statusDetail, paymentMethodId, installments, paymentStatus, mpStatus, ticketUrl, paymentTypeId],
   );
   return attachOrderItems({ query }, result.rows[0]);
 }

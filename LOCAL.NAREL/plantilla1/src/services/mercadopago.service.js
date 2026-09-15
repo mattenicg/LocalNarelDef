@@ -1,10 +1,11 @@
 'use strict';
 
 const crypto = require('crypto');
-const { MercadoPagoConfig, Payment } = require('mercadopago');
+const { MercadoPagoConfig, Payment, Preference } = require('mercadopago');
 const env = require('../config/env');
 
 let paymentClient = null;
+let preferenceClient = null;
 
 function isMercadoPagoProvider() {
   return ['mercadopago', 'mercado_pago'].includes(
@@ -39,7 +40,87 @@ function getPaymentClient() {
   return paymentClient;
 }
 
-async function createCardPayment({
+function getPreferenceClient() {
+  if (!isConfigured()) {
+    const error = new Error('Mercado Pago no está configurado');
+    error.code = 'MERCADO_PAGO_NOT_CONFIGURED';
+    throw error;
+  }
+
+  if (!preferenceClient) {
+    const config = new MercadoPagoConfig({
+      accessToken: env.MERCADO_PAGO_ACCESS_TOKEN,
+      options: {
+        timeout: 10000,
+      },
+    });
+
+    preferenceClient = new Preference(config);
+  }
+
+  return preferenceClient;
+}
+
+async function createPreference({
+  items,
+  customer,
+  shipping,
+  total,
+  externalReference,
+  backUrls,
+}) {
+  const client = getPreferenceClient();
+
+  const prefItems = (items && items.length > 0)
+    ? items.map((item, idx) => ({
+        id: String(item.product_id || item.id || `item-${idx}`),
+        title: String(item.product_name || item.name || item.title || 'Producto Narel').slice(0, 250),
+        quantity: Number(item.quantity || 1),
+        unit_price: Number(item.unit_price || item.unitPrice || item.price || total),
+        currency_id: 'ARS',
+      }))
+    : [
+        {
+          id: 'narel-cart',
+          title: 'Compra en Narel Local',
+          quantity: 1,
+          unit_price: Number(total),
+          currency_id: 'ARS',
+        },
+      ];
+
+  const body = {
+    items: prefItems,
+    payer: customer ? {
+      name: String(customer.name || '').slice(0, 100),
+      email: String(customer.email || '').trim().toLowerCase(),
+      phone: customer.phone ? { number: String(customer.phone) } : undefined,
+    } : undefined,
+    external_reference: String(externalReference),
+    payment_methods: {
+      excluded_payment_methods: [], // NO excluimos ningún medio soportado por MP
+      excluded_payment_types: [],   // Permitimos todos los tipos de pago soportados
+      installments: 24,             // Habilitamos hasta 24 cuotas
+    },
+    back_urls: backUrls || undefined,
+    auto_return: backUrls ? 'approved' : undefined,
+    statement_descriptor: env.MERCADO_PAGO_STATEMENT_DESCRIPTOR || 'Narel Local',
+  };
+
+  try {
+    return await client.create({ body });
+  } catch (error) {
+    console.error('Mercado Pago createPreference error:', {
+      responseData: error.response?.data,
+      cause: error.cause,
+      status: error.status,
+      message: error.message,
+    });
+    throw error;
+  }
+}
+
+async function processPayment({
   amount,
   externalReference,
   payerEmail,
@@ -50,17 +131,34 @@ async function createCardPayment({
   payerIdentification,
   idempotencyKey,
 }) {
+  // Verificación defensiva: Go Cuotas está estrictamente excluido
+  if (String(paymentMethodId || '').toLowerCase().includes('gocuotas')) {
+    const error = new Error('Método de pago no admitido.');
+    error.status = 400;
+    throw error;
+  }
+
   const body = {
     transaction_amount: Number(amount),
-    token: String(token),
     description: `${env.MERCADO_PAGO_STATEMENT_DESCRIPTOR || 'Narel Local'} - ${externalReference}`.slice(0, 250),
-    installments: Number(installments) || 1,
     payment_method_id: String(paymentMethodId),
     payer: {
       email: String(payerEmail).trim().toLowerCase(),
     },
     external_reference: String(externalReference),
   };
+
+  if (token) {
+    body.token = String(token);
+    body.installments = Number(installments) || 1;
+    if (
+      issuerId !== undefined
+      && issuerId !== null
+      && issuerId !== ''
+    ) {
+      body.issuer_id = Number(issuerId);
+    }
+  }
 
   if (
     payerIdentification
@@ -73,14 +171,6 @@ async function createCardPayment({
     };
   }
 
-  if (
-    issuerId !== undefined
-    && issuerId !== null
-    && issuerId !== ''
-  ) {
-    body.issuer_id = Number(issuerId);
-  }
-
   try {
     return await getPaymentClient().create({
       body,
@@ -89,7 +179,7 @@ async function createCardPayment({
       },
     });
   } catch (error) {
-    console.error('Mercado Pago error:', {
+    console.error('Mercado Pago processPayment error:', {
       responseData: error.response?.data,
       cause: error.cause,
       status: error.status,
@@ -98,6 +188,10 @@ async function createCardPayment({
 
     throw error;
   }
+}
+
+async function createCardPayment(params) {
+  return processPayment(params);
 }
 
 async function getPayment(paymentId) {
@@ -165,6 +259,8 @@ function verifyWebhookSignature({
 
 module.exports = {
   createCardPayment,
+  processPayment,
+  createPreference,
   getPayment,
   isConfigured,
   verifyWebhookSignature,

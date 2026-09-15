@@ -1,16 +1,59 @@
 // ============================================================
 // AuthGuard - Protección de rutas en HTML (client side)
-// La fuente de verdad es el backend /api/auth/me (no el browser JWT)
-// ya que el backend valida la sesión única en user_sessions.
+// La fuente de verdad es el backend /api/auth/me
+// Soporta cookies de sesión e inclusión de Bearer token + X-Session-Id
+// para compatibilidad total dentro de iframes y navegadores modernos.
 // ============================================================
+
+function getStoredToken() {
+  try {
+    return localStorage.getItem('nl_token') || null;
+  } catch (_e) {
+    return null;
+  }
+}
+
+function getStoredSessionId() {
+  try {
+    return localStorage.getItem('nl_session_id') || null;
+  } catch (_e) {
+    return null;
+  }
+}
+
+function storeAuth(token, sessionId) {
+  try {
+    if (token) localStorage.setItem('nl_token', token);
+    if (sessionId) localStorage.setItem('nl_session_id', sessionId);
+  } catch (_e) {}
+}
+
+function clearStoredAuth() {
+  try {
+    localStorage.removeItem('nl_token');
+    localStorage.removeItem('nl_session_id');
+  } catch (_e) {}
+}
 
 async function getCurrentUser() {
   try {
-    const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
-    if (r.status === 401 || r.status === 403) return null;
+    const headers = {};
+    const token = getStoredToken();
+    const sessionId = getStoredSessionId();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (sessionId) headers['X-Session-Id'] = sessionId;
+
+    const r = await fetch('/api/auth/me', { credentials: 'include', headers });
+    if (r.status === 401 || r.status === 403) {
+      clearStoredAuth();
+      return null;
+    }
     if (!r.ok) return null;
     const json = await r.json();
-    if (!json || !json.ok) return null;
+    if (!json || !json.ok) {
+      clearStoredAuth();
+      return null;
+    }
     return json.user || null;
   } catch (e) {
     return null;
@@ -70,13 +113,25 @@ function setButtonLoading(btnId, loading, textLoading = 'Cargando...') {
 }
 
 async function apiFetch(url, options = {}) {
+  const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+  const token = getStoredToken();
+  const sessionId = getStoredSessionId();
+  if (token && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  if (sessionId && !headers['X-Session-Id']) {
+    headers['X-Session-Id'] = sessionId;
+  }
+
   const opts = Object.assign(
     {
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      headers
     },
     options || {}
   );
+  opts.headers = headers;
+
   if (opts.body && typeof opts.body !== 'string' && !(opts.body instanceof FormData)) {
     opts.body = JSON.stringify(opts.body);
   }
@@ -86,6 +141,9 @@ async function apiFetch(url, options = {}) {
     let json = { ok: false, message: 'Error de red' };
     try { json = await r.json(); } catch (_e) {}
     json.__status = r.status;
+    if (json.user && json.user.token) {
+      storeAuth(json.user.token, json.user.session_id);
+    }
     return json;
   } catch (err) {
     return { ok: false, message: err.message || 'Error de conexión' };
@@ -94,8 +152,14 @@ async function apiFetch(url, options = {}) {
 
 async function logout() {
   try {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+    const headers = {};
+    const token = getStoredToken();
+    const sessionId = getStoredSessionId();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (sessionId) headers['X-Session-Id'] = sessionId;
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers });
   } catch (_e) { /* no importa el error, igualmente el user queda sin sesión */ }
+  clearStoredAuth();
   return true;
 }
 
@@ -107,4 +171,8 @@ window.auth = {
   setButtonLoading,
   apiFetch,
   logout,
+  storeAuth,
+  clearStoredAuth,
+  getStoredToken,
+  getStoredSessionId
 };

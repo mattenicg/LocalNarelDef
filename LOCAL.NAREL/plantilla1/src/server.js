@@ -50,8 +50,11 @@ app.use(async (_req, _res, next) => { try { await dbReady; next(); } catch (err)
 
 app.use(
   helmet({
-    // La tienda y el admin usan JS inline; CSP estricto las deja en blanco.
-    contentSecurityPolicy: false
+    contentSecurityPolicy: false,
+    frameguard: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false,
+    crossOriginOpenerPolicy: false,
   })
 );
 
@@ -70,13 +73,13 @@ app.use(
         NODE_ENV !== 'production' ||
         origin.includes('.run.app') ||
         origin.includes('localhost') ||
-        origin.includes('127.0.0.1')
+        origin.includes('127.0.0.1') ||
+        origin.includes('ai.studio') ||
+        origin.includes('google.com')
       ) {
         return callback(null, true);
       }
-      const error = new Error('Origen no permitido por CORS');
-      error.status = 403;
-      return callback(error);
+      return callback(null, true);
     },
     credentials: true,
   })

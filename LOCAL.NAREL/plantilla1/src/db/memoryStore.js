@@ -239,6 +239,11 @@ function executeMemoryQuery(rawText, params = []) {
   const lowerSql = sql.toLowerCase();
 
   // 1. PROFILES (Auth)
+  if (lowerSql.includes('from profiles') && lowerSql.includes('where id=$1')) {
+    const user = data.profiles.find((p) => p.id === params[0]);
+    return { rows: user ? [{ ...user }] : [], rowCount: user ? 1 : 0 };
+  }
+
   if (lowerSql.includes('from profiles') && lowerSql.includes('lower(email)=lower($1)')) {
     const email = String(params[0] || '').toLowerCase();
     const user = data.profiles.find((p) => p.email.toLowerCase() === email);

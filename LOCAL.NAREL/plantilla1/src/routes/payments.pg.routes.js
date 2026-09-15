@@ -7,6 +7,8 @@ const env = require('../config/env');
 const logger = require('../services/logger');
 const {
   createCardPayment,
+  processPayment,
+  createPreference,
   getPayment,
   isConfigured,
   verifyWebhookSignature,
@@ -34,21 +36,74 @@ function whatsappUrl(order) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(`Hola Narel Local, quiero confirmar mi pedido.\nOrden: ${order.order_number}\nTotal: $ ${Number(order.total).toLocaleString('es-AR')}`)}`;
 }
 
-function safeOrder(order) {
+function safeOrder(order, extra = {}) {
   if (!order) return null;
-  const publicOrder = { ...order };
+  const publicOrder = { ...order, ...extra };
   delete publicOrder.mp_idempotency_key;
+  if (order.mp_ticket_url && !publicOrder.ticket_url) {
+    publicOrder.ticket_url = order.mp_ticket_url;
+  }
   return { ...publicOrder, whatsapp_url: whatsappUrl(order) };
 }
 
-function paymentMessage(status, detail) {
+function paymentMessage(status, detail, paymentMethodId) {
   if (status === 'approved') return 'Pago aprobado y pedido confirmado.';
-  if (status === 'pending' || status === 'in_process') return 'El pago quedó pendiente de confirmación. Te avisaremos cuando Mercado Pago lo actualice.';
-  if (detail === 'cc_rejected_other_reason') return 'Mercado Pago rechazó la tarjeta. Probá con otra tarjeta o medio de pago.';
-  return 'El pago fue rechazado. Revisá los datos o probá con otra tarjeta.';
+  if (status === 'pending' || status === 'in_process') {
+    if (['rapipago', 'pagofacil', 'ticket', 'bolbradesco'].includes(String(paymentMethodId || '').toLowerCase())) {
+      return 'Pedido registrado. Podés pagar con tu cupón en cualquier sucursal antes de su vencimiento.';
+    }
+    return 'El pago quedó pendiente de confirmación. Te avisaremos cuando Mercado Pago lo actualice.';
+  }
+  if (detail === 'cc_rejected_other_reason') return 'Mercado Pago rechazó el pago. Probá con otro medio de pago.';
+  return 'El pago fue rechazado. Revisá los datos o probá con otro medio de pago.';
 }
 
-const cardRules = [
+// Endpoint de Preferencia para Mercado Pago (habilita Dinero en cuenta / Billetera MP)
+router.post('/mercadopago/preference', async (req, res) => {
+  if (!isConfigured()) {
+    return res.status(503).json({ ok: false, message: 'Mercado Pago no está disponible en este momento.' });
+  }
+
+  try {
+    const { items, customer, shipping, total, externalReference } = req.body || {};
+    const subtotal = Number(total) || 0;
+    if (subtotal <= 0 && (!items || !items.length)) {
+      return res.status(400).json({ ok: false, message: 'Monto o productos inválidos.' });
+    }
+
+    const host = req.get('host') || 'localhost:3000';
+    const proto = req.get('x-forwarded-proto') || req.protocol || 'http';
+    const origin = req.get('origin') || `${proto}://${host}`;
+
+    const backUrls = {
+      success: `${origin}/?mp_status=approved`,
+      pending: `${origin}/?mp_status=pending`,
+      failure: `${origin}/?mp_status=failure`,
+    };
+
+    const preference = await createPreference({
+      items,
+      customer,
+      shipping,
+      total: subtotal,
+      externalReference: externalReference || `NL-PREF-${Date.now()}`,
+      backUrls,
+    });
+
+    return res.status(200).json({
+      ok: true,
+      data: {
+        preference_id: preference.id,
+        init_point: preference.init_point,
+      },
+    });
+  } catch (error) {
+    logger.error('[mercadopago] error creando preferencia:', error);
+    return res.status(500).json({ ok: false, message: error.message || 'Error al inicializar Mercado Pago.' });
+  }
+});
+
+const paymentRules = [
   body('items').isArray({ min: 1, max: 50 }).withMessage('El carrito está vacío.'),
   body('items.*.product_id').isUUID().withMessage('Producto inválido.'),
   body('items.*.quantity').isInt({ min: 1, max: 99 }).withMessage('Cantidad inválida.'),
@@ -61,9 +116,9 @@ const cardRules = [
   body('shipping.city').optional({ nullable: true }).isString().isLength({ max: 120 }).withMessage('Ciudad inválida.'),
   body('shipping.postal_code').optional({ nullable: true }).isString().isLength({ max: 30 }).withMessage('Código postal inválido.'),
   body('shipping.notes').optional({ nullable: true }).isString().isLength({ max: 500 }).withMessage('Notas inválidas.'),
-  body('payment.token').isString().trim().isLength({ min: 10, max: 500 }).withMessage('Token de tarjeta inválido.'),
-  body('payment.payment_method_id').isString().trim().isLength({ min: 1, max: 60 }).withMessage('Método de tarjeta inválido.'),
-  body('payment.installments').isInt({ min: 1, max: 24 }).withMessage('Cantidad de cuotas inválida.'),
+  body('payment.token').optional({ nullable: true }).isString().trim().isLength({ min: 10, max: 500 }).withMessage('Token de tarjeta inválido.'),
+  body('payment.payment_method_id').isString().trim().isLength({ min: 1, max: 60 }).withMessage('Método de pago inválido.'),
+  body('payment.installments').optional({ nullable: true }).isInt({ min: 1, max: 24 }).withMessage('Cantidad de cuotas inválida.'),
   body('payment.issuer_id').optional({ nullable: true }).isInt().withMessage('Emisor de tarjeta inválido.'),
   body('payment.payer').optional({ nullable: true }).isObject().withMessage('Datos del pagador inválidos.'),
   body('payment.payer.identification').optional({ nullable: true }).isObject().withMessage('Identificación inválida.'),
@@ -71,7 +126,7 @@ const cardRules = [
   body('payment.payer.identification.number').optional({ nullable: true }).isString().isLength({ min: 3, max: 40 }).withMessage('Número de identificación inválido.'),
 ];
 
-router.post('/mercadopago/card', cardRules, async (req, res) => {
+async function handleMercadoPagoProcess(req, res) {
   if (validationError(req, res)) return;
   if (!isConfigured()) {
     return res.status(503).json({ ok: false, message: 'El pago con Mercado Pago no está disponible en este momento.' });
@@ -80,6 +135,11 @@ router.post('/mercadopago/card', cardRules, async (req, res) => {
   const idempotencyKey = String(req.get('Idempotency-Key') || crypto.randomUUID()).trim().slice(0, 200);
   const payload = { ...req.body, payment_method: 'mercadopago_card' };
   const paymentData = req.body.payment;
+
+  // Verificación defensiva contra Go Cuotas
+  if (String(paymentData.payment_method_id || '').toLowerCase().includes('gocuotas')) {
+    return res.status(400).json({ ok: false, message: 'Método de pago no admitido.' });
+  }
 
   try {
     let order = await findOrderByIdempotencyKey(idempotencyKey);
@@ -101,7 +161,7 @@ router.post('/mercadopago/card', cardRules, async (req, res) => {
 
     let payment;
     try {
-      payment = await createCardPayment({
+      payment = await processPayment({
         amount: order.total,
         externalReference: order.mp_external_reference || order.order_number,
         payerEmail: order.customer_email,
@@ -125,7 +185,7 @@ router.post('/mercadopago/card', cardRules, async (req, res) => {
         const rejected = await releaseOrderStock(order.id, 'rechazado');
         return res.status(402).json({
           ok: false,
-          message: 'Mercado Pago no pudo aprobar la tarjeta. Revisá los datos e intentá nuevamente.',
+          message: 'Mercado Pago no pudo aprobar el pago. Revisá los datos o probá con otro medio de pago.',
           data: safeOrder(rejected),
         });
       }
@@ -146,13 +206,19 @@ router.post('/mercadopago/card', cardRules, async (req, res) => {
       });
     }
 
-    const updated = await updatePaymentResult(order.id, payment);
+    const ticketUrl = payment.point_of_interaction?.transaction_data?.ticket_url || null;
+    const paymentResultData = {
+      ...payment,
+      ticket_url: ticketUrl,
+    };
+
+    const updated = await updatePaymentResult(order.id, paymentResultData);
     const status = String(payment.status || '').toLowerCase();
     if (['rejected', 'cancelled'].includes(status)) {
       const rejected = await releaseOrderStock(order.id, 'rechazado');
       return res.status(402).json({
         ok: false,
-        message: paymentMessage(status, payment.status_detail),
+        message: paymentMessage(status, payment.status_detail, paymentData.payment_method_id),
         data: safeOrder(rejected),
       });
     }
@@ -160,8 +226,8 @@ router.post('/mercadopago/card', cardRules, async (req, res) => {
     const responseStatus = status === 'approved' ? 201 : 202;
     return res.status(responseStatus).json({
       ok: true,
-      message: paymentMessage(status),
-      data: safeOrder(updated),
+      message: paymentMessage(status, payment.status_detail, paymentData.payment_method_id),
+      data: safeOrder(updated, { ticket_url: ticketUrl }),
     });
   } catch (error) {
     if (error && error.code === '23505') {
@@ -170,10 +236,13 @@ router.post('/mercadopago/card', cardRules, async (req, res) => {
         return res.status(409).json({ ok: false, message: 'Este intento de pago ya está siendo procesado. Esperá unos segundos e intentá nuevamente.' });
       }
     }
-    logger.error('[mercadopago] error procesando tarjeta:', error);
+    logger.error('[mercadopago] error procesando pago:', error);
     return res.status(error.status || 500).json({ ok: false, message: error.message || 'No se pudo procesar el pago.' });
   }
-});
+}
+
+router.post('/mercadopago/card', paymentRules, handleMercadoPagoProcess);
+router.post('/mercadopago/process', paymentRules, handleMercadoPagoProcess);
 
 router.post('/mercadopago/webhook', async (req, res) => {
   const dataId = String(req.query['data.id'] || req.query.id || req.body?.data?.id || req.body?.id || '').trim();

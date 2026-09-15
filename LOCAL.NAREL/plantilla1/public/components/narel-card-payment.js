@@ -149,14 +149,14 @@
     '@media(max-width:600px){.ncp-shell{padding:20px;}}' +
     '</style>' +
     '<div class="ncp-shell" part="shell">' +
-      '<p class="ncp-kicker" part="kicker">Datos de la tarjeta</p>' +
+      '<p class="ncp-kicker" part="kicker">Medio de pago</p>' +
       '<div class="ncp-brick-mount" part="brick-mount"><slot name="brick"></slot></div>' +
       '<p class="ncp-status" part="status" role="status" aria-live="polite" data-state="idle"></p>' +
     '</div>';
 
   class NarelCardPayment extends HTMLElement {
     static get observedAttributes() {
-      return ['amount', 'public-key', 'locale', 'endpoint', 'payer-email', 'disabled', 'max-installments'];
+      return ['amount', 'public-key', 'locale', 'endpoint', 'payer-email', 'disabled', 'max-installments', 'preference-id'];
     }
 
     constructor() {
@@ -201,7 +201,7 @@
       if (oldValue === newValue || !this._connected) return;
       if (name === 'amount') {
         this._updateAmount();
-      } else if (name === 'public-key' || name === 'locale' || name === 'max-installments') {
+      } else if (name === 'public-key' || name === 'locale' || name === 'max-installments' || name === 'preference-id') {
         this._boot();
       } else if (name === 'disabled') {
         this._applyDisabled();
@@ -213,6 +213,9 @@
 
     get publicKey() { return this.getAttribute('public-key') || ''; }
     set publicKey(value) { value ? this.setAttribute('public-key', value) : this.removeAttribute('public-key'); }
+
+    get preferenceId() { return this.getAttribute('preference-id') || ''; }
+    set preferenceId(value) { value ? this.setAttribute('preference-id', value) : this.removeAttribute('preference-id'); }
 
     get locale() { return this.getAttribute('locale') || 'es-AR'; }
     set locale(value) { this.setAttribute('locale', value); }
@@ -295,9 +298,23 @@
             if (self._destroyed) return;
             self._mercadoPago = new MercadoPagoCtor(publicKey, { locale: self.locale });
             var bricksBuilder = self._mercadoPago.bricks();
-            var maxInstallments = Number(self.getAttribute('max-installments')) || 1;
+            var maxInstallmentsAttr = self.getAttribute('max-installments');
+            var maxInstallments = maxInstallmentsAttr ? Number(maxInstallmentsAttr) : 24;
+            var preferenceId = self.preferenceId || self.getAttribute('preference-id');
+
+            var paymentMethodsConfig = {
+              creditCard: 'all',
+              debitCard: 'all',
+              ticket: 'all',
+              bankTransfer: 'all',
+              mercadoPago: 'all',
+              maxInstallments: maxInstallments || 24,
+            };
+
             var initialization = { amount: amount };
+            if (preferenceId) initialization.preferenceId = preferenceId;
             if (self.payerEmail) initialization.payer = { email: self.payerEmail };
+
             var accentToken = readHostToken('--yellow', '#ffffff');
             var bgToken = readHostToken('--black', '#0a0a0a');
             var textToken = readHostToken('--white', '#ffffff');
@@ -324,25 +341,43 @@
                     },
                   },
                 },
-                paymentMethods: { maxInstallments: maxInstallments },
+                paymentMethods: paymentMethodsConfig,
               },
               callbacks: {
                 onReady: function () {
-                  self._setStatus('Completá los datos de tu tarjeta.', 'ready');
+                  self._setStatus('Elegí tu medio de pago y completá los datos.', 'ready');
                   if (typeof self.onReady === 'function') self.onReady();
                   self._dispatch('narel-payment-ready', {});
                 },
-                onSubmit: function (formData) { return self._handleSubmit(formData); },
+                onSubmit: function (param) { return self._handleSubmit(param); },
                 onError: function (error) {
-                  self._setStatus('No pudimos procesar la tarjeta. Probá de nuevo.', 'error');
+                  self._setStatus('No pudimos procesar el medio de pago seleccionado. Probá de nuevo.', 'error');
                   if (typeof self.onError === 'function') self.onError(error);
                   self._dispatch('narel-payment-error', { error: String((error && error.message) || error || '') });
                 },
               },
             };
-            return bricksBuilder.create('cardPayment', self._lightContainer.id, settings).then(function (controller) {
-              self._brickController = controller;
-            });
+
+            // Intentamos inicializar con Payment Brick (todos los medios de pago)
+            return bricksBuilder.create('payment', self._lightContainer.id, settings)
+              .then(function (controller) {
+                self._brickController = controller;
+              })
+              .catch(function (paymentError) {
+                console.warn('[narel-card-payment] Fallback al brick cardPayment:', paymentError);
+                var cardSettings = Object.assign({}, settings, {
+                  callbacks: Object.assign({}, settings.callbacks, {
+                    onReady: function () {
+                      self._setStatus('Completá los datos de tu tarjeta.', 'ready');
+                      if (typeof self.onReady === 'function') self.onReady();
+                      self._dispatch('narel-payment-ready', {});
+                    },
+                  }),
+                });
+                return bricksBuilder.create('cardPayment', self._lightContainer.id, cardSettings).then(function (controller) {
+                  self._brickController = controller;
+                });
+              });
           }).catch(function () {
             self._setStatus('No pudimos cargar Mercado Pago. Probá de nuevo.', 'error');
             self._dispatch('narel-payment-error', { message: 'sdk_or_brick_failed' });
@@ -378,18 +413,25 @@
       self._boot();
     }
 
-    _handleSubmit(formData) {
-      // Este es el "handleSubmit" local pedido: no envía nada a ningún backend
-      // por sí mismo salvo que asignes onSubmit / endpoint. formData ya viene
-      // tokenizado por el Brick (token, payment_method_id, issuer_id,
-      // installments, payer.identification) — nunca contiene el PAN ni el CVV.
+    _handleSubmit(param) {
       var self = this;
       self._setStatus('Procesando pago…', 'processing');
       self._dispatch('narel-payment-processing', {});
-      var detail = { payment: formData, amount: self.amount };
+
+      var formData = (param && param.formData) ? param.formData : param;
+      var selectedPaymentMethod = (param && param.selectedPaymentMethod)
+        || (formData && formData.payment_type_id)
+        || (formData && formData.token ? 'credit_card' : 'ticket');
+
+      var detail = {
+        payment: formData,
+        selectedPaymentMethod: selectedPaymentMethod,
+        amount: self.amount,
+      };
+
       var submitEvent = self._dispatch('narel-payment-submit', detail, true);
       if (submitEvent.defaultPrevented) {
-        self._setStatus('Completá los datos de tu tarjeta.', 'ready');
+        self._setStatus('Elegí tu medio de pago y completá los datos.', 'ready');
         return Promise.resolve();
       }
 
@@ -399,16 +441,16 @@
       } else if (self.endpoint) {
         handlerPromise = self._defaultSubmit(detail);
       } else {
-        console.info('[narel-card-payment] Asigná element.onSubmit = async (detail) => { ... } (o el atributo endpoint) para conectar tu API de pagos existente.');
+        console.info('[narel-card-payment] Asigná element.onSubmit = async (detail) => { ... } para conectar tu API de pagos existente.');
         handlerPromise = Promise.resolve();
       }
 
       return handlerPromise.then(function (result) {
-        self._setStatus('Datos de tarjeta completos.', 'success');
+        self._setStatus('Pago procesado correctamente.', 'success');
         self._dispatch('narel-payment-success', detail);
         return result;
       }).catch(function (error) {
-        self._setStatus((error && error.message) || 'No pudimos procesar la tarjeta. Probá de nuevo.', 'error');
+        self._setStatus((error && error.message) || 'No pudimos procesar el medio de pago. Probá de nuevo.', 'error');
         self._dispatch('narel-payment-error', { error: String((error && error.message) || error || '') });
         throw error;
       });
