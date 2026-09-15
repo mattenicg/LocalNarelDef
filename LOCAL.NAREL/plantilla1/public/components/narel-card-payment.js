@@ -156,7 +156,7 @@
 
   class NarelCardPayment extends HTMLElement {
     static get observedAttributes() {
-      return ['amount', 'public-key', 'locale', 'endpoint', 'payer-email', 'disabled', 'max-installments', 'preference-id'];
+      return ['amount', 'public-key', 'locale', 'endpoint', 'payer-email', 'disabled', 'max-installments', 'preference-id', 'allowed-methods', 'allowed-installments'];
     }
 
     constructor() {
@@ -302,15 +302,27 @@
             var maxInstallments = maxInstallmentsAttr ? Number(maxInstallmentsAttr) : 24;
             var preferenceId = self.preferenceId || self.getAttribute('preference-id');
 
+            var allowedMethodsAttr = self.getAttribute('allowed-methods');
+            var allowedInstAttr = self.getAttribute('allowed-installments');
+            var methodsList = allowedMethodsAttr ? allowedMethodsAttr.split(',').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean) : null;
+            var instList = allowedInstAttr ? allowedInstAttr.split(',').map(Number).filter(function (n) { return Number.isInteger(n) && n > 0; }) : null;
+
+            var allowCredit = !methodsList || methodsList.indexOf('tarjeta_credito') !== -1;
+            var allowDebit = !methodsList || methodsList.indexOf('tarjeta_debito') !== -1;
+            var allowTransfer = !methodsList || methodsList.indexOf('transferencia') !== -1;
+            var allowTicket = !methodsList || methodsList.indexOf('efectivo') !== -1;
+
+            var calculatedMaxInst = (instList && instList.length) ? Math.max.apply(null, instList) : (maxInstallments || 24);
+
             var paymentMethodsConfig = {
-              creditCard: 'all',
-              debitCard: 'all',
-              prepaidCard: 'all',
-              ticket: 'all',
-              bankTransfer: 'all',
-              mercadoPago: 'all',
+              creditCard: allowCredit ? 'all' : [],
+              debitCard: allowDebit ? 'all' : [],
+              prepaidCard: (allowCredit || allowDebit) ? 'all' : [],
+              ticket: allowTicket ? 'all' : [],
+              bankTransfer: allowTransfer ? 'all' : [],
+              mercadoPago: (allowCredit || allowDebit) ? 'all' : [],
               excludedPaymentMethods: ['gocuotas'],
-              maxInstallments: maxInstallments || 24,
+              maxInstallments: calculatedMaxInst || 24,
             };
 
             var initialization = { amount: amount };
@@ -430,6 +442,16 @@
         selectedPaymentMethod: selectedPaymentMethod,
         amount: self.amount,
       };
+
+      var allowedInstAttr = self.getAttribute('allowed-installments');
+      var instList = allowedInstAttr ? allowedInstAttr.split(',').map(Number).filter(function (n) { return Number.isInteger(n) && n > 0; }) : null;
+      var chosenInstallments = Number((formData && formData.installments) || 1);
+      if (instList && instList.length && (selectedPaymentMethod === 'credit_card' || selectedPaymentMethod === 'cardPayment')) {
+        if (instList.indexOf(chosenInstallments) === -1) {
+          self._setStatus('La cantidad de cuotas elegida (' + chosenInstallments + ') no está permitida para este producto.', 'error');
+          return Promise.reject(new Error('Cantidad de cuotas no permitida. Cuotas disponibles: ' + instList.join(', ')));
+        }
+      }
 
       var submitEvent = self._dispatch('narel-payment-submit', detail, true);
       if (submitEvent.defaultPrevented) {

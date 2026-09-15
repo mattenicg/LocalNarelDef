@@ -73,6 +73,34 @@ async function createOrderWithStock(payload, options = {}) {
         throw orderError(`Stock insuficiente para: ${product.name}`, 409);
       }
 
+      // Validar COMPRA DIRECTA en el backend
+      if (product.direct_purchase) {
+        if ((payload.items || []).length > 1) {
+          throw orderError(`El producto "${product.name}" utiliza compra directa y debe adquirirse de forma individual.`, 400);
+        }
+
+        const allowedMethods = Array.isArray(product.allowed_payment_methods)
+          ? product.allowed_payment_methods
+          : (typeof product.allowed_payment_methods === 'string'
+              ? JSON.parse(product.allowed_payment_methods)
+              : ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo']);
+
+        const isCard = ['mercadopago_card', 'mercadopago'].includes(paymentMethod);
+        const cardAllowed = allowedMethods.includes('tarjeta_credito') || allowedMethods.includes('tarjeta_debito');
+        const transferAllowed = allowedMethods.includes('transferencia');
+        const cashAllowed = allowedMethods.includes('efectivo');
+
+        if (isCard && !cardAllowed) {
+          throw orderError(`El producto "${product.name}" no admite pago con tarjeta.`, 400);
+        }
+        if (paymentMethod === 'transferencia' && !transferAllowed) {
+          throw orderError(`El producto "${product.name}" no admite pago por transferencia bancaria.`, 400);
+        }
+        if (paymentMethod === 'efectivo' && !cashAllowed) {
+          throw orderError(`El producto "${product.name}" no admite pago en efectivo.`, 400);
+        }
+      }
+
       const promoPrice = await resolvePromoPrice(client, item.banner_id, item.product_id);
       const unitPrice = promoPrice == null ? Number(product.price) : promoPrice;
       subtotal += unitPrice * quantity;

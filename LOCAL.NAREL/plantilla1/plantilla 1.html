@@ -8184,14 +8184,24 @@
 
       function productCardHTML(p) {
         const cat = (p.category || guessCategory(p.name, p.description) || 'remeras').toLowerCase();
-        const badge = CAT_LABEL[cat] || 'NUEVO';
+        const isDirect = !!(p.direct_purchase === true || p.direct_purchase === 1 || p.direct_purchase === 'true');
+        const badge = isDirect ? '⚡ COMPRA DIRECTA' : (CAT_LABEL[cat] || 'NUEVO');
+        const badgeStyle = isDirect ? ' style="background:#fff;color:#000;font-weight:700;letter-spacing:0.06em;"' : '';
         const priceStr = fmtPriceClean(p.price) || '';
         const name = htmlEscape(p.name || 'Producto');
         const desc = htmlEscape(p.description || '').replace(/\[CAT:\s*[a-z_]+\]/gi, '').trim() || 'Prenda · Stock Disponible';
         const sizes = htmlEscape(p.sizes || '');
         const stock = Number(p.stock) || 0;
         const disabledBtn = stock <= 0 ? ' disabled' : '';
-        const btnText = stock <= 0 ? 'SIN STOCK' : 'AGREGAR';
+        const btnText = stock <= 0 ? 'SIN STOCK' : (isDirect ? 'COMPRAR' : 'AGREGAR');
+        const btnAction = isDirect ? 'buy-direct' : 'add';
+        const btnAria = isDirect ? `Comprar ${name}` : `Agregar ${name} al carrito`;
+        const btnIcon = isDirect
+          ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`
+          : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>`;
+        const directAttrs = isDirect
+          ? ` data-direct="1" data-allowed-methods="${htmlEscape(JSON.stringify(p.allowed_payment_methods || []))}" data-allowed-installments="${htmlEscape(JSON.stringify(p.allowed_installments || []))}"`
+          : '';
         const imgUrl = (p.image_url && typeof p.image_url === 'string' && p.image_url.trim()) ? p.image_url.trim() : '';
         const sizesLine = sizes ? (' · ' + sizes) : '';
         const innerImg = imgUrl
@@ -8200,17 +8210,17 @@
           : `<div class="placeholder">${PLACEHOLDER_IMG_SVG}<span>IMAGEN</span></div>`;
 
         return (
-          `<article class="product" data-id="${htmlEscape(p.id || '')}" data-price="${Number(p.price || 0)}" data-stock="${stock}" data-name="${name}" data-image="${htmlEscape(imgUrl)}" data-sizes="${sizes}" style="cursor:pointer;" title="Click para ver detalle y completar tu compra">` +
+          `<article class="product" data-id="${htmlEscape(p.id || '')}" data-price="${Number(p.price || 0)}" data-stock="${stock}" data-name="${name}" data-image="${htmlEscape(imgUrl)}" data-sizes="${sizes}"${directAttrs} style="cursor:pointer;" title="Click para ver detalle y completar tu compra">` +
           `<span class="product-shine" aria-hidden="true"></span>` +
-          `<span class="product-badge">${badge}</span>` +
+          `<span class="product-badge"${badgeStyle}>${badge}</span>` +
           `<div class="product-image">${innerImg}</div>` +
           `<div class="product-body">` +
           `<h4 class="product-name">${name}</h4>` +
           `<p class="product-desc">${desc}${sizesLine}</p>` +
           `<div class="product-bottom">` +
           `<span class="product-price">${priceStr}</span>` +
-          `<button type="button" class="btn-add"${disabledBtn} data-action="add" aria-label="Agregar ${name} al carrito">` +
-          `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>` +
+          `<button type="button" class="btn-add"${disabledBtn} data-action="${btnAction}" aria-label="${btnAria}">` +
+          btnIcon +
           `<span>${btnText}</span>` +
           `</button>` +
           `</div>` +
@@ -8224,6 +8234,9 @@
         if (!maxCount) maxCount = 4;
         if (!Array.isArray(catalog) || !catalog.length) return [];
         const sourceList = Array.isArray(targetItemOrList) ? targetItemOrList : [targetItemOrList];
+        if (sourceList.some(item => item && (item.direct_purchase === true || item.direct_purchase === 1 || item.direct_purchase === 'true'))) {
+          return [];
+        }
         const excludedIds = new Set();
         const currentCategories = new Set();
 
@@ -8265,9 +8278,10 @@
           }
         });
 
-        // Filter eligible candidates: not excluded and in stock
+        // Filter eligible candidates: not excluded, in stock, and NOT direct purchase
         const candidates = catalog.filter(p => {
           if (!p || !p.id) return false;
+          if (p.direct_purchase) return false;
           if (excludedIds.has(String(p.id))) return false;
           const stock = p.stock == null ? 99 : Number(p.stock);
           return stock > 0;
@@ -8354,7 +8368,9 @@
         if (!body || !currentModalProduct) return;
         const p = currentModalProduct;
         const cat = (p.category || guessCategory(p.name, p.description) || 'remeras').toLowerCase();
-        const badge = CAT_LABEL[cat] || 'NUEVO';
+        const isDirect = !!(p.direct_purchase === true || p.direct_purchase === 1 || p.direct_purchase === 'true');
+        const badge = isDirect ? '⚡ COMPRA DIRECTA' : (CAT_LABEL[cat] || 'NUEVO');
+        const badgeStyle = isDirect ? ' style="background:#fff;color:#000;font-weight:700;letter-spacing:0.06em;"' : '';
         const priceStr = fmtPriceClean(p.price) || '';
         const name = htmlEscape(p.name || 'Producto');
         const desc = htmlEscape(p.description || '').replace(/\[CAT:\s*[a-z_]+\]/gi, '').trim() || 'Prenda de alta calidad confeccionada con diseño urbano y corte contemporáneo.';
@@ -8385,8 +8401,8 @@
           ? `<img src="${htmlEscape(imgUrl)}" alt="${name}">`
           : `<span>${htmlEscape((p.id || 'NL').slice(0, 2).toUpperCase())}</span>`;
 
-        // Cross-selling complementary products
-        const recs = getCrossSellProducts(window.__CATALOG_PRODUCTS__ || [], [p], 4);
+        // Cross-selling complementary products (only if not direct purchase)
+        const recs = isDirect ? [] : getCrossSellProducts(window.__CATALOG_PRODUCTS__ || [], [p], 4);
         let crossSellHTML = '';
         if (recs && recs.length > 0) {
           crossSellHTML = `
@@ -8404,10 +8420,22 @@
             </div>`;
         }
 
+        const directNoticeHTML = isDirect ? `
+          <div class="pm-direct-notice" style="margin-top:14px;padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);font-size:12px;letter-spacing:0.04em;">
+            <strong style="color:var(--yellow,#fff);display:block;margin-bottom:2px;">⚡ COMPRA DIRECTA</strong>
+            <span>Este producto se adquiere de forma individual y pasa directamente al checkout con sus medios habilitados.</span>
+          </div>` : '';
+
+        const mainBtnIcon = isDirect
+          ? `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`
+          : `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>`;
+        const mainBtnText = stock <= 0 ? 'SIN STOCK' : (isDirect ? 'COMPRAR AHORA' : 'AGREGAR AL CARRITO');
+        const mainBtnStyle = isDirect ? ' style="background:#fff;color:#000;font-weight:700;"' : '';
+
         body.innerHTML = `
           <div class="pm-main">
             <div class="pm-gallery">
-              <span class="pm-badge">${badge}</span>
+              <span class="pm-badge"${badgeStyle}>${badge}</span>
               ${imgHTML}
             </div>
             <div class="pm-info">
@@ -8419,11 +8447,10 @@
               </div>
               <p class="pm-desc">${desc}</p>
               ${sizesHTML}
-              <button type="button" class="pm-btn-add" id="pmMainAddBtn" ${stock <= 0 ? 'disabled' : ''}>
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/>
-                </svg>
-                <span>${stock <= 0 ? 'SIN STOCK' : 'AGREGAR AL CARRITO'}</span>
+              ${directNoticeHTML}
+              <button type="button" class="pm-btn-add" id="pmMainAddBtn"${mainBtnStyle} ${stock <= 0 ? 'disabled' : ''}>
+                ${mainBtnIcon}
+                <span>${mainBtnText}</span>
               </button>
             </div>
           </div>
@@ -8443,11 +8470,32 @@
           });
         });
 
-        // Main Add to Cart button
+        // Main Add to Cart / Direct Buy button
         const mainAdd = container.querySelector('#pmMainAddBtn');
         if (mainAdd && currentModalProduct) {
           mainAdd.addEventListener('click', () => {
             try {
+              const isDirect = !!(currentModalProduct.direct_purchase === true || currentModalProduct.direct_purchase === 1 || currentModalProduct.direct_purchase === 'true');
+              if (isDirect) {
+                closeProductModal();
+                if (window.shop && typeof window.shop.startDirectCheckout === 'function') {
+                  window.shop.startDirectCheckout({
+                    id: currentModalProduct.id,
+                    name: currentModalProduct.name,
+                    price: Number(currentModalProduct.price) || 0,
+                    image: currentModalProduct.image_url || '',
+                    stock: Number(currentModalProduct.stock) || 0,
+                    sizes: currentModalProduct.sizes || '',
+                    size: selectedModalSize || '',
+                    qty: 1,
+                    direct_purchase: true,
+                    allowed_payment_methods: currentModalProduct.allowed_payment_methods,
+                    allowed_installments: currentModalProduct.allowed_installments,
+                  });
+                }
+                return;
+              }
+
               if (window.shop && typeof window.shop.addToCart === 'function') {
                 window.shop.addToCart({
                   id: currentModalProduct.id,
@@ -8555,24 +8603,54 @@
       });
 
       function mountAddToCart(root) {
-        root.querySelectorAll('.btn-add[data-action="add"]:not([data-mounted="1"])').forEach(btn => {
+        root.querySelectorAll('.btn-add:not([data-mounted="1"])').forEach(btn => {
           btn.dataset.mounted = '1';
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
             try {
+              const card = btn.closest('.product');
+              if (!card) return;
+              const isDirect = btn.dataset.action === 'buy-direct' || card.dataset.direct === '1';
+              const rawSizes = card.dataset.sizes || '';
+              const sizeList = rawSizes.split(/\s*[-|/,]\s*/).map(s => s.trim()).filter(Boolean);
+
+              let allowedMethods = null;
+              let allowedInstallments = null;
+              try {
+                if (card.dataset.allowedMethods) allowedMethods = JSON.parse(card.dataset.allowedMethods);
+                if (card.dataset.allowedInstallments) allowedInstallments = JSON.parse(card.dataset.allowedInstallments);
+              } catch (_) {}
+
+              const item = {
+                id: card.dataset.id || ('local-' + Math.random().toString(36).slice(2, 10)),
+                name: card.dataset.name || 'Producto',
+                price: Number(card.dataset.price) || 0,
+                image: card.dataset.image || '',
+                stock: Number(card.dataset.stock) || 0,
+                sizes: card.dataset.sizes || '',
+                qty: 1,
+                size: sizeList.length === 1 ? sizeList[0] : '',
+                direct_purchase: isDirect,
+                allowed_payment_methods: allowedMethods,
+                allowed_installments: allowedInstallments,
+              };
+
+              if (isDirect) {
+                // Si requiere talle y hay varios, abrimos el modal para que elija talle primero
+                if (sizeList.length > 1 && !item.size) {
+                  const prod = (window.__CATALOG_PRODUCTS__ || []).find(p => String(p.id) === String(card.dataset.id));
+                  if (prod) {
+                    openProductModal(prod);
+                    return;
+                  }
+                }
+                if (window.shop && typeof window.shop.startDirectCheckout === 'function') {
+                  window.shop.startDirectCheckout(item);
+                }
+                return;
+              }
+
               if (window.shop && typeof window.shop.addToCart === 'function') {
-                const card = btn.closest('.product');
-                if (!card) return;
-                const item = {
-                  id: card.dataset.id || ('local-' + Math.random().toString(36).slice(2, 10)),
-                  name: card.dataset.name || 'Producto',
-                  price: Number(card.dataset.price) || 0,
-                  image: card.dataset.image || '',
-                  stock: Number(card.dataset.stock) || 0,
-                  sizes: card.dataset.sizes || '',
-                  qty: 1,
-                  size: '',
-                };
                 window.shop.addToCart(item);
               } else if (window.cart && typeof window.cart.add === 'function') {
                 window.cart.add({ ...btn.closest('.product').dataset, qty: 1 });

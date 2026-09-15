@@ -167,11 +167,18 @@ app.get('/api/products/public', async (req, res) => {
     }
 
     params.push(limit);
-    const querySql = `SELECT id,name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,created_at,updated_at FROM products ${conditions} ORDER BY featured DESC,updated_at DESC LIMIT $${params.length}`;
+    const querySql = `SELECT id,name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,created_at,updated_at FROM products ${conditions} ORDER BY featured DESC,updated_at DESC LIMIT $${params.length}`;
 
     const result = await query(querySql, params);
     const mapped = result.rows.map((p) => ({
       ...p,
+      direct_purchase: Boolean(p.direct_purchase),
+      allowed_payment_methods: typeof p.allowed_payment_methods === 'string'
+        ? JSON.parse(p.allowed_payment_methods)
+        : (p.allowed_payment_methods || ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo']),
+      allowed_installments: typeof p.allowed_installments === 'string'
+        ? JSON.parse(p.allowed_installments)
+        : (p.allowed_installments || [1, 3, 6]),
       category: String(p.category || guessCategoryFallback(p.name, p.description) || 'remeras').toLowerCase(),
       subcategory: p.subcategory ? String(p.subcategory).toLowerCase() : null,
     }));

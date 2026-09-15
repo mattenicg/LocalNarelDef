@@ -28,9 +28,19 @@
 
     bindImage();
     bindForm();
+    bindDirectPurchase();
     await loadCategories();
     bindCategoryEvents();
     await cargarProducto();
+  }
+
+  function bindDirectPurchase() {
+    const chk = document.getElementById('direct_purchase');
+    const box = document.getElementById('directPurchaseConfigBox');
+    if (!chk || !box) return;
+    chk.addEventListener('change', () => {
+      box.style.display = chk.checked ? 'block' : 'none';
+    });
   }
 
   const DEFAULT_CATEGORIES = [
@@ -267,6 +277,32 @@
     const featEl = document.getElementById('featured');
     if (featEl) { featEl.checked = !!(p.featured === true || p.featured === 1 || p.featured === 'true'); }
 
+    const isDirect = !!(p.direct_purchase === true || p.direct_purchase === 1 || p.direct_purchase === 'true');
+    const directEl = document.getElementById('direct_purchase');
+    const boxEl = document.getElementById('directPurchaseConfigBox');
+    if (directEl) directEl.checked = isDirect;
+    if (boxEl) boxEl.style.display = isDirect ? 'block' : 'none';
+
+    const allowedMethods = Array.isArray(p.allowed_payment_methods)
+      ? p.allowed_payment_methods
+      : (typeof p.allowed_payment_methods === 'string'
+          ? (p.allowed_payment_methods.startsWith('[') ? JSON.parse(p.allowed_payment_methods) : [p.allowed_payment_methods])
+          : ['tarjeta_debito', 'tarjeta_credito', 'transferencia', 'efectivo']);
+
+    document.querySelectorAll('.direct-pay-method').forEach((chk) => {
+      chk.checked = allowedMethods.includes(chk.value);
+    });
+
+    const allowedInst = Array.isArray(p.allowed_installments)
+      ? p.allowed_installments.map(Number)
+      : (typeof p.allowed_installments === 'string'
+          ? (p.allowed_installments.startsWith('[') ? JSON.parse(p.allowed_installments).map(Number) : [1, 3, 6])
+          : [1, 3, 6]);
+
+    document.querySelectorAll('.direct-installment').forEach((chk) => {
+      chk.checked = allowedInst.includes(Number(chk.value));
+    });
+
     if (p.image_url) {
       const wrap = document.getElementById('imagePreviewWrap');
       const img = document.getElementById('imagePreviewImg');
@@ -401,6 +437,7 @@
     const subcatEl = document.getElementById('subcategory');
     const activeEl = document.getElementById('active');
     const featuredEl = document.getElementById('featured');
+    const directPurchaseEl = document.getElementById('direct_purchase');
 
     const name = (nameEl.value || '').trim();
     const description = (descEl.value || '').trim();
@@ -413,6 +450,15 @@
     const subcategory_id = subcatSelectedOpt && subcatSelectedOpt.dataset.id ? subcatSelectedOpt.dataset.id : null;
     const active = !!(activeEl && activeEl.checked);
     const featured = !!(featuredEl && featuredEl.checked);
+    const direct_purchase = !!(directPurchaseEl && directPurchaseEl.checked);
+
+    const allowed_payment_methods = Array.from(document.querySelectorAll('.direct-pay-method:checked')).map((c) => c.value);
+    const allowed_installments = Array.from(document.querySelectorAll('.direct-installment:checked')).map((c) => parseInt(c.value, 10)).filter(Boolean);
+
+    if (direct_purchase && allowed_payment_methods.length === 0) {
+      window.auth.setMessage(msgId, 'Para compra directa, debés seleccionar al menos un método de pago permitido.', 'error');
+      return;
+    }
 
     if (!name) {
       window.auth.setMessage(msgId, 'El nombre es requerido', 'error');
@@ -452,6 +498,9 @@
         subcategory_id,
         active,
         featured,
+        direct_purchase,
+        allowed_payment_methods,
+        allowed_installments,
       };
       const prevImageUrl = currentProduct.image_url || null;
 

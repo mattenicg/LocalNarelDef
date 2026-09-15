@@ -17,8 +17,18 @@
 
     bindImage();
     bindForm();
+    bindDirectPurchase();
     await loadCategories();
     bindCategoryEvents();
+  }
+
+  function bindDirectPurchase() {
+    const chk = document.getElementById('direct_purchase');
+    const box = document.getElementById('directPurchaseConfigBox');
+    if (!chk || !box) return;
+    chk.addEventListener('change', () => {
+      box.style.display = chk.checked ? 'block' : 'none';
+    });
   }
 
   const DEFAULT_CATEGORIES = [
@@ -288,6 +298,7 @@
     const subcatEl = document.getElementById('subcategory');
     const activeEl = document.getElementById('active');
     const featuredEl = document.getElementById('featured');
+    const directPurchaseEl = document.getElementById('direct_purchase');
 
     const name = (nameEl.value || '').trim();
     const description = (descEl.value || '').trim();
@@ -300,6 +311,15 @@
     const subcategory_id = subcatSelectedOpt && subcatSelectedOpt.dataset.id ? subcatSelectedOpt.dataset.id : null;
     const active = !!(activeEl && activeEl.checked);
     const featured = !!(featuredEl && featuredEl.checked);
+    const direct_purchase = !!(directPurchaseEl && directPurchaseEl.checked);
+
+    const allowed_payment_methods = Array.from(document.querySelectorAll('.direct-pay-method:checked')).map((c) => c.value);
+    const allowed_installments = Array.from(document.querySelectorAll('.direct-installment:checked')).map((c) => parseInt(c.value, 10)).filter(Boolean);
+
+    if (direct_purchase && allowed_payment_methods.length === 0) {
+      window.auth.setMessage(msgId, 'Para compra directa, debés seleccionar al menos un método de pago permitido.', 'error');
+      return;
+    }
 
     if (!name) {
       window.auth.setMessage(msgId, 'El nombre es requerido', 'error');
@@ -358,6 +378,9 @@
           subcategory_id,
           active,
           featured,
+          direct_purchase,
+          allowed_payment_methods,
+          allowed_installments,
         },
       });
 

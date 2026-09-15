@@ -95,6 +95,9 @@
       stock: Number.isFinite(stock) ? Math.max(0, stock) : null,
       qty: Math.max(1, Math.min(99, Number(item && (item.qty || item.quantity)) || 1)),
       size: String(item && item.size || '').trim().slice(0, 40),
+      direct_purchase: !!(item && (item.direct_purchase === true || item.direct_purchase === 1 || item.direct_purchase === 'true' || item.directPurchase)),
+      allowed_payment_methods: (item && (item.allowed_payment_methods || item.allowedPaymentMethods)) || null,
+      allowed_installments: (item && (item.allowed_installments || item.allowedInstallments)) || null,
     };
   }
 
@@ -242,6 +245,7 @@
 
     const candidates = catalog.filter((p) => {
       if (!p || !p.id) return false;
+      if (p.direct_purchase) return false;
       if (inCartIds.has(String(p.id))) return false;
       const stock = p.stock == null ? 99 : Number(p.stock);
       return stock > 0;
@@ -266,7 +270,7 @@
     const csItems = get('cartCrossSellItems');
     if (!csRoot || !csItems) return;
 
-    if (!cartItems || !cartItems.length) {
+    if (!cartItems || !cartItems.length || cartItems.some((it) => it.direct_purchase)) {
       csRoot.style.display = 'none';
       csItems.innerHTML = '';
       return;
@@ -319,6 +323,18 @@
   function pushItem(item) {
     const normalized = normalizeItem(item);
     if (!normalized.id || normalized.stock === 0) return false;
+
+    // Si es compra directa, no puede agregarse al carrito junto a otros productos
+    if (normalized.direct_purchase) {
+      startDirectCheckout(normalized);
+      return false;
+    }
+
+    // Si el carrito tenía un producto de compra directa, se limpia para no mezclar
+    if (state.items.some((it) => it.direct_purchase)) {
+      state.items = [];
+    }
+
     const current = state.items.find((entry) => entry.key === normalized.key);
     if (current) {
       const requested = current.qty + normalized.qty;
@@ -331,6 +347,21 @@
     } else {
       state.items.push(normalized);
     }
+    return true;
+  }
+
+  function startDirectCheckout(item) {
+    const normalized = normalizeItem(item);
+    if (!normalized.id || normalized.stock === 0) return false;
+    normalized.direct_purchase = true;
+    // La compra directa es de ese único producto y cantidad (aislado)
+    state.items = [normalized];
+    state.isDirectPurchase = true;
+    saveCart();
+    renderCart();
+    setCartOpen(false);
+    setPaymentOpen(true);
+    renderCheckout();
     return true;
   }
 
@@ -795,13 +826,89 @@
     state.cardPaymentIdempotencyKey = null;
     state.cardPaymentEl = null;
 
-    const cardGatewayMarkup = mercadoPagoEnabled()
-      ? '<div class="checkout-card-mount" id="checkoutCardMount"></div>'
-      : '<p class="checkout-instructions">El pago con tarjeta no está disponible en este momento. Volvé a intentarlo más tarde.</p>';
+    const directItem = state.items.find((i) => i.direct_purchase) || (state.isDirectPurchase ? state.items[0] : null);
+    let allowedMethods = ['tarjeta_debito', 'tarjeta_credito', 'transferencia', 'efectivo'];
+    let allowedInstallments = [1, 3, 6];
+
+    if (directItem) {
+      if (directItem.allowed_payment_methods) {
+        allowedMethods = Array.isArray(directItem.allowed_payment_methods)
+          ? directItem.allowed_payment_methods
+          : (typeof directItem.allowed_payment_methods === 'string'
+              ? (directItem.allowed_payment_methods.startsWith('[') ? JSON.parse(directItem.allowed_payment_methods) : directItem.allowed_payment_methods.split(','))
+              : allowedMethods);
+      }
+      if (directItem.allowed_installments) {
+        allowedInstallments = Array.isArray(directItem.allowed_installments)
+          ? directItem.allowed_installments.map(Number)
+          : (typeof directItem.allowed_installments === 'string'
+              ? (directItem.allowed_installments.startsWith('[') ? JSON.parse(directItem.allowed_installments).map(Number) : directItem.allowed_installments.split(',').map(Number))
+              : allowedInstallments);
+      }
+    }
+
+    const allowsCard = allowedMethods.includes('tarjeta_credito') || allowedMethods.includes('tarjeta_debito');
+    const allowsTransfer = allowedMethods.includes('transferencia');
+    const allowsCash = allowedMethods.includes('efectivo');
+
+    let directCalloutHTML = '';
+    if (directItem) {
+      directCalloutHTML = `
+        <div class="checkout-direct-callout" style="margin-bottom:14px;padding:12px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.18);">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--yellow,#fff);margin-bottom:4px;">⚡ COMPRA DIRECTA</div>
+          <p style="font-size:12px;color:#fff;margin:0;line-height:1.4;">Estás adquiriendo individualmente <strong>${escapeHtml(directItem.name)}</strong>${directItem.size ? ' (Talle ' + escapeHtml(directItem.size) + ')' : ''}.</p>
+        </div>`;
+    }
+
+    let paymentSubtitle = 'Cuotas disponibles según tarjeta y banco · Procesado de forma segura por Mercado Pago';
+    if (directItem && allowedInstallments.length) {
+      paymentSubtitle = `Cuotas habilitadas por el comercio: ${allowedInstallments.join(', ')} cuota${allowedInstallments.length > 1 ? 's' : ''} · Mercado Pago`;
+    }
+
+    let cardSectionHTML = '';
+    if (allowsCard) {
+      const cardGatewayMarkup = mercadoPagoEnabled()
+        ? '<div class="checkout-card-mount" id="checkoutCardMount"></div>'
+        : '<p class="checkout-instructions">El pago con tarjeta no está disponible en este momento. Podés optar por los otros medios habilitados.</p>';
+
+      cardSectionHTML = `
+        <div class="checkout-payment-info-banner" aria-label="Información de medios de pago soportados">
+          <div class="checkout-payment-info-text">
+            <span class="checkout-payment-info-title">Pagá con tarjeta ${allowedMethods.includes('tarjeta_credito') ? 'de crédito' : ''}${allowedMethods.includes('tarjeta_credito') && allowedMethods.includes('tarjeta_debito') ? ', débito y prepagas' : allowedMethods.includes('tarjeta_debito') ? 'de débito y prepagas' : ''}</span>
+            <span class="checkout-payment-info-subtitle">${escapeHtml(paymentSubtitle)}</span>
+          </div>
+          <div class="checkout-payment-badges" aria-hidden="true">
+            <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1A1F71"/><text x="16" y="14" fill="#FFFFFF" font-family="sans-serif" font-size="9" font-weight="800" text-anchor="middle" font-style="italic">VISA</text></svg><span>Visa</span></span>
+            <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1e1e1e"/><circle cx="12" cy="10" r="6" fill="#EB001B"/><circle cx="20" cy="10" r="6" fill="#F79E1B" fill-opacity="0.85"/></svg><span>Mastercard</span></span>
+            <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#006FCF"/><text x="16" y="13" fill="#FFFFFF" font-family="sans-serif" font-size="7" font-weight="900" text-anchor="middle">AMEX</text></svg><span>American Express</span></span>
+            <span class="checkout-pay-badge"><svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#009EE3"/><path d="M10 11.5c.8-1 2.2-1 3 0l3 3c.8 1 2.2 1 3 0l3-3" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Mercado Pago</span></span>
+          </div>
+        </div>
+        ${cardGatewayMarkup}`;
+    }
+
+    let offlineSectionHTML = '';
+    if (allowsTransfer) {
+      offlineSectionHTML += `
+        <div class="checkout-offline-option" style="margin-top:14px;padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);">
+          <div style="font-weight:700;font-size:12px;letter-spacing:.06em;color:#fff;margin-bottom:4px;">TRANSFERENCIA BANCARIA DIRECTA</div>
+          <p style="font-size:12px;color:var(--grey,#aaa);margin-bottom:10px;line-height:1.4;">Confirmá tu pedido y te enviamos los datos de CBU/Alias para transferir. Verificación rápida por WhatsApp.</p>
+          <button type="button" class="btn" id="btnConfirmTransfer" style="width:100%;font-weight:700;">CONFIRMAR POR TRANSFERENCIA</button>
+        </div>`;
+    }
+    if (allowsCash) {
+      offlineSectionHTML += `
+        <div class="checkout-offline-option" style="margin-top:12px;padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);">
+          <div style="font-weight:700;font-size:12px;letter-spacing:.06em;color:#fff;margin-bottom:4px;">PAGO EN EFECTIVO EN EL LOCAL</div>
+          <p style="font-size:12px;color:var(--grey,#aaa);margin-bottom:10px;line-height:1.4;">Reservá tu prenda y aboná en efectivo al retirar en LA PEATONAL San Martín 2029.</p>
+          <button type="button" class="btn" id="btnConfirmEfectivo" style="width:100%;font-weight:700;">CONFIRMAR PAGO EN EFECTIVO</button>
+        </div>`;
+    }
 
     paymentContent.innerHTML = `
       <form id="checkoutForm" class="checkout-form" novalidate>
         <div id="checkoutAlert" class="checkout-alert" role="alert" aria-live="assertive"></div>
+        ${directCalloutHTML}
         <fieldset class="checkout-fieldset">
           <legend>DATOS DEL COMPRADOR</legend>
           <div class="checkout-grid">
@@ -863,47 +970,8 @@
 
         <fieldset class="checkout-fieldset">
           <legend>MÉTODO DE PAGO</legend>
-          <div class="checkout-payment-info-banner" aria-label="Información de medios de pago soportados">
-            <div class="checkout-payment-info-text">
-              <span class="checkout-payment-info-title">Pagá con tarjetas de crédito, débito y prepagas</span>
-              <span class="checkout-payment-info-subtitle">Cuotas disponibles según tarjeta y banco · Procesado de forma segura por Mercado Pago</span>
-            </div>
-            <div class="checkout-payment-badges" aria-hidden="true">
-              <span class="checkout-pay-badge">
-                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1A1F71"/><text x="16" y="14" fill="#FFFFFF" font-family="sans-serif" font-size="9" font-weight="800" text-anchor="middle" font-style="italic">VISA</text></svg>
-                <span>Visa</span>
-              </span>
-              <span class="checkout-pay-badge">
-                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1e1e1e"/><circle cx="12" cy="10" r="6" fill="#EB001B"/><circle cx="20" cy="10" r="6" fill="#F79E1B" fill-opacity="0.85"/></svg>
-                <span>Mastercard</span>
-              </span>
-              <span class="checkout-pay-badge">
-                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#006FCF"/><text x="16" y="13" fill="#FFFFFF" font-family="sans-serif" font-size="7" font-weight="900" text-anchor="middle">AMEX</text></svg>
-                <span>American Express</span>
-              </span>
-              <span class="checkout-pay-badge">
-                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#FF5500"/><text x="16" y="14" fill="#FFFFFF" font-family="sans-serif" font-size="8" font-weight="900" text-anchor="middle">NX</text></svg>
-                <span>Naranja X</span>
-              </span>
-              <span class="checkout-pay-badge">
-                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#0E3B68"/><circle cx="10" cy="10" r="4" fill="#E30613"/><text x="21" y="13" fill="#FFFFFF" font-family="sans-serif" font-size="6.5" font-weight="700" text-anchor="middle">CABAL</text></svg>
-                <span>Cabal</span>
-              </span>
-              <span class="checkout-pay-badge">
-                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#1e1e1e"/><circle cx="12" cy="10" r="6" fill="#EB001B"/><circle cx="20" cy="10" r="6" fill="#00A1DE" fill-opacity="0.85"/></svg>
-                <span>Maestro</span>
-              </span>
-              <span class="checkout-pay-badge">
-                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#2B1A4A"/><path d="M7 7h18v2H7zm0 4h12v2H7z" fill="#9D65C9"/><circle cx="23" cy="13" r="2" fill="#00E5FF"/></svg>
-                <span>Tarjetas prepagas</span>
-              </span>
-              <span class="checkout-pay-badge">
-                <svg class="badge-icon" viewBox="0 0 32 20"><rect width="32" height="20" rx="3" fill="#009EE3"/><path d="M10 11.5c.8-1 2.2-1 3 0l3 3c.8 1 2.2 1 3 0l3-3" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span>Mercado Pago</span>
-              </span>
-            </div>
-          </div>
-          ${cardGatewayMarkup}
+          ${cardSectionHTML}
+          ${offlineSectionHTML}
         </fieldset>
 
         <div class="checkout-summary" id="checkoutSummary"></div>
@@ -969,10 +1037,15 @@
       }
     });
 
+    get('btnConfirmTransfer')?.addEventListener('click', () => processOfflineOrder(form, 'transferencia'));
+    get('btnConfirmEfectivo')?.addEventListener('click', () => processOfflineOrder(form, 'efectivo'));
+
     get('cancelCheckoutBtn')?.addEventListener('click', () => setPaymentOpen(false));
     toggleShipping();
     renderCheckoutSummary();
-    mountCardPaymentGateway(form);
+    if (allowsCard) {
+      mountCardPaymentGateway(form);
+    }
   }
 
   async function mountCardPaymentGateway(form) {
@@ -984,6 +1057,28 @@
     cardEl.setAttribute('amount', String(Number(totalPrice().toFixed(2))));
     cardEl.setAttribute('locale', state.publicConfig.MERCADO_PAGO_LOCALE || 'es-AR');
     cardEl.setAttribute('max-installments', '24');
+
+    const directItem = state.items.find((i) => i.direct_purchase) || (state.isDirectPurchase ? state.items[0] : null);
+    if (directItem) {
+      if (directItem.allowed_payment_methods) {
+        const methodsStr = Array.isArray(directItem.allowed_payment_methods)
+          ? directItem.allowed_payment_methods.join(',')
+          : String(directItem.allowed_payment_methods);
+        cardEl.setAttribute('allowed-methods', methodsStr);
+      }
+      if (directItem.allowed_installments) {
+        const instList = Array.isArray(directItem.allowed_installments)
+          ? directItem.allowed_installments
+          : (typeof directItem.allowed_installments === 'string'
+              ? (directItem.allowed_installments.startsWith('[') ? JSON.parse(directItem.allowed_installments) : directItem.allowed_installments.split(','))
+              : [1, 3, 6]);
+        cardEl.setAttribute('allowed-installments', instList.join(','));
+        const maxI = Math.max(...instList.map(Number).filter(n => Number.isInteger(n) && n > 0));
+        if (Number.isFinite(maxI) && maxI > 0) {
+          cardEl.setAttribute('max-installments', String(maxI));
+        }
+      }
+    }
 
     // Intentamos obtener una preferencia para habilitar Dinero en cuenta / Billetera MP
     try {
@@ -1096,8 +1191,15 @@
     window.shop = Object.assign(window.shop || {}, {
       addToCart,
       addManyToCart,
+      startDirectCheckout,
       renderCart,
       openCart: () => setCartOpen(true),
+      openCheckout: () => {
+        if (!state.items.length) return;
+        setCartOpen(false);
+        setPaymentOpen(true);
+        renderCheckout();
+      },
     });
     window.addEventListener('catalog:loaded', () => {
       renderCart();

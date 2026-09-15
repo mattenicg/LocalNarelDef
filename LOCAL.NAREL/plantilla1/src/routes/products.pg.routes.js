@@ -20,7 +20,7 @@ function fail(req, res) {
   return e.isEmpty() ? null : res.status(400).json({ ok: false, message: e.array()[0].msg });
 }
 
-const fields = 'id,name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,created_at,updated_at';
+const fields = 'id,name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,created_at,updated_at';
 
 router.use(authenticate, requireAdmin);
 
@@ -157,6 +157,9 @@ const rules = [
   body('subcategory_id').optional(),
   body('active').optional().isBoolean(),
   body('featured').optional().isBoolean(),
+  body('direct_purchase').optional().isBoolean(),
+  body('allowed_payment_methods').optional().isArray(),
+  body('allowed_installments').optional().isArray(),
 ];
 
 router.post('/', rules, async (req, res) => {
@@ -182,8 +185,16 @@ router.post('/', rules, async (req, res) => {
       }
     }
 
+    const directPurchase = req.body.direct_purchase === true;
+    const allowedPaymentMethods = Array.isArray(req.body.allowed_payment_methods) && req.body.allowed_payment_methods.length > 0
+      ? JSON.stringify(req.body.allowed_payment_methods)
+      : JSON.stringify(['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo']);
+    const allowedInstallments = Array.isArray(req.body.allowed_installments) && req.body.allowed_installments.length > 0
+      ? JSON.stringify(req.body.allowed_installments.map(Number).filter((n) => Number.isInteger(n) && n > 0))
+      : JSON.stringify([1, 3, 6]);
+
     const r = await query(
-      `INSERT INTO products(name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING ${fields}`,
+      `INSERT INTO products(name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING ${fields}`,
       [
         req.body.name.trim(),
         req.body.description || '',
@@ -196,6 +207,9 @@ router.post('/', rules, async (req, res) => {
         subcategoryId,
         req.body.active !== false,
         req.body.featured === true,
+        directPurchase,
+        allowedPaymentMethods,
+        allowedInstallments,
       ]
     );
     res.status(201).json({ ok: true, message: 'Producto creado correctamente', data: r.rows[0] });
@@ -208,7 +222,7 @@ router.post('/', rules, async (req, res) => {
 router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
   if (fail(req, res)) return;
   try {
-    const existing = await query('SELECT id, category, subcategory, subcategory_id FROM products WHERE id=$1', [req.params.id]);
+    const existing = await query('SELECT id, category, subcategory, subcategory_id, direct_purchase, allowed_payment_methods, allowed_installments FROM products WHERE id=$1', [req.params.id]);
     if (!existing.rows[0]) return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
 
     const currentProd = existing.rows[0];
@@ -232,8 +246,20 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
       }
     }
 
+    const directPurchase = req.body.direct_purchase !== undefined ? (req.body.direct_purchase === true) : Boolean(currentProd.direct_purchase);
+    const allowedPaymentMethods = req.body.allowed_payment_methods !== undefined
+      ? (Array.isArray(req.body.allowed_payment_methods) && req.body.allowed_payment_methods.length > 0
+          ? JSON.stringify(req.body.allowed_payment_methods)
+          : JSON.stringify(['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo']))
+      : (currentProd.allowed_payment_methods ? JSON.stringify(currentProd.allowed_payment_methods) : JSON.stringify(['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo']));
+    const allowedInstallments = req.body.allowed_installments !== undefined
+      ? (Array.isArray(req.body.allowed_installments) && req.body.allowed_installments.length > 0
+          ? JSON.stringify(req.body.allowed_installments.map(Number).filter((n) => Number.isInteger(n) && n > 0))
+          : JSON.stringify([1, 3, 6]))
+      : (currentProd.allowed_installments ? JSON.stringify(currentProd.allowed_installments) : JSON.stringify([1, 3, 6]));
+
     const r = await query(
-      `UPDATE products SET name=$1,description=$2,price=$3,sizes=$4,stock=$5,image_url=COALESCE($6,image_url),category=$7,subcategory=$8,subcategory_id=$9,active=COALESCE($10,active),featured=COALESCE($11,featured),updated_at=now() WHERE id=$12 RETURNING ${fields}`,
+      `UPDATE products SET name=$1,description=$2,price=$3,sizes=$4,stock=$5,image_url=COALESCE($6,image_url),category=$7,subcategory=$8,subcategory_id=$9,active=COALESCE($10,active),featured=COALESCE($11,featured),direct_purchase=$12,allowed_payment_methods=$13,allowed_installments=$14,updated_at=now() WHERE id=$15 RETURNING ${fields}`,
       [
         req.body.name.trim(),
         req.body.description || '',
@@ -246,6 +272,9 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
         subcategoryId,
         req.body.active === undefined ? null : req.body.active,
         req.body.featured === undefined ? null : req.body.featured,
+        directPurchase,
+        allowedPaymentMethods,
+        allowedInstallments,
         req.params.id,
       ]
     );

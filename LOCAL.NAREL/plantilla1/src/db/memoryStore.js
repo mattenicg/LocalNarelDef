@@ -99,6 +99,9 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       subcategory_id: 's4444444-4444-4444-8444-111111111111',
       active: true,
       featured: true,
+      direct_purchase: false,
+      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+      allowed_installments: [1, 3, 6],
       created_at: now,
       updated_at: now,
     },
@@ -115,6 +118,9 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       subcategory_id: 's3333333-3333-4333-8333-111111111111',
       active: true,
       featured: true,
+      direct_purchase: false,
+      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+      allowed_installments: [1, 3, 6],
       created_at: now,
       updated_at: now,
     },
@@ -131,6 +137,9 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       subcategory_id: 's1111111-1111-4111-8111-111111111111',
       active: true,
       featured: true,
+      direct_purchase: false,
+      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+      allowed_installments: [1, 3, 6],
       created_at: now,
       updated_at: now,
     },
@@ -147,6 +156,9 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       subcategory_id: 's2222222-2222-4222-8222-111111111111',
       active: true,
       featured: false,
+      direct_purchase: false,
+      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+      allowed_installments: [1, 3, 6],
       created_at: now,
       updated_at: now,
     },
@@ -163,6 +175,9 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       subcategory_id: 's5555555-5555-4555-8555-111111111111',
       active: true,
       featured: true,
+      direct_purchase: false,
+      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+      allowed_installments: [1, 3, 6],
       created_at: now,
       updated_at: now,
     },
@@ -179,6 +194,9 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
       subcategory_id: null,
       active: true,
       featured: false,
+      direct_purchase: false,
+      allowed_payment_methods: ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+      allowed_installments: [1, 3, 6],
       created_at: now,
       updated_at: now,
     },
@@ -752,6 +770,7 @@ function executeMemoryQuery(rawText, params = []) {
     const id = uuid();
     const now = nowIso();
     const isExtended = lowerSql.includes('subcategory');
+    const hasDirect = lowerSql.includes('direct_purchase');
     const newProduct = {
       id,
       name: params[0],
@@ -765,6 +784,9 @@ function executeMemoryQuery(rawText, params = []) {
       subcategory_id: isExtended ? (params[8] || null) : null,
       active: (isExtended ? params[9] : params[7]) !== false,
       featured: (isExtended ? params[10] : params[8]) === true,
+      direct_purchase: hasDirect ? params[11] === true : false,
+      allowed_payment_methods: hasDirect && params[12] ? (typeof params[12] === 'string' ? JSON.parse(params[12]) : params[12]) : ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+      allowed_installments: hasDirect && params[13] ? (typeof params[13] === 'string' ? JSON.parse(params[13]) : params[13]) : [1, 3, 6],
       created_at: now,
       updated_at: now,
     };
@@ -797,6 +819,26 @@ function executeMemoryQuery(rawText, params = []) {
         return { rows: [{ ...p }], rowCount: 1 };
       }
       return { rows: [], rowCount: 0 };
+    }
+    if (lowerSql.includes('where id=$15')) {
+      const p = data.products.find((x) => x.id === params[14]);
+      if (!p) return { rows: [], rowCount: 0 };
+      p.name = params[0];
+      p.description = params[1] || '';
+      p.price = Number(params[2]) || 0;
+      p.sizes = params[3] || '';
+      p.stock = Number(params[4]) || 0;
+      if (params[5] !== null && params[5] !== undefined) p.image_url = params[5];
+      if (params[6]) p.category = params[6];
+      p.subcategory = params[7] || null;
+      p.subcategory_id = params[8] || null;
+      if (params[9] !== null && params[9] !== undefined) p.active = params[9];
+      if (params[10] !== null && params[10] !== undefined) p.featured = params[10];
+      if (params[11] !== null && params[11] !== undefined) p.direct_purchase = params[11] === true;
+      if (params[12]) p.allowed_payment_methods = typeof params[12] === 'string' ? JSON.parse(params[12]) : params[12];
+      if (params[13]) p.allowed_installments = typeof params[13] === 'string' ? JSON.parse(params[13]) : params[13];
+      p.updated_at = nowIso();
+      return { rows: [{ ...p }], rowCount: 1 };
     }
     if (lowerSql.includes('where id=$12')) {
       const p = data.products.find((x) => x.id === params[11]);

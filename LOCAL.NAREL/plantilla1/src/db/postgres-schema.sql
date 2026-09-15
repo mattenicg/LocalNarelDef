@@ -95,11 +95,17 @@ CREATE TABLE IF NOT EXISTS products (
   subcategory_id UUID REFERENCES subcategories(id) ON DELETE SET NULL,
   active BOOLEAN NOT NULL DEFAULT true,
   featured BOOLEAN NOT NULL DEFAULT false,
+  direct_purchase BOOLEAN NOT NULL DEFAULT false,
+  allowed_payment_methods JSONB NOT NULL DEFAULT '["tarjeta_credito","tarjeta_debito","transferencia","efectivo"]'::jsonb,
+  allowed_installments JSONB NOT NULL DEFAULT '[1,3,6]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory TEXT DEFAULT NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory_id UUID REFERENCES subcategories(id) ON DELETE SET NULL;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_purchase BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS allowed_payment_methods JSONB NOT NULL DEFAULT '["tarjeta_credito","tarjeta_debito","transferencia","efectivo"]'::jsonb;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS allowed_installments JSONB NOT NULL DEFAULT '[1,3,6]'::jsonb;
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_products_cat_subcat ON products(category, subcategory);
 CREATE INDEX IF NOT EXISTS idx_products_active ON products(active);

@@ -111,6 +111,64 @@
             </label>
           </div>
 
+          <!-- COMPRA DIRECTA -->
+          <div class="form-group full" style="background:#161616;border:1px solid #333;padding:18px;border-radius:4px;margin-top:6px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;font-weight:600;">
+                <input type="checkbox" id="direct_purchase" name="direct_purchase" style="width:18px;height:18px;accent-color:#fff;background:#111;border:1px solid #fff;">
+                ⚡ Compra Directa
+              </label>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#888;letter-spacing:.03em;">
+                (No se agrega al carrito · Botón "Comprar" directo al checkout)
+              </span>
+            </div>
+
+            <div id="directPurchaseConfigBox" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #282828;">
+              <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:11px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;margin-bottom:8px;">
+                  Métodos de pago permitidos para este producto:
+                </label>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-pay-method" value="tarjeta_debito" checked style="accent-color:#fff;"> Débito
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-pay-method" value="tarjeta_credito" checked style="accent-color:#fff;"> Crédito
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-pay-method" value="transferencia" checked style="accent-color:#fff;"> Transferencia
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-pay-method" value="efectivo" checked style="accent-color:#fff;"> Efectivo
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label style="display:block;font-size:11px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;margin-bottom:8px;">
+                  Opciones de cuotas permitidas (Tarjeta de Crédito):
+                </label>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-installment" value="1" checked style="accent-color:#fff;"> 1 cuota
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-installment" value="3" checked style="accent-color:#fff;"> 3 cuotas
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-installment" value="6" checked style="accent-color:#fff;"> 6 cuotas
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-installment" value="9" style="accent-color:#fff;"> 9 cuotas
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-installment" value="12" style="accent-color:#fff;"> 12 cuotas
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="form-group full">
             <label for="sizes">Talles (ej: S, M, L, XL / Único / 38 al 44)</label>
             <input type="text" id="sizes" name="sizes" class="form-control" maxlength="200" placeholder="S · M · L · XL">
