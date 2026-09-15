@@ -3,9 +3,7 @@
 
   let productId = null;
   let currentProduct = null;
-  let selectedFile = null;
-  let localPreviewUrl = null;
-  let currentImageRemoved = false;
+  let allImages = []; // Array of { type: 'existing' | 'new', url: string, file?: File, id: string }
   let categoriesList = [];
 
   window.addEventListener('DOMContentLoaded', init);
@@ -26,7 +24,7 @@
     }
     productId = id;
 
-    bindImage();
+    bindImages();
     bindForm();
     bindDirectPurchase();
     await loadCategories();
@@ -421,123 +419,172 @@
       chk.checked = allowedInst.includes(Number(chk.value));
     });
 
-    if (p.image_url) {
-      const wrap = document.getElementById('imagePreviewWrap');
-      const img = document.getElementById('imagePreviewImg');
-      const info = document.getElementById('imageInfoText');
-      const delBtn = document.getElementById('deleteCurrentImageBtn');
-
-      img.src = p.image_url;
-      img.onerror = () => { info.textContent = '(Imagen no disponible)'; };
-      info.textContent = 'Imagen actual asignada';
-      delBtn.style.display = 'inline-flex';
-      wrap.style.display = 'flex';
+    let initialImages = [];
+    if (Array.isArray(p.images)) {
+      initialImages = p.images.filter(Boolean);
+    } else if (typeof p.images === 'string' && p.images.trim()) {
+      try {
+        const parsed = JSON.parse(p.images);
+        if (Array.isArray(parsed)) initialImages = parsed.filter(Boolean);
+      } catch (_) {
+        initialImages = [p.images.trim()];
+      }
+    }
+    if (p.image_url && !initialImages.includes(p.image_url)) {
+      initialImages.unshift(p.image_url);
     }
 
+    allImages = initialImages.map((url, idx) => ({
+      type: 'existing',
+      url,
+      id: 'exist_' + idx + '_' + Math.random().toString(36).substring(2, 6),
+    }));
+
+    renderGallery();
     window.auth.setMessage(msgId, '', 'info');
   }
 
-  function bindImage() {
-    const input = document.getElementById('image');
-    const wrap = document.getElementById('imagePreviewWrap');
-    const img = document.getElementById('imagePreviewImg');
-    const info = document.getElementById('imageInfoText');
-    const removeBtn = document.getElementById('removeImageBtn');
-    const delCurrentBtn = document.getElementById('deleteCurrentImageBtn');
+  function renderGallery() {
+    const container = document.getElementById('imagesGalleryContainer');
+    const grid = document.getElementById('imagesGrid');
+    const countText = document.getElementById('galleryCountText');
+    const delAllBtn = document.getElementById('deleteAllImagesBtn');
+    const input = document.getElementById('imagesInput');
 
-    function restoreCurrentOrHide() {
-      selectedFile = null;
-      if (localPreviewUrl) { try { URL.revokeObjectURL(localPreviewUrl); } catch (_e) {} localPreviewUrl = null; }
-      input.value = '';
+    if (!container || !grid) return;
 
-      if (currentProduct && currentProduct.image_url && !currentImageRemoved) {
-        img.src = currentProduct.image_url;
-        info.textContent = 'Imagen actual asignada';
-        delCurrentBtn.style.display = 'inline-flex';
-        wrap.style.display = 'flex';
-      } else {
-        wrap.style.display = 'none';
-        img.removeAttribute('src');
-        info.textContent = '—';
-        delCurrentBtn.style.display = 'none';
-      }
-    }
-
-    input.addEventListener('change', function () {
-      const file = input.files && input.files[0];
-      if (!file) { restoreCurrentOrHide(); return; }
-
-      const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!allowed.includes(file.type || '')) {
-        window.auth.setMessage('formMessage', 'Formato no permitido. Solo JPG, JPEG, PNG y WEBP.', 'error');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        window.auth.setMessage('formMessage', 'La imagen supera el tamaño máximo permitido (5 MB).', 'error');
-        return;
-      }
-
-      selectedFile = file;
-      if (localPreviewUrl) { try { URL.revokeObjectURL(localPreviewUrl); } catch (_e) {} }
-      localPreviewUrl = URL.createObjectURL(file);
-      img.src = localPreviewUrl;
-
-      const kb = Math.round(file.size / 1024);
-      const sizeStr = kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
-      info.textContent = `Nueva imagen: ${escapeHtml(file.name)} · ${sizeStr} · ${escapeHtml(file.type || '')}`;
-      delCurrentBtn.style.display = 'none';
-      wrap.style.display = 'flex';
-      window.auth.setMessage('formMessage', '', 'info');
-    });
-
-    removeBtn.addEventListener('click', restoreCurrentOrHide);
-    delCurrentBtn.addEventListener('click', eliminarImagenActual);
-  }
-
-  async function eliminarImagenActual() {
-    if (!currentProduct || !currentProduct.image_url) return;
-    const msgId = 'formMessage';
-    const ok = window.confirm('¿Eliminar la imagen actual del producto? Esta acción no se puede deshacer.');
-    if (!ok) return;
-
-    const btn = document.getElementById('deleteCurrentImageBtn');
-    const prevText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'ELIMINANDO...';
-
-    const res = await window.auth.apiFetch(`/api/admin/products/${encodeURIComponent(productId)}/image`, { method: 'DELETE' });
-
-    btn.disabled = false;
-    btn.textContent = prevText;
-
-    if (!res.ok) {
-      window.auth.setMessage(msgId, res.message || 'Error al eliminar la imagen', 'error');
+    if (allImages.length === 0) {
+      container.style.display = 'none';
+      grid.innerHTML = '';
+      if (delAllBtn) delAllBtn.style.display = 'none';
       return;
     }
 
-    currentProduct.image_url = null;
-    currentImageRemoved = true;
-
-    const wrap = document.getElementById('imagePreviewWrap');
-    const img = document.getElementById('imagePreviewImg');
-    const info = document.getElementById('imageInfoText');
-    const delBtn = document.getElementById('deleteCurrentImageBtn');
-
-    if (selectedFile) {
-      info.textContent = info.textContent;
-    } else {
-      wrap.style.display = 'none';
-      img.removeAttribute('src');
-      info.textContent = '—';
+    container.style.display = 'block';
+    if (delAllBtn) delAllBtn.style.display = 'inline-flex';
+    if (countText) {
+      countText.textContent = `${allImages.length} foto${allImages.length > 1 ? 's' : ''} (La 1ra es la portada principal)`;
     }
-    delBtn.style.display = 'none';
 
-    window.auth.setMessage(msgId, 'Imagen eliminada correctamente', 'success');
-    setTimeout(() => window.auth.setMessage(msgId, '', 'info'), 1800);
+    grid.innerHTML = '';
+    allImages.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'position:relative;background:#111;border:1px solid #333;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;';
+      
+      const isPrimary = index === 0;
+      const isNew = item.type === 'new';
+
+      card.innerHTML = `
+        <div style="position:relative;width:100%;height:120px;background:#050505;">
+          <img src="${item.url}" alt="Foto ${index + 1}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.src='/assets/img/logo-ngl-diamond.jpeg';">
+          ${isPrimary ? '<span style="position:absolute;top:6px;left:6px;background:#e50914;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;font-family:\'DM Mono\',monospace;letter-spacing:.05em;">PORTADA</span>' : ''}
+          ${isNew ? '<span style="position:absolute;top:6px;right:6px;background:#0066cc;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;font-family:\'DM Mono\',monospace;">NUEVA</span>' : ''}
+          <span style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:\'DM Mono\',monospace;">#${index + 1}</span>
+        </div>
+        <div style="padding:6px;display:flex;gap:4px;align-items:center;justify-content:space-between;background:#181818;border-top:1px solid #282828;">
+          <div style="display:flex;gap:2px;">
+            <button type="button" class="btn-move-left" style="background:#222;color:#fff;border:1px solid #444;border-radius:3px;padding:2px 6px;font-size:11px;cursor:pointer;" ${index === 0 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''} title="Mover a la izquierda">◀</button>
+            <button type="button" class="btn-move-right" style="background:#222;color:#fff;border:1px solid #444;border-radius:3px;padding:2px 6px;font-size:11px;cursor:pointer;" ${index === allImages.length - 1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''} title="Mover a la derecha">▶</button>
+          </div>
+          <button type="button" class="btn-remove-img" style="background:#3a0000;color:#ff6666;border:1px solid #770000;border-radius:3px;padding:2px 6px;font-size:10px;font-weight:700;cursor:pointer;" title="Eliminar foto">✕</button>
+        </div>
+      `;
+
+      // Events
+      const btnLeft = card.querySelector('.btn-move-left');
+      const btnRight = card.querySelector('.btn-move-right');
+      const btnDel = card.querySelector('.btn-remove-img');
+
+      if (btnLeft && index > 0) {
+        btnLeft.addEventListener('click', () => {
+          const temp = allImages[index - 1];
+          allImages[index - 1] = allImages[index];
+          allImages[index] = temp;
+          renderGallery();
+        });
+      }
+
+      if (btnRight && index < allImages.length - 1) {
+        btnRight.addEventListener('click', () => {
+          const temp = allImages[index + 1];
+          allImages[index + 1] = allImages[index];
+          allImages[index] = temp;
+          renderGallery();
+        });
+      }
+
+      if (btnDel) {
+        btnDel.addEventListener('click', () => {
+          if (item.type === 'new' && item.file) {
+            try { URL.revokeObjectURL(item.url); } catch (_) {}
+          }
+          allImages.splice(index, 1);
+          renderGallery();
+        });
+      }
+
+      grid.appendChild(card);
+    });
+  }
+
+  function bindImages() {
+    const input = document.getElementById('imagesInput');
+    const delAllBtn = document.getElementById('deleteAllImagesBtn');
+
+    if (input) {
+      input.addEventListener('change', function () {
+        const files = Array.from(input.files || []);
+        if (!files.length) return;
+
+        const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        let errorMsg = '';
+
+        for (const file of files) {
+          if (!allowed.includes(file.type || '')) {
+            errorMsg = `Formato no permitido en ${file.name}. Solo JPG, JPEG, PNG y WEBP.`;
+            break;
+          }
+          if (file.size > 5 * 1024 * 1024) {
+            errorMsg = `El archivo ${file.name} supera el tamaño máximo permitido (5 MB).`;
+            break;
+          }
+          allImages.push({
+            type: 'new',
+            file,
+            url: URL.createObjectURL(file),
+            id: 'file_' + Math.random().toString(36).substring(2, 9),
+          });
+        }
+
+        if (errorMsg) {
+          window.auth.setMessage('formMessage', errorMsg, 'error');
+        } else {
+          window.auth.setMessage('formMessage', '', 'info');
+        }
+
+        input.value = '';
+        renderGallery();
+      });
+    }
+
+    if (delAllBtn) {
+      delAllBtn.addEventListener('click', function () {
+        if (!confirm('¿Seguro que deseas quitar todas las fotos del producto?')) return;
+        allImages.forEach((img) => {
+          if (img.type === 'new') {
+            try { URL.revokeObjectURL(img.url); } catch (_) {}
+          }
+        });
+        allImages = [];
+        renderGallery();
+      });
+    }
   }
 
   function bindForm() {
     const form = document.getElementById('productForm');
+    form.addEventListener('submit', handleSubmit);
+  }
     form.addEventListener('submit', handleSubmit);
   }
 
@@ -646,22 +693,51 @@
         direct_custom_transfer_price,
         direct_transfer_text,
       };
-      const prevImageUrl = currentProduct.image_url || null;
+      // Upload any new images and build final ordered URLs
+      const newItems = allImages.filter((item) => item.type === 'new' && item.file);
+      let uploadedUrlsMap = new Map();
 
-      if (selectedFile) {
-        window.auth.setMessage(msgId, 'Subiendo nueva imagen...', 'info');
+      if (newItems.length > 0) {
+        window.auth.setMessage(msgId, `Subiendo ${newItems.length} imagen${newItems.length > 1 ? 'es' : ''} nueva${newItems.length > 1 ? 's' : ''}...`, 'info');
         const fd = new FormData();
-        fd.append('image', selectedFile);
-        const upRes = await window.auth.apiFetch('/api/admin/products/upload-image', {
+        newItems.forEach((item) => {
+          fd.append('images', item.file);
+        });
+
+        const upRes = await window.auth.apiFetch('/api/admin/products/upload-images', {
           method: 'POST',
           body: fd,
         });
-        if (!upRes.ok) throw new Error(upRes.message || 'Error al subir la imagen');
 
-        const newImageUrl = upRes.image_url || (upRes.data && upRes.data.image_url) || null;
-        if (!newImageUrl) throw new Error('No se obtuvo la URL de la nueva imagen');
-        payload.image_url = newImageUrl;
+        if (!upRes.ok) throw new Error(upRes.message || 'Error al subir las nuevas imágenes');
+
+        let returnedUrls = [];
+        if (Array.isArray(upRes.images)) {
+          returnedUrls = upRes.images;
+        } else if (Array.isArray(upRes.data?.images)) {
+          returnedUrls = upRes.data.images;
+        } else if (upRes.image_url) {
+          returnedUrls = [upRes.image_url];
+        } else if (upRes.data?.image_url) {
+          returnedUrls = [upRes.data.image_url];
+        }
+
+        newItems.forEach((item, idx) => {
+          if (returnedUrls[idx]) {
+            uploadedUrlsMap.set(item.id, returnedUrls[idx]);
+          }
+        });
       }
+
+      const finalImageUrls = allImages.map((item) => {
+        if (item.type === 'existing') return item.url;
+        return uploadedUrlsMap.get(item.id) || item.url;
+      }).filter(Boolean);
+
+      const primaryImageUrl = finalImageUrls[0] || null;
+
+      payload.images = finalImageUrls;
+      payload.image_url = primaryImageUrl;
 
       const updRes = await window.auth.apiFetch(`/api/admin/products/${encodeURIComponent(productId)}`, {
         method: 'PUT',
@@ -672,7 +748,7 @@
 
       if (currentProduct && updRes.data) currentProduct = { ...currentProduct, ...updRes.data };
 
-      window.auth.setMessage(msgId, 'Producto actualizado correctamente. Redirigiendo...', 'success');
+      window.auth.setMessage(msgId, 'Producto actualizado correctamente con todas sus fotos. Redirigiendo...', 'success');
       setTimeout(() => window.location.replace('/admin/products.html'), 900);
     } catch (err) {
       window.auth.setMessage(msgId, err.message || 'Error inesperado', 'error');

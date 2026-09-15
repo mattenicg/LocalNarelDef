@@ -167,29 +167,46 @@ app.get('/api/products/public', async (req, res) => {
     }
 
     params.push(limit);
-    const querySql = `SELECT id,name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at FROM products ${conditions} ORDER BY featured DESC,updated_at DESC LIMIT $${params.length}`;
+    const querySql = `SELECT id,name,description,price,sizes,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at FROM products ${conditions} ORDER BY featured DESC,updated_at DESC LIMIT $${params.length}`;
 
     const result = await query(querySql, params);
-    const mapped = result.rows.map((p) => ({
-      ...p,
-      direct_purchase: Boolean(p.direct_purchase),
-      allowed_payment_methods: typeof p.allowed_payment_methods === 'string'
-        ? JSON.parse(p.allowed_payment_methods)
-        : (p.allowed_payment_methods || ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo']),
-      allowed_installments: typeof p.allowed_installments === 'string'
-        ? JSON.parse(p.allowed_installments)
-        : (p.allowed_installments || [1, 3, 6]),
-      direct_discount_percent: p.direct_discount_percent !== undefined && p.direct_discount_percent !== null ? Number(p.direct_discount_percent) : 25,
-      direct_discount_text: p.direct_discount_text || 'con transferencia',
-      direct_show_promo_badge: p.direct_show_promo_badge !== false,
-      direct_promo_badge_text: p.direct_promo_badge_text || 'PROMO ACTIVA',
-      direct_installments_count: Number(p.direct_installments_count) || 6,
-      direct_installments_text: p.direct_installments_text || 'sin interés',
-      direct_custom_transfer_price: p.direct_custom_transfer_price ? Number(p.direct_custom_transfer_price) : null,
-      direct_transfer_text: p.direct_transfer_text || 'con Transferencia',
-      category: String(p.category || guessCategoryFallback(p.name, p.description) || 'remeras').toLowerCase(),
-      subcategory: p.subcategory ? String(p.subcategory).toLowerCase() : null,
-    }));
+    const mapped = result.rows.map((p) => {
+      let imagesList = [];
+      if (Array.isArray(p.images)) {
+        imagesList = p.images;
+      } else if (typeof p.images === 'string' && p.images.startsWith('[')) {
+        try { imagesList = JSON.parse(p.images); } catch (_) {}
+      } else if (p.images && typeof p.images === 'string') {
+        imagesList = [p.images];
+      }
+      if (p.image_url && !imagesList.includes(p.image_url)) {
+        imagesList.unshift(p.image_url);
+      }
+      const mainImageUrl = p.image_url || imagesList[0] || null;
+
+      return {
+        ...p,
+        image_url: mainImageUrl,
+        images: imagesList,
+        direct_purchase: Boolean(p.direct_purchase),
+        allowed_payment_methods: typeof p.allowed_payment_methods === 'string'
+          ? JSON.parse(p.allowed_payment_methods)
+          : (p.allowed_payment_methods || ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo']),
+        allowed_installments: typeof p.allowed_installments === 'string'
+          ? JSON.parse(p.allowed_installments)
+          : (p.allowed_installments || [1, 3, 6]),
+        direct_discount_percent: p.direct_discount_percent !== undefined && p.direct_discount_percent !== null ? Number(p.direct_discount_percent) : 25,
+        direct_discount_text: p.direct_discount_text || 'con transferencia',
+        direct_show_promo_badge: p.direct_show_promo_badge !== false,
+        direct_promo_badge_text: p.direct_promo_badge_text || 'PROMO ACTIVA',
+        direct_installments_count: Number(p.direct_installments_count) || 6,
+        direct_installments_text: p.direct_installments_text || 'sin interés',
+        direct_custom_transfer_price: p.direct_custom_transfer_price ? Number(p.direct_custom_transfer_price) : null,
+        direct_transfer_text: p.direct_transfer_text || 'con Transferencia',
+        category: String(p.category || guessCategoryFallback(p.name, p.description) || 'remeras').toLowerCase(),
+        subcategory: p.subcategory ? String(p.subcategory).toLowerCase() : null,
+      };
+    });
 
     return res.status(200).json({ ok: true, count: mapped.length, data: mapped });
   } catch (err) {

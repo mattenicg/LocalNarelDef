@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS products (
   sizes TEXT NOT NULL DEFAULT '',
   stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
   image_url TEXT,
+  images JSONB NOT NULL DEFAULT '[]'::jsonb,
   category TEXT NOT NULL DEFAULT 'remeras',
   subcategory TEXT DEFAULT NULL,
   subcategory_id UUID REFERENCES subcategories(id) ON DELETE SET NULL,
@@ -109,6 +110,7 @@ CREATE TABLE IF NOT EXISTS products (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE products ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory TEXT DEFAULT NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory_id UUID REFERENCES subcategories(id) ON DELETE SET NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_purchase BOOLEAN NOT NULL DEFAULT false;
@@ -122,6 +124,7 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_installments_count INTEGER 
 ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_installments_text VARCHAR(60) NOT NULL DEFAULT 'sin interés';
 ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_custom_transfer_price NUMERIC(12,2) DEFAULT NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_transfer_text VARCHAR(60) NOT NULL DEFAULT 'con Transferencia';
+UPDATE products SET images = jsonb_build_array(image_url) WHERE (images IS NULL OR images = '[]'::jsonb) AND image_url IS NOT NULL AND image_url <> '';
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_products_cat_subcat ON products(category, subcategory);
 CREATE INDEX IF NOT EXISTS idx_products_active ON products(active);

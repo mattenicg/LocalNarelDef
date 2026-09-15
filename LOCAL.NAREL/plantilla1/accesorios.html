@@ -8462,6 +8462,19 @@
         const stockText = stock > 0 ? (stock <= 5 ? `ÚLTIMAS ${stock} UNIDADES` : `EN STOCK (${stock})`) : 'SIN STOCK';
         const imgUrl = (p.image_url && typeof p.image_url === 'string') ? p.image_url.trim() : '';
 
+        let productImages = [];
+        if (Array.isArray(p.images) && p.images.length > 0) {
+          productImages = p.images.filter(Boolean);
+        } else if (typeof p.images === 'string' && p.images.startsWith('[')) {
+          try { productImages = JSON.parse(p.images).filter(Boolean); } catch (_) {}
+        }
+        if (imgUrl && !productImages.includes(imgUrl)) {
+          productImages.unshift(imgUrl);
+        }
+        if (productImages.length === 0 && imgUrl) {
+          productImages = [imgUrl];
+        }
+
         // Sizes chips
         const rawSizes = String(p.sizes || '').trim();
         const sizeList = rawSizes.split(/\s*[-|/,]\s*/).map(s => s.trim()).filter(Boolean);
@@ -8481,9 +8494,25 @@
             </div>`;
         }
 
-        const imgHTML = imgUrl
-          ? `<img src="${htmlEscape(imgUrl)}" alt="${name}">`
-          : `<span>${htmlEscape((p.id || 'NL').slice(0, 2).toUpperCase())}</span>`;
+        let galleryHTML = '';
+        if (productImages.length > 0) {
+          galleryHTML = `
+            <div class="pm-main-img-wrap" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#080808;overflow:hidden;border-radius:8px;">
+              <img id="pmMainImg" src="${htmlEscape(productImages[0])}" alt="${name}" style="width:100%;height:100%;object-fit:cover;display:block;">
+            </div>`;
+          if (productImages.length > 1) {
+            galleryHTML += `
+              <div class="pm-thumbnails" style="display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:4px;width:100%;">
+                ${productImages.map((img, idx) => `
+                  <button type="button" class="pm-thumb-btn ${idx === 0 ? 'active' : ''}" data-img-src="${htmlEscape(img)}" style="border:2px solid ${idx === 0 ? '#ffffff' : 'rgba(255,255,255,0.18)'};background:#000;padding:0;border-radius:6px;cursor:pointer;overflow:hidden;width:58px;height:58px;flex-shrink:0;transition:all 0.15s ease;">
+                    <img src="${htmlEscape(img)}" alt="Foto ${idx+1}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                  </button>
+                `).join('')}
+              </div>`;
+          }
+        } else {
+          galleryHTML = `<span>${htmlEscape((p.id || 'NL').slice(0, 2).toUpperCase())}</span>`;
+        }
 
         // Cross-selling complementary products (only if not direct purchase)
         const recs = isDirect ? [] : getCrossSellProducts(window.__CATALOG_PRODUCTS__ || [], [p], 4);
@@ -8566,7 +8595,7 @@
           <div class="pm-main">
             <div class="pm-gallery">
               <span class="pm-badge"${badgeStyle}>${badge}</span>
-              ${imgHTML}
+              ${galleryHTML}
             </div>
             <div class="pm-info">
               <span class="pm-eyebrow">${htmlEscape(cat.toUpperCase())} // CREW N.L.</span>
@@ -8588,6 +8617,23 @@
       }
 
       function bindProductModalEvents(container) {
+        // Thumbnail image selection
+        container.querySelectorAll('.pm-thumb-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const src = btn.dataset.imgSrc;
+            const mainImg = container.querySelector('#pmMainImg');
+            if (mainImg && src) {
+              mainImg.src = src;
+              container.querySelectorAll('.pm-thumb-btn').forEach(b => {
+                b.style.borderColor = 'rgba(255,255,255,0.18)';
+                b.classList.remove('active');
+              });
+              btn.style.borderColor = '#ffffff';
+              btn.classList.add('active');
+            }
+          });
+        });
+
         // Size selection
         container.querySelectorAll('[data-pm-size]').forEach(btn => {
           btn.addEventListener('click', () => {

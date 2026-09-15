@@ -20,7 +20,7 @@ function fail(req, res) {
   return e.isEmpty() ? null : res.status(400).json({ ok: false, message: e.array()[0].msg });
 }
 
-const fields = 'id,name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at';
+const fields = 'id,name,description,price,sizes,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at';
 
 router.use(authenticate, requireAdmin);
 
@@ -231,15 +231,34 @@ router.post('/', rules, async (req, res) => {
       : null;
     const directTransferText = req.body.direct_transfer_text ? String(req.body.direct_transfer_text).trim() : 'con Transferencia';
 
+    let images = [];
+    if (Array.isArray(req.body.images)) {
+      images = req.body.images.filter(Boolean);
+    } else if (typeof req.body.images === 'string' && req.body.images.trim()) {
+      try {
+        const parsed = JSON.parse(req.body.images);
+        if (Array.isArray(parsed)) images = parsed.filter(Boolean);
+      } catch (_) {
+        images = [req.body.images.trim()];
+      }
+    }
+    const mainImageUrl = (req.body.image_url && typeof req.body.image_url === 'string' && req.body.image_url.trim())
+      ? req.body.image_url.trim()
+      : (images[0] || null);
+    if (mainImageUrl && !images.includes(mainImageUrl)) {
+      images.unshift(mainImageUrl);
+    }
+
     const r = await query(
-      `INSERT INTO products(name,description,price,sizes,stock,image_url,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING ${fields}`,
+      `INSERT INTO products(name,description,price,sizes,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING ${fields}`,
       [
         req.body.name.trim(),
         req.body.description || '',
         Number(req.body.price),
         req.body.sizes || '',
         Number(req.body.stock),
-        req.body.image_url || null,
+        mainImageUrl,
+        JSON.stringify(images),
         categorySlug,
         subcategorySlug,
         subcategoryId,
@@ -268,7 +287,7 @@ router.post('/', rules, async (req, res) => {
 router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
   if (fail(req, res)) return;
   try {
-    const existing = await query('SELECT id, category, subcategory, subcategory_id, direct_purchase, allowed_payment_methods, allowed_installments, direct_discount_percent, direct_discount_text, direct_show_promo_badge, direct_promo_badge_text, direct_installments_count, direct_installments_text, direct_custom_transfer_price, direct_transfer_text FROM products WHERE id=$1', [req.params.id]);
+    const existing = await query('SELECT id, category, subcategory, subcategory_id, image_url, images, direct_purchase, allowed_payment_methods, allowed_installments, direct_discount_percent, direct_discount_text, direct_show_promo_badge, direct_promo_badge_text, direct_installments_count, direct_installments_text, direct_custom_transfer_price, direct_transfer_text FROM products WHERE id=$1', [req.params.id]);
     if (!existing.rows[0]) return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
 
     const currentProd = existing.rows[0];
@@ -329,15 +348,40 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
       ? String(req.body.direct_transfer_text).trim()
       : (currentProd.direct_transfer_text || 'con Transferencia');
 
+    let imagesJson = null;
+    let mainImageUrl = req.body.image_url !== undefined ? req.body.image_url : currentProd.image_url;
+
+    if (req.body.images !== undefined) {
+      let imagesList = [];
+      if (Array.isArray(req.body.images)) {
+        imagesList = req.body.images.filter(Boolean);
+      } else if (typeof req.body.images === 'string' && req.body.images.trim()) {
+        try {
+          const parsed = JSON.parse(req.body.images);
+          if (Array.isArray(parsed)) imagesList = parsed.filter(Boolean);
+        } catch (_) {
+          imagesList = [req.body.images.trim()];
+        }
+      }
+      if (mainImageUrl && !imagesList.includes(mainImageUrl)) {
+        imagesList.unshift(mainImageUrl);
+      }
+      if (!mainImageUrl && imagesList.length > 0) {
+        mainImageUrl = imagesList[0];
+      }
+      imagesJson = JSON.stringify(imagesList);
+    }
+
     const r = await query(
-      `UPDATE products SET name=$1,description=$2,price=$3,sizes=$4,stock=$5,image_url=COALESCE($6,image_url),category=$7,subcategory=$8,subcategory_id=$9,active=COALESCE($10,active),featured=COALESCE($11,featured),direct_purchase=$12,allowed_payment_methods=$13,allowed_installments=$14,direct_discount_percent=$15,direct_discount_text=$16,direct_show_promo_badge=$17,direct_promo_badge_text=$18,direct_installments_count=$19,direct_installments_text=$20,direct_custom_transfer_price=$21,direct_transfer_text=$22,updated_at=now() WHERE id=$23 RETURNING ${fields}`,
+      `UPDATE products SET name=$1,description=$2,price=$3,sizes=$4,stock=$5,image_url=$6,images=COALESCE($7::jsonb,images),category=$8,subcategory=$9,subcategory_id=$10,active=COALESCE($11,active),featured=COALESCE($12,featured),direct_purchase=$13,allowed_payment_methods=$14,allowed_installments=$15,direct_discount_percent=$16,direct_discount_text=$17,direct_show_promo_badge=$18,direct_promo_badge_text=$19,direct_installments_count=$20,direct_installments_text=$21,direct_custom_transfer_price=$22,direct_transfer_text=$23,updated_at=now() WHERE id=$24 RETURNING ${fields}`,
       [
         req.body.name.trim(),
         req.body.description || '',
         Number(req.body.price),
         req.body.sizes || '',
         Number(req.body.stock),
-        req.body.image_url || null,
+        mainImageUrl,
+        imagesJson,
         categorySlug,
         subcategorySlug,
         subcategoryId,

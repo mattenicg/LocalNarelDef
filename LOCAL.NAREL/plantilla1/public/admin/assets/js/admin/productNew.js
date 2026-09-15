@@ -1,8 +1,7 @@
 (function () {
   'use strict';
 
-  let selectedFile = null;
-  let localPreviewUrl = null;
+  let selectedFiles = []; // Array of { file: File, previewUrl: string, id: string }
   let categoriesList = [];
 
   window.addEventListener('DOMContentLoaded', init);
@@ -15,7 +14,7 @@
       window.initSupabaseBrowser().catch(() => {});
     }
 
-    bindImage();
+    bindImages();
     bindForm();
     bindDirectPurchase();
     await loadCategories();
@@ -314,54 +313,117 @@
     }
   }
 
-  function bindImage() {
-    const input = document.getElementById('image');
-    const wrap = document.getElementById('imagePreviewWrap');
-    const img = document.getElementById('imagePreviewImg');
-    const info = document.getElementById('imageInfoText');
-    const removeBtn = document.getElementById('removeImageBtn');
+  function bindImages() {
+    const input = document.getElementById('imagesInput');
+    const container = document.getElementById('imagesGalleryContainer');
+    const grid = document.getElementById('imagesGrid');
+    const countText = document.getElementById('galleryCountText');
 
-    function clearPreview() {
-      selectedFile = null;
-      if (localPreviewUrl) {
-        try { URL.revokeObjectURL(localPreviewUrl); } catch (_e) {}
-        localPreviewUrl = null;
+    function renderGallery() {
+      if (!container || !grid) return;
+      if (selectedFiles.length === 0) {
+        container.style.display = 'none';
+        grid.innerHTML = '';
+        if (input) input.value = '';
+        return;
       }
-      input.value = '';
-      wrap.style.display = 'none';
-      img.removeAttribute('src');
-      info.textContent = '—';
+
+      container.style.display = 'block';
+      if (countText) {
+        countText.textContent = `${selectedFiles.length} foto${selectedFiles.length > 1 ? 's' : ''} seleccionada${selectedFiles.length > 1 ? 's' : ''} (La 1ra es la portada principal)`;
+      }
+
+      grid.innerHTML = '';
+      selectedFiles.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.style.cssText = 'position:relative;background:#111;border:1px solid #333;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;';
+        
+        const isPrimary = index === 0;
+
+        card.innerHTML = `
+          <div style="position:relative;width:100%;height:120px;background:#050505;">
+            <img src="${item.previewUrl}" alt="Preview" style="width:100%;height:100%;object-fit:cover;display:block;">
+            ${isPrimary ? '<span style="position:absolute;top:6px;left:6px;background:#e50914;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;font-family:\'DM Mono\',monospace;letter-spacing:.05em;">PORTADA</span>' : ''}
+            <span style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:\'DM Mono\',monospace;">#${index + 1}</span>
+          </div>
+          <div style="padding:6px;display:flex;gap:4px;align-items:center;justify-content:space-between;background:#181818;border-top:1px solid #282828;">
+            <div style="display:flex;gap:2px;">
+              <button type="button" class="btn-move-left" style="background:#222;color:#fff;border:1px solid #444;border-radius:3px;padding:2px 6px;font-size:11px;cursor:pointer;" ${index === 0 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''} title="Mover a la izquierda">◀</button>
+              <button type="button" class="btn-move-right" style="background:#222;color:#fff;border:1px solid #444;border-radius:3px;padding:2px 6px;font-size:11px;cursor:pointer;" ${index === selectedFiles.length - 1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''} title="Mover a la derecha">▶</button>
+            </div>
+            <button type="button" class="btn-remove-img" style="background:#3a0000;color:#ff6666;border:1px solid #770000;border-radius:3px;padding:2px 6px;font-size:10px;font-weight:700;cursor:pointer;" title="Eliminar foto">✕</button>
+          </div>
+        `;
+
+        // Events
+        const btnLeft = card.querySelector('.btn-move-left');
+        const btnRight = card.querySelector('.btn-move-right');
+        const btnDel = card.querySelector('.btn-remove-img');
+
+        if (btnLeft && index > 0) {
+          btnLeft.addEventListener('click', () => {
+            const temp = selectedFiles[index - 1];
+            selectedFiles[index - 1] = selectedFiles[index];
+            selectedFiles[index] = temp;
+            renderGallery();
+          });
+        }
+
+        if (btnRight && index < selectedFiles.length - 1) {
+          btnRight.addEventListener('click', () => {
+            const temp = selectedFiles[index + 1];
+            selectedFiles[index + 1] = selectedFiles[index];
+            selectedFiles[index] = temp;
+            renderGallery();
+          });
+        }
+
+        if (btnDel) {
+          btnDel.addEventListener('click', () => {
+            try { URL.revokeObjectURL(item.previewUrl); } catch (_) {}
+            selectedFiles.splice(index, 1);
+            renderGallery();
+          });
+        }
+
+        grid.appendChild(card);
+      });
     }
 
-    input.addEventListener('change', function () {
-      const file = input.files && input.files[0];
-      if (!file) { clearPreview(); return; }
+    if (input) {
+      input.addEventListener('change', function () {
+        const files = Array.from(input.files || []);
+        if (!files.length) return;
 
-      const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!allowed.includes(file.type || '')) {
-        window.auth.setMessage('formMessage', 'Formato no permitido. Solo JPG, JPEG, PNG y WEBP.', 'error');
-        clearPreview();
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        window.auth.setMessage('formMessage', 'La imagen supera el tamaño máximo permitido (5 MB).', 'error');
-        clearPreview();
-        return;
-      }
+        const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        let errorMsg = '';
 
-      selectedFile = file;
-      if (localPreviewUrl) { try { URL.revokeObjectURL(localPreviewUrl); } catch (_e) {} }
-      localPreviewUrl = URL.createObjectURL(file);
-      img.src = localPreviewUrl;
+        for (const file of files) {
+          if (!allowed.includes(file.type || '')) {
+            errorMsg = `Formato no permitido en ${file.name}. Solo JPG, JPEG, PNG y WEBP.`;
+            break;
+          }
+          if (file.size > 5 * 1024 * 1024) {
+            errorMsg = `El archivo ${file.name} supera el tamaño máximo permitido (5 MB).`;
+            break;
+          }
+          selectedFiles.push({
+            file,
+            previewUrl: URL.createObjectURL(file),
+            id: 'file_' + Math.random().toString(36).substring(2, 9),
+          });
+        }
 
-      const kb = Math.round(file.size / 1024);
-      const sizeStr = kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
-      info.textContent = `${escapeHtml(file.name)} · ${sizeStr} · ${escapeHtml(file.type || '')}`;
-      wrap.style.display = 'flex';
-      window.auth.setMessage('formMessage', '', 'info');
-    });
+        if (errorMsg) {
+          window.auth.setMessage('formMessage', errorMsg, 'error');
+        } else {
+          window.auth.setMessage('formMessage', '', 'info');
+        }
 
-    removeBtn.addEventListener('click', clearPreview);
+        input.value = ''; // Reset input so user can add more files consecutively
+        renderGallery();
+      });
+    }
   }
 
   function bindForm() {
@@ -433,21 +495,35 @@
     window.auth.setMessage(msgId, 'Procesando...', 'info');
 
     try {
-      let image_url = null;
-      if (selectedFile) {
-        window.auth.setMessage(msgId, 'Subiendo imagen...', 'info');
+      let uploadedImageUrls = [];
+      if (selectedFiles.length > 0) {
+        window.auth.setMessage(msgId, `Subiendo ${selectedFiles.length} imagen${selectedFiles.length > 1 ? 'es' : ''}...`, 'info');
         const fd = new FormData();
-        fd.append('image', selectedFile);
-        const upRes = await window.auth.apiFetch('/api/admin/products/upload-image', {
+        selectedFiles.forEach((item) => {
+          fd.append('images', item.file);
+        });
+
+        const upRes = await window.auth.apiFetch('/api/admin/products/upload-images', {
           method: 'POST',
           body: fd,
         });
+
         if (!upRes.ok) {
-          throw new Error(upRes.message || 'Error al subir la imagen');
+          throw new Error(upRes.message || 'Error al subir las imágenes');
         }
-        image_url = upRes.image_url || (upRes.data && upRes.data.image_url) || null;
-        if (!image_url) throw new Error('No se obtuvo la URL de la imagen');
+
+        if (Array.isArray(upRes.images)) {
+          uploadedImageUrls = upRes.images;
+        } else if (Array.isArray(upRes.data?.images)) {
+          uploadedImageUrls = upRes.data.images;
+        } else if (upRes.image_url) {
+          uploadedImageUrls = [upRes.image_url];
+        } else if (upRes.data?.image_url) {
+          uploadedImageUrls = [upRes.data.image_url];
+        }
       }
+
+      const primaryImageUrl = uploadedImageUrls[0] || null;
 
       const discPctEl = document.getElementById('direct_discount_percent');
       const discTxtEl = document.getElementById('direct_discount_text');
@@ -475,7 +551,8 @@
           price,
           sizes,
           stock,
-          image_url,
+          image_url: primaryImageUrl,
+          images: uploadedImageUrls,
           category,
           subcategory,
           subcategory_id,
@@ -499,7 +576,7 @@
         throw new Error(createRes.message || 'Error al crear el producto');
       }
 
-      window.auth.setMessage(msgId, 'Producto creado correctamente. Redirigiendo...', 'success');
+      window.auth.setMessage(msgId, 'Producto creado correctamente con sus fotos. Redirigiendo...', 'success');
       setTimeout(() => {
         window.location.replace('/admin/products.html');
       }, 900);
