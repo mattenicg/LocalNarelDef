@@ -9,6 +9,12 @@ const { initMemoryDb, executeMemoryQuery } = require('./memoryStore');
 
 let useMock = false;
 
+// If neither DATABASE_URL nor an explicit POSTGRES_HOST is set, immediately default to in-memory store
+if (!env.DATABASE_URL && !process.env.POSTGRES_HOST) {
+  useMock = true;
+  initMemoryDb(env.ADMIN_DEFAULT_EMAIL, env.ADMIN_DEFAULT_PASSWORD);
+}
+
 const connection = env.DATABASE_URL
   ? { connectionString: env.DATABASE_URL, ssl: env.POSTGRES_SSL ? { rejectUnauthorized: false } : false }
   : {
@@ -85,6 +91,10 @@ async function withTransaction(callback) {
 }
 
 async function initPostgres() {
+  if (useMock) {
+    logger.info('[postgres] Almacenamiento en memoria activo.');
+    return;
+  }
   try {
     // Probe database connection with a fast test
     const client = await pool.connect();

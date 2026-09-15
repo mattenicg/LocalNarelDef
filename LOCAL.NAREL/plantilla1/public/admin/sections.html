@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Secciones y Categorías — Panel Admin | NAREL LOCAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/auth-shared.css">
+  <style>
+    .section-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border-subtle, rgba(255,255,255,0.12));
+      border-radius: 4px;
+      color: #fff;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+    .url-preview-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      background: rgba(255, 230, 0, 0.08);
+      border: 1px solid rgba(255, 230, 0, 0.3);
+      border-radius: 4px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--yellow, #ffe600);
+      text-decoration: none;
+      word-break: break-all;
+      transition: background .2s, border-color .2s;
+    }
+    .url-preview-pill:hover {
+      background: rgba(255, 230, 0, 0.18);
+      border-color: var(--yellow, #ffe600);
+      color: #fff;
+    }
+    .subtitle-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-family: 'DM Mono', monospace;
+      color: #d1d5db;
+      background: rgba(0,0,0,0.4);
+      padding: 3px 8px;
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: 3px;
+    }
+    .default-tag {
+      font-size: 10px;
+      color: var(--grey, #888);
+      margin-left: 6px;
+      text-transform: uppercase;
+    }
+    .callout-info {
+      padding: 12px 16px;
+      background: rgba(255, 230, 0, 0.05);
+      border-left: 3px solid var(--yellow, #ffe600);
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #e5e7eb;
+      line-height: 1.5;
+    }
+    .form-hint {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: #9ca3af;
+      font-family: 'DM Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <span>CREW N.L.</span><span>·</span><span>ENVÍOS A TODO EL PAÍS</span><span>·</span><span>UNA NUEVA VISIÓN</span>
+  </div>
+
+  <header>
+    <a class="logo" href="/">
+      <div class="logo-circle"><img src="/assets/img/logo-ngl-diamond.jpeg" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;background:#000;" onerror="this.onerror=null;this.src='/logo_1.jpeg';var s2=function(){this.onerror=null;this.src='/logo%20solo.jpeg';this.addEventListener('error',function(){this.style.display='none';});}.bind(this);this.addEventListener('error',s2,{once:true});" /></div>
+      <div class="logo-text">
+        <span class="brand">NAREL LOCAL</span>
+        <span class="tag">@narel_local</span>
+      </div>
+    </a>
+    <nav class="nav-links">
+      <a href="/admin/dashboard.html">DASHBOARD</a>
+      <a href="/admin/notifications.html">NOTIFICACIONES</a>
+      <a href="/admin/shipping-promo.html">CONTADOR PROMO</a>
+      <a href="/admin/products.html">PRODUCTOS</a>
+      <a href="/admin/sections.html" class="active">SECCIONES</a>
+      <a href="/admin/orders.html">PEDIDOS</a>
+      <a href="/admin/banners.html">BANNERS</a>
+      <a href="/admin/product-new.html">NUEVO</a>
+      <a href="#" onclick="logout(); return false;">SALIR</a>
+    </nav>
+  </header>
+
+  <main class="page-wrapper">
+    <p class="page-kicker">[ ADMIN — GESTIÓN DE SECCIONES ]</p>
+    <h1 class="page-title">Secciones y Categorías de la Tienda</h1>
+
+    <div id="pageMessage"></div>
+
+    <div class="callout-info">
+      <strong>Control total de secciones:</strong> Podés crear nuevas secciones, editar sus nombres y URLs (los cambios se propagan automáticamente a los productos y subcategorías vinculados), y personalizar el texto de abajo (por defecto <code>CARGADO DESDE PANEL ADMIN</code>) que se muestra en los títulos de cada sección del catálogo.
+    </div>
+
+    <section class="admin-panel">
+      <div class="admin-toolbar">
+        <div class="form-group" style="margin:0;min-width:260px;flex:1;max-width:380px;">
+          <input type="search" id="searchInput" class="form-control" placeholder="Buscar por nombre, URL o subtítulo...">
+        </div>
+        <div class="admin-toolbar-actions">
+          <button type="button" class="button primary" id="btnOpenCreateSection">+ NUEVA SECCIÓN</button>
+          <a href="/admin/products.html" class="button secondary">VER PRODUCTOS</a>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="admin-table" id="sectionsTable">
+          <thead>
+            <tr>
+              <th style="width:60px;text-align:center;">#</th>
+              <th style="min-width:160px;">Sección / Nombre</th>
+              <th style="min-width:160px;">URL de la Página</th>
+              <th style="min-width:240px;">Texto de Abajo (Subtítulo)</th>
+              <th style="width:110px;text-align:center;">Productos</th>
+              <th style="width:180px;">Subcategorías</th>
+              <th style="width:180px;text-align:right;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="sectionsTbody">
+            <tr>
+              <td colspan="7" style="text-align:center;padding:40px;color:var(--grey);font-family:'DM Mono',monospace;letter-spacing:.1em;">
+                Cargando secciones...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: CREAR / EDITAR SECCIÓN -->
+  <div class="modal" id="sectionModal" role="dialog" aria-modal="true" aria-labelledby="sectionModalTitle" style="display:none;">
+    <div class="modal-dialog" style="max-width:540px;">
+      <h2 class="modal-title" id="sectionModalTitle">Nueva Sección</h2>
+      <p class="modal-text" id="sectionModalDesc">Configurá el nombre, la dirección web y el texto que acompañará el encabezado de esta sección.</p>
+
+      <form id="sectionForm" novalidate style="margin-top:16px;">
+        <input type="hidden" id="sectionId">
+
+        <div class="form-group">
+          <label for="sectionName" class="form-label">Nombre de la Sección *</label>
+          <input type="text" id="sectionName" class="form-control" placeholder="Ej: Pantalones, Shorts, Buzos, Remeras" required autocomplete="off">
+          <small class="form-hint">Se mostrará en los menús, en el catálogo y como título principal.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="sectionSlug" class="form-label">URL / Identificador de la Página *</label>
+          <input type="text" id="sectionSlug" class="form-control" placeholder="Ej: pantalones, shorts-y-bermudas" autocomplete="off">
+          <small class="form-hint">
+            Dirección pública: <span id="urlPreviewText" style="color:var(--yellow);font-weight:600;">/seccion</span>
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="sectionSubtitle" class="form-label">Texto de Abajo (Subtítulo de la Sección)</label>
+          <input type="text" id="sectionSubtitle" class="form-control" placeholder="CARGADO DESDE PANEL ADMIN" value="CARGADO DESDE PANEL ADMIN" autocomplete="off">
+          <small class="form-hint">
+            Por defecto es <strong>"CARGADO DESDE PANEL ADMIN"</strong>. Podés escribir cualquier texto, ej: "COLECCIÓN 2026", "EDICIÓN LIMITADA" o "NUEVOS INGRESOS".
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="sectionSortOrder" class="form-label">Orden de Aparición</label>
+          <input type="number" id="sectionSortOrder" class="form-control" placeholder="1, 2, 3..." min="1" value="1">
+          <small class="form-hint">Define la posición en el menú de navegación y en la página principal.</small>
+        </div>
+
+        <div id="sectionModalAlert" style="display:none;margin-top:12px;" class="alert"></div>
+
+        <div class="modal-actions" style="margin-top:24px;">
+          <button type="button" class="button secondary" id="sectionModalCancelBtn" style="width:auto;padding:12px 20px;">CANCELAR</button>
+          <button type="submit" class="button primary" id="sectionModalSaveBtn" style="width:auto;padding:12px 24px;">GUARDAR SECCIÓN</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ELIMINAR SECCIÓN -->
+  <div class="modal" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" style="display:none;">
+    <div class="modal-dialog">
+      <h2 class="modal-title" id="deleteModalTitle">Eliminar Sección</h2>
+      <p class="modal-text" id="deleteModalText">¿Estás seguro de que deseas eliminar esta sección?</p>
+      <div class="callout-info" style="margin-top:12px;font-size:12px;background:rgba(255,0,0,0.08);border-color:#ff4444;color:#ffcccc;">
+        <strong>Atención:</strong> Se eliminarán las subcategorías asociadas y los productos vinculados pasarán a quedar desvinculados de esta sección para no eliminarlos.
+      </div>
+      <div class="modal-actions" style="margin-top:20px;">
+        <button type="button" class="button secondary" id="deleteCancelBtn" style="width:auto;padding:12px 20px;">CANCELAR</button>
+        <button type="button" class="button primary" id="deleteConfirmBtn" style="width:auto;padding:12px 20px;background:#c53030;border-color:#c53030;">ELIMINAR SECCIÓN</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer-auth">
+    <strong>NAREL LOCAL</strong> · Panel Administrador · © 2026
+  </footer>
+
+  <script src="/assets/js/supabaseClientBrowser.js"></script>
+  <script src="/assets/js/authGuard.js"></script>
+  <script src="/admin/assets/js/admin/sections.js"></script>
+</body>
+</html>

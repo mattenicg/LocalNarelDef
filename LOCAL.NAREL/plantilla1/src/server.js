@@ -31,6 +31,7 @@ if (LEGACY_SQLITE_ENABLED) {
 // NUEVAS RUTAS SUPABASE (auth + admin products + storage)
 // ============================================================
 const supabaseAuthRoutes = require('./routes/auth.pg.routes');
+const supabaseCategoriesRoutes = require('./routes/categories.pg.routes');
 const supabaseProductsRoutes = require('./routes/products.pg.routes');
 const supabaseBannersRoutes = require('./routes/banners.pg.routes');
 const supabasePromotionsRoutes = require('./routes/promotions.pg.routes');
@@ -184,7 +185,7 @@ app.get('/api/products/public', async (req, res) => {
 
 // ================= CATEGORIAS PÚBLICO (tienda - sin login) =================
 async function getCategoriesHierarchy() {
-  const catsRes = await query('SELECT id, name, slug, sort_order FROM categories ORDER BY sort_order ASC, name ASC');
+  const catsRes = await query('SELECT id, name, slug, sort_order, COALESCE(subtitle, \'CARGADO DESDE PANEL ADMIN\') AS subtitle FROM categories ORDER BY sort_order ASC, name ASC');
   const subcatsRes = await query('SELECT id, category_id, category_slug, name, slug FROM subcategories ORDER BY name ASC');
 
   const subcatsByCat = new Map();
@@ -196,6 +197,7 @@ async function getCategoriesHierarchy() {
 
   return catsRes.rows.map((c) => ({
     ...c,
+    subtitle: c.subtitle || 'CARGADO DESDE PANEL ADMIN',
     subcategories: subcatsByCat.get(c.slug) || [],
   }));
 }
@@ -268,6 +270,8 @@ function guessCategoryFallback(name, description){
 }
 // Auth
 app.use('/api/auth', supabaseAuthRoutes);
+// Categories / Sections (admin) - CRUD
+app.use('/api/admin/categories', supabaseCategoriesRoutes);
 // Products (admin) - CRUD + imagen
 app.use('/api/admin/products', supabaseProductsRoutes);
 // Banners (admin) - CRUD
@@ -471,7 +475,7 @@ async function servirCategoriaOTienda(req, res, next) {
   try {
     let cat = null;
     try {
-      const catRes = await query('SELECT id, name, slug FROM categories WHERE slug = $1', [categoryParam]);
+      const catRes = await query('SELECT id, name, slug, COALESCE(subtitle, \'CARGADO DESDE PANEL ADMIN\') AS subtitle FROM categories WHERE slug = $1', [categoryParam]);
       if (catRes && catRes.rows && catRes.rows[0]) {
         cat = catRes.rows[0];
       }
@@ -481,7 +485,7 @@ async function servirCategoriaOTienda(req, res, next) {
 
     if (!cat) {
       if (DEFAULT_CATEGORIES_MAP[categoryParam]) {
-        cat = { id: 0, slug: categoryParam, name: DEFAULT_CATEGORIES_MAP[categoryParam] };
+        cat = { id: 0, slug: categoryParam, name: DEFAULT_CATEGORIES_MAP[categoryParam], subtitle: 'CARGADO DESDE PANEL ADMIN' };
       } else {
         return next();
       }
@@ -512,6 +516,7 @@ async function servirCategoriaOTienda(req, res, next) {
     const routeState = JSON.stringify({
       category: cat.slug,
       categoryName: cat.name,
+      categorySubtitle: cat.subtitle || 'CARGADO DESDE PANEL ADMIN',
       subcategory: sub ? sub.slug : null,
       subcategoryName: sub ? sub.name : null,
     }).replace(/<\/script/gi, '<\\/script');

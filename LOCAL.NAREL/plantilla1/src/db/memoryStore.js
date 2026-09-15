@@ -64,11 +64,11 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
 
   // Seed Categories & Subcategories
   const seedCategories = [
-    { id: 'c1111111-1111-4111-8111-111111111111', name: 'Pantalones', slug: 'pantalones', sort_order: 1, created_at: now, updated_at: now },
-    { id: 'c2222222-2222-4222-8222-222222222222', name: 'Camperas', slug: 'camperas', sort_order: 2, created_at: now, updated_at: now },
-    { id: 'c3333333-3333-4333-8333-333333333333', name: 'Buzos', slug: 'buzos', sort_order: 3, created_at: now, updated_at: now },
-    { id: 'c4444444-4444-4444-8444-444444444444', name: 'Remeras', slug: 'remeras', sort_order: 4, created_at: now, updated_at: now },
-    { id: 'c5555555-5555-4555-8555-555555555555', name: 'Accesorios', slug: 'accesorios', sort_order: 5, created_at: now, updated_at: now },
+    { id: 'c1111111-1111-4111-8111-111111111111', name: 'Pantalones', slug: 'pantalones', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 1, created_at: now, updated_at: now },
+    { id: 'c2222222-2222-4222-8222-222222222222', name: 'Camperas', slug: 'camperas', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 2, created_at: now, updated_at: now },
+    { id: 'c3333333-3333-4333-8333-333333333333', name: 'Buzos', slug: 'buzos', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 3, created_at: now, updated_at: now },
+    { id: 'c4444444-4444-4444-8444-444444444444', name: 'Remeras', slug: 'remeras', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 4, created_at: now, updated_at: now },
+    { id: 'c5555555-5555-4555-8555-555555555555', name: 'Accesorios', slug: 'accesorios', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 5, created_at: now, updated_at: now },
   ];
   data.categories.push(...seedCategories);
 
@@ -503,12 +503,19 @@ function executeMemoryQuery(rawText, params = []) {
   // 2b. CATEGORIES & SUBCATEGORIES
   if (lowerSql.startsWith('select') && lowerSql.includes('from categories')) {
     let list = [...data.categories];
+    if (lowerSql.includes('count(*)')) {
+      return { rows: [{ count: list.length }], rowCount: 1 };
+    }
     if (/where\s+slug\s*=\s*\$1/.test(lowerSql)) {
       const cat = list.find((c) => String(c.slug).toLowerCase() === String(params[0] || '').toLowerCase().trim());
-      return { rows: cat ? [{ ...cat }] : [], rowCount: cat ? 1 : 0 };
+      return { rows: cat ? [{ ...cat, subtitle: cat.subtitle || 'CARGADO DESDE PANEL ADMIN' }] : [], rowCount: cat ? 1 : 0 };
+    }
+    if (/where\s+id\s*=\s*\$1/.test(lowerSql) || /where\s+id::text\s*=\s*\$1/.test(lowerSql)) {
+      const cat = list.find((c) => String(c.id) === String(params[0] || '').trim() || String(c.slug).toLowerCase() === String(params[0] || '').toLowerCase().trim());
+      return { rows: cat ? [{ ...cat, subtitle: cat.subtitle || 'CARGADO DESDE PANEL ADMIN' }] : [], rowCount: cat ? 1 : 0 };
     }
     list.sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
-    return { rows: list.map((c) => ({ ...c })), rowCount: list.length };
+    return { rows: list.map((c) => ({ ...c, subtitle: c.subtitle || 'CARGADO DESDE PANEL ADMIN' })), rowCount: list.length };
   }
 
   if (lowerSql.startsWith('insert into categories')) {
@@ -516,14 +523,92 @@ function executeMemoryQuery(rawText, params = []) {
     const now = nowIso();
     const name = String(params[0] || '').trim();
     const slug = String(params[1] || '').toLowerCase().trim();
-    const sort_order = Number(params[2]) || 0;
+    let subtitle = 'CARGADO DESDE PANEL ADMIN';
+    let sort_order = 0;
+    if (params.length >= 4) {
+      if (typeof params[2] === 'string' && isNaN(Number(params[2]))) {
+        subtitle = params[2].trim() || 'CARGADO DESDE PANEL ADMIN';
+        sort_order = Number(params[3]) || 0;
+      } else {
+        sort_order = Number(params[2]) || 0;
+        subtitle = params[3] ? String(params[3]).trim() || 'CARGADO DESDE PANEL ADMIN' : subtitle;
+      }
+    } else if (params.length === 3) {
+      if (typeof params[2] === 'number' || !isNaN(Number(params[2]))) {
+        sort_order = Number(params[2]) || 0;
+      } else {
+        subtitle = String(params[2]).trim() || subtitle;
+      }
+    }
     const existing = data.categories.find((c) => c.slug === slug);
     if (existing) {
-      return { rows: [{ ...existing }], rowCount: 1 };
+      return { rows: [{ ...existing, subtitle: existing.subtitle || 'CARGADO DESDE PANEL ADMIN' }], rowCount: 1 };
     }
-    const newCat = { id, name, slug, sort_order, created_at: now, updated_at: now };
+    const newCat = { id, name, slug, subtitle, sort_order, created_at: now, updated_at: now };
     data.categories.push(newCat);
     return { rows: [{ ...newCat }], rowCount: 1 };
+  }
+
+  if (lowerSql.startsWith('update categories')) {
+    const now = nowIso();
+    const id = String(params[params.length - 1] || '');
+    const cat = data.categories.find((c) => c.id === id || c.slug === id);
+    if (!cat) return { rows: [], rowCount: 0 };
+    if (params.length >= 4) {
+      cat.name = String(params[0] || cat.name).trim();
+      cat.slug = String(params[1] || cat.slug).toLowerCase().trim();
+      cat.subtitle = params[2] !== undefined ? String(params[2]).trim() || 'CARGADO DESDE PANEL ADMIN' : (cat.subtitle || 'CARGADO DESDE PANEL ADMIN');
+      cat.sort_order = Number(params[3]) !== undefined && !isNaN(Number(params[3])) ? Number(params[3]) : cat.sort_order;
+    }
+    cat.updated_at = now;
+    return { rows: [{ ...cat }], rowCount: 1 };
+  }
+
+  if (lowerSql.startsWith('delete from categories')) {
+    const id = String(params[0] || '');
+    const idx = data.categories.findIndex((c) => c.id === id || c.slug === id);
+    if (idx >= 0) {
+      const removed = data.categories.splice(idx, 1)[0];
+      // Cascade delete subcategories
+      data.subcategories = data.subcategories.filter((s) => s.category_id !== removed.id && s.category_slug.toLowerCase() !== removed.slug.toLowerCase());
+      // Unlink products
+      data.products.forEach((p) => {
+        if (p.category && (p.category.toLowerCase() === removed.slug.toLowerCase() || p.category.toLowerCase() === removed.name.toLowerCase())) {
+          p.category = '';
+          p.subcategory = null;
+          p.subcategory_id = null;
+        }
+      });
+      return { rows: [{ id: removed.id }], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  if (lowerSql.startsWith('update subcategories')) {
+    if (lowerSql.includes('set category_slug = $1') || lowerSql.includes('set category_slug=$1')) {
+      const newSlug = String(params[0] || '').toLowerCase().trim();
+      const oldSlug = String(params[1] || '').toLowerCase().trim();
+      const catId = params[2] ? String(params[2]) : null;
+      let count = 0;
+      data.subcategories.forEach((s) => {
+        if (s.category_slug.toLowerCase() === oldSlug || (catId && s.category_id === catId)) {
+          s.category_slug = newSlug;
+          s.updated_at = nowIso();
+          count++;
+        }
+      });
+      return { rows: [], rowCount: count };
+    }
+  }
+
+  if (lowerSql.startsWith('delete from subcategories')) {
+    const idOrSlug = String(params[0] || '').toLowerCase().trim();
+    const beforeLen = data.subcategories.length;
+    data.subcategories = data.subcategories.filter((s) => {
+      const matches = s.category_id === params[0] || s.category_slug.toLowerCase() === idOrSlug || s.id === params[0];
+      return !matches;
+    });
+    return { rows: [], rowCount: beforeLen - data.subcategories.length };
   }
 
   if (lowerSql.startsWith('select') && lowerSql.includes('from subcategories')) {
@@ -624,6 +709,21 @@ function executeMemoryQuery(rawText, params = []) {
     return { rows: sliced.map((p) => ({ ...p })), rowCount: sliced.length };
   }
 
+  if (lowerSql.includes('from products') && lowerSql.includes('group by category')) {
+    const counts = new Map();
+    data.products.forEach((p) => {
+      const c = String(p.category || '').toLowerCase().trim();
+      if (c) {
+        counts.set(c, (counts.get(c) || 0) + 1);
+      }
+    });
+    const rows = [];
+    counts.forEach((count, category) => {
+      rows.push({ category, count: Number(count) });
+    });
+    return { rows, rowCount: rows.length };
+  }
+
   if (lowerSql.startsWith('insert into products')) {
     const id = uuid();
     const now = nowIso();
@@ -649,6 +749,21 @@ function executeMemoryQuery(rawText, params = []) {
   }
 
   if (lowerSql.startsWith('update products')) {
+    if (lowerSql.includes('set category = $1') || lowerSql.includes('set category=$1')) {
+      const newCat = String(params[0] || '').toLowerCase().trim();
+      const oldCat = String(params[1] || '').toLowerCase().trim();
+      const altOldCat = params[2] ? String(params[2] || '').toLowerCase().trim() : '';
+      let updatedCount = 0;
+      data.products.forEach((p) => {
+        const pCat = String(p.category || '').toLowerCase().trim();
+        if (pCat === oldCat || (altOldCat && pCat === altOldCat)) {
+          p.category = newCat;
+          p.updated_at = nowIso();
+          updatedCount++;
+        }
+      });
+      return { rows: [], rowCount: updatedCount };
+    }
     if (lowerSql.includes('stock=stock-$1')) {
       const delta = Number(params[0]);
       const p = data.products.find((x) => x.id === params[1]);

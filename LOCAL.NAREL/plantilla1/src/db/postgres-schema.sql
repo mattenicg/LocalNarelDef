@@ -36,19 +36,22 @@ CREATE TABLE IF NOT EXISTS categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
+  subtitle TEXT NOT NULL DEFAULT 'CARGADO DESDE PANEL ADMIN',
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
 
-INSERT INTO categories (name, slug, sort_order) VALUES
-  ('Pantalones', 'pantalones', 1),
-  ('Camperas', 'camperas', 2),
-  ('Buzos', 'buzos', 3),
-  ('Remeras', 'remeras', 4),
-  ('Accesorios', 'accesorios', 5)
-ON CONFLICT (slug) DO NOTHING;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS subtitle TEXT NOT NULL DEFAULT 'CARGADO DESDE PANEL ADMIN';
+
+INSERT INTO categories (name, slug, subtitle, sort_order) VALUES
+  ('Pantalones', 'pantalones', 'CARGADO DESDE PANEL ADMIN', 1),
+  ('Camperas', 'camperas', 'CARGADO DESDE PANEL ADMIN', 2),
+  ('Buzos', 'buzos', 'CARGADO DESDE PANEL ADMIN', 3),
+  ('Remeras', 'remeras', 'CARGADO DESDE PANEL ADMIN', 4),
+  ('Accesorios', 'accesorios', 'CARGADO DESDE PANEL ADMIN', 5)
+ON CONFLICT (slug) DO UPDATE SET subtitle = EXCLUDED.subtitle WHERE categories.subtitle IS NULL;
 
 CREATE TABLE IF NOT EXISTS subcategories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
