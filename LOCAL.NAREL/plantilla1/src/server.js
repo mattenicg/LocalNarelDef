@@ -440,9 +440,24 @@ app.get('/admin*', (req, res) => {
 });
 
 // ================= CATEGORÍAS Y SUBCATEGORÍAS DINÁMICAS (Storefront) =================
+const DEFAULT_CATEGORIES_MAP = {
+  pantalones: 'Pantalones',
+  camperas: 'Camperas',
+  buzos: 'Buzos',
+  remeras: 'Remeras',
+  accesorios: 'Accesorios',
+};
+
 async function servirCategoriaOTienda(req, res, next) {
-  const categoryParam = (req.params.category || '').toLowerCase().trim();
-  const subcategoryParam = (req.params.subcategory || '').toLowerCase().trim();
+  let categoryParam = (req.params.category || '').toLowerCase().trim();
+  let subcategoryParam = (req.params.subcategory || '').toLowerCase().trim();
+
+  if (categoryParam.endsWith('.html')) {
+    categoryParam = categoryParam.slice(0, -5);
+  }
+  if (subcategoryParam.endsWith('.html')) {
+    subcategoryParam = subcategoryParam.slice(0, -5);
+  }
 
   // Evitar interceptar archivos con extensión o rutas reservadas
   if (
@@ -454,21 +469,37 @@ async function servirCategoriaOTienda(req, res, next) {
   }
 
   try {
-    const catRes = await query('SELECT id, name, slug FROM categories WHERE slug = $1', [categoryParam]);
-    if (!catRes.rows || !catRes.rows[0]) {
-      return next();
+    let cat = null;
+    try {
+      const catRes = await query('SELECT id, name, slug FROM categories WHERE slug = $1', [categoryParam]);
+      if (catRes && catRes.rows && catRes.rows[0]) {
+        cat = catRes.rows[0];
+      }
+    } catch (_dbErr) {
+      // Ignorar error de DB si está en fallback
     }
 
-    const cat = catRes.rows[0];
-    let sub = null;
+    if (!cat) {
+      if (DEFAULT_CATEGORIES_MAP[categoryParam]) {
+        cat = { id: 0, slug: categoryParam, name: DEFAULT_CATEGORIES_MAP[categoryParam] };
+      } else {
+        return next();
+      }
+    }
 
+    let sub = null;
     if (subcategoryParam) {
       if (subcategoryParam.includes('.')) return next();
-      const subRes = await query('SELECT id, name, slug FROM subcategories WHERE category_slug = $1 AND slug = $2', [cat.slug, subcategoryParam]);
-      if (!subRes.rows || !subRes.rows[0]) {
-        return res.status(404).send(`Subcategoría '${subcategoryParam}' no encontrada en la categoría ${cat.name}`);
+      try {
+        const subRes = await query('SELECT id, name, slug FROM subcategories WHERE category_slug = $1 AND slug = $2', [cat.slug, subcategoryParam]);
+        if (subRes && subRes.rows && subRes.rows[0]) {
+          sub = subRes.rows[0];
+        }
+      } catch (_dbErr) {}
+
+      if (!sub) {
+        sub = { id: 0, slug: subcategoryParam, name: subcategoryParam.charAt(0).toUpperCase() + subcategoryParam.slice(1) };
       }
-      sub = subRes.rows[0];
     }
 
     if (!fs.existsSync(storefrontFile)) {
@@ -485,14 +516,48 @@ async function servirCategoriaOTienda(req, res, next) {
       subcategoryName: sub ? sub.name : null,
     }).replace(/<\/script/gi, '<\\/script');
 
+    const pageTitle = sub
+      ? `${cat.name.toUpperCase()} · ${sub.name.toUpperCase()} | NAREL LOCAL`
+      : `${cat.name.toUpperCase()} | NAREL LOCAL`;
+
+    html = html.replace(/<title>.*?<\/title>/i, `<title>${pageTitle}</title>`);
+
+    // Inyectar clase en body para que el renderizado de la sección sea instantáneo sin parpadeos
+    if (/<body[^>]*class=["']/i.test(html)) {
+      html = html.replace(/<body([^>]*)class=["']([^"']*)["']/i, `<body$1class="$2 is-category-page is-cat-${cat.slug}" data-category="${cat.slug}" data-subcategory="${sub ? sub.slug : ''}"`);
+    } else {
+      html = html.replace(/<body([^>]*)>/i, `<body$1 class="is-category-page is-cat-${cat.slug}" data-category="${cat.slug}" data-subcategory="${sub ? sub.slug : ''}">`);
+    }
+
+    const categoryPageCss = `
+    <style id="__category_page_css">
+      body.is-category-page #inicio,
+      body.is-category-page #shippingPromoBanner,
+      body.is-category-page .categories,
+      body.is-category-page #secciones-grid,
+      body.is-category-page .services-section,
+      body.is-category-page #otros-servicios,
+      body.is-category-page .how-to-buy,
+      body.is-category-page #como-comprar,
+      body.is-category-page .return-policy,
+      body.is-category-page #politicas-cambio {
+        display: none !important;
+      }
+      body.is-category-page .catalog-section:not(#${cat.slug}) {
+        display: none !important;
+      }
+      body.is-category-page #${cat.slug} {
+        display: block !important;
+      }
+      body.is-category-page #${cat.slug} .section-label {
+        display: none !important;
+      }
+    </style>`;
+
     const injection = `
+    ${categoryPageCss}
     <script id="__promo_config_injected">window.__SHIPPING_PROMO_CONFIG__ = ${safeConfig};</script>
     <script id="__route_state_injected">window.__DYNAMIC_ROUTE__ = ${routeState};</script>`;
-
-    const pageTitle = sub
-      ? `${cat.name} · ${sub.name} | NAREL LOCAL`
-      : `${cat.name} | NAREL LOCAL`;
-    html = html.replace(/<title>.*?<\/title>/i, `<title>${pageTitle}</title>`);
 
     if (html.includes('</head>')) {
       html = html.replace('</head>', `${injection}\n</head>`);
@@ -507,6 +572,8 @@ async function servirCategoriaOTienda(req, res, next) {
   }
 }
 
+app.get('/:category.html', servirCategoriaOTienda);
+app.get('/:category/:subcategory.html', servirCategoriaOTienda);
 app.get('/:category', servirCategoriaOTienda);
 app.get('/:category/:subcategory', servirCategoriaOTienda);
 
