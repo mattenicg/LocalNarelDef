@@ -41,8 +41,8 @@ const paymentsRoutes = require('./routes/payments.pg.routes');
 const {
   shippingPromoPublicRoutes,
   shippingPromoAdminRoutes,
-  getShippingPromoConfig,
 } = require('./routes/shippingPromo.pg.routes');
+const shippingRoutes = require('./routes/shipping.pg.routes');
 const notificationsAdminRoutes = require('./routes/notifications.pg.routes');
 const env = require('./config/env');
 
@@ -348,6 +348,8 @@ app.use('/api/admin/products', supabaseProductsRoutes);
 // Promoción de envíos gratis y contador (público y admin)
 app.use('/api/shipping-promo', shippingPromoPublicRoutes);
 app.use('/api/admin/shipping-promo', shippingPromoAdminRoutes);
+// Cálculo de costos de envío con Correo Argentino
+app.use('/api/shipping', shippingRoutes);
 // Notificaciones de pedidos (admin)
 app.use('/api/admin/notifications', notificationsAdminRoutes);
 
