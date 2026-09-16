@@ -13,6 +13,7 @@ const data = {
   categories: [],
   subcategories: [],
   products: [],
+  product_images: [],
   promo_banners: [],
   promo_banner_items: [],
   promotions: [],
@@ -48,6 +49,7 @@ function saveMemoryDbToFile() {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     const payload = {
       products: data.products,
+      product_images: data.product_images,
       categories: data.categories,
       subcategories: data.subcategories,
       promotions: data.promotions,
@@ -72,6 +74,7 @@ function loadMemoryDbFromFile() {
     const parsed = JSON.parse(content);
     if (parsed && typeof parsed === 'object') {
       if (Array.isArray(parsed.products) && parsed.products.length > 0) data.products = parsed.products;
+      if (Array.isArray(parsed.product_images)) data.product_images = parsed.product_images;
       if (Array.isArray(parsed.categories) && parsed.categories.length > 0) data.categories = parsed.categories;
       if (Array.isArray(parsed.subcategories) && parsed.subcategories.length > 0) data.subcategories = parsed.subcategories;
       if (Array.isArray(parsed.promotions)) data.promotions = parsed.promotions;
@@ -116,7 +119,7 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
     });
   }
 
-  if (!loadedFromDisk) {
+  if (!loadedFromDisk || data.categories.length === 0) {
     // Seed Categories & Subcategories
     const seedCategories = [
       { id: 'c1111111-1111-4111-8111-111111111111', name: 'Pantalones', slug: 'pantalones', subtitle: 'CARGADO DESDE PANEL ADMIN', sort_order: 1, created_at: now, updated_at: now },
@@ -366,7 +369,27 @@ function initMemoryDb(adminEmail = 'admin@narel.local', adminPassword = 'Admin12
     saveMemoryDbToFile();
   }
 
-
+  // Auto-sync product_images from products if empty
+  if (data.product_images.length === 0 && data.products.length > 0) {
+    data.products.forEach((p) => {
+      let urls = [];
+      if (Array.isArray(p.images)) urls = p.images.filter(Boolean);
+      else if (p.image_url) urls = [p.image_url];
+      urls.forEach((u, idx) => {
+        data.product_images.push({
+          id: uuid(),
+          product_id: p.id,
+          image_url: u,
+          storage_path: u,
+          alt_text: '',
+          position: idx,
+          created_at: p.created_at || now,
+          updated_at: p.updated_at || now,
+        });
+      });
+    });
+    saveMemoryDbToFile();
+  }
 
   // Default Store Settings (Shipping Promo Countdown)
   const promoFile = path.join(__dirname, '..', '..', 'data', 'shipping-promo.json');
@@ -892,10 +915,107 @@ function executeMemoryQuery(rawText, params = []) {
       updated_at: now,
     };
     data.products.unshift(newProduct);
+    saveMemoryDbToFile();
     return { rows: [{ ...newProduct }], rowCount: 1 };
   }
 
+  // PRODUCT_IMAGES (Relación 1 a N con products)
+  if (lowerSql.startsWith('select') && lowerSql.includes('from product_images')) {
+    let list = [...data.product_images];
+    if (lowerSql.includes('product_id = any') || lowerSql.includes('product_id=any')) {
+      const ids = Array.isArray(params[0]) ? params[0].map(String) : [String(params[0])];
+      list = list.filter((img) => ids.includes(img.product_id));
+      list.sort((a, b) => (Number(a.position) || 0) - (Number(b.position) || 0));
+      return { rows: list.map((img) => ({ ...img })), rowCount: list.length };
+    }
+    if (lowerSql.includes('where product_id = $1') || lowerSql.includes('where product_id=$1')) {
+      const pId = String(params[0] || '');
+      list = list.filter((img) => img.product_id === pId);
+      list.sort((a, b) => (Number(a.position) || 0) - (Number(b.position) || 0));
+      return { rows: list.map((img) => ({ ...img })), rowCount: list.length };
+    }
+    if (lowerSql.includes('where id = $1') || lowerSql.includes('where id=$1')) {
+      const imgId = String(params[0] || '');
+      const found = list.find((img) => img.id === imgId);
+      return { rows: found ? [{ ...found }] : [], rowCount: found ? 1 : 0 };
+    }
+    return { rows: list.map((img) => ({ ...img })), rowCount: list.length };
+  }
+
+  if (lowerSql.startsWith('insert into product_images')) {
+    const id = uuid();
+    const now = nowIso();
+    const product_id = String(params[0] || '');
+    const image_url = String(params[1] || '');
+    const storage_path = params[2] ? String(params[2]) : image_url;
+    const alt_text = params[3] ? String(params[3]) : '';
+    const position = params[4] !== undefined && !isNaN(Number(params[4])) ? Number(params[4]) : 0;
+
+    const newImg = {
+      id,
+      product_id,
+      image_url,
+      storage_path,
+      alt_text,
+      position,
+      created_at: now,
+      updated_at: now,
+    };
+    data.product_images.push(newImg);
+    saveMemoryDbToFile();
+    return { rows: [{ ...newImg }], rowCount: 1 };
+  }
+
+  if (lowerSql.startsWith('delete from product_images')) {
+    const beforeLen = data.product_images.length;
+    if (lowerSql.includes('where product_id = $1') || lowerSql.includes('where product_id=$1')) {
+      const pId = String(params[0] || '');
+      data.product_images = data.product_images.filter((img) => img.product_id !== pId);
+    } else if (lowerSql.includes('where id = $1') || lowerSql.includes('where id=$1')) {
+      const imgId = String(params[0] || '');
+      data.product_images = data.product_images.filter((img) => img.id !== imgId);
+    }
+    saveMemoryDbToFile();
+    return { rows: [], rowCount: beforeLen - data.product_images.length };
+  }
+
+  if (lowerSql.startsWith('update product_images')) {
+    const now = nowIso();
+    if (lowerSql.includes('where id = $') || lowerSql.includes('where id=$')) {
+      const imgId = String(params[params.length - 1] || '');
+      const found = data.product_images.find((img) => img.id === imgId);
+      if (found) {
+        if (lowerSql.includes('position')) {
+          found.position = Number(params[0]) || 0;
+        }
+        if (lowerSql.includes('alt_text')) {
+          found.alt_text = String(params[1] || '');
+        }
+        found.updated_at = now;
+        saveMemoryDbToFile();
+        return { rows: [{ ...found }], rowCount: 1 };
+      }
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
   if (lowerSql.startsWith('update products')) {
+    if (lowerSql.includes('set image_url') && lowerSql.includes('images')) {
+      const prodId = params[2];
+      const p = data.products.find((x) => x.id === prodId);
+      if (p) {
+        p.image_url = params[0] || null;
+        try {
+          p.images = typeof params[1] === 'string' ? JSON.parse(params[1]) : params[1];
+        } catch (_) {
+          p.images = params[1] ? [params[1]] : [];
+        }
+        p.updated_at = nowIso();
+        saveMemoryDbToFile();
+        return { rows: [{ ...p }], rowCount: 1 };
+      }
+      return { rows: [], rowCount: 0 };
+    }
     if (lowerSql.includes('where id=$24')) {
       const p = data.products.find((x) => x.id === params[23]);
       if (!p) return { rows: [], rowCount: 0 };
@@ -1034,16 +1154,22 @@ function executeMemoryQuery(rawText, params = []) {
     }
     if (lowerSql.includes('image_url=null where id=$1')) {
       const p = data.products.find((x) => x.id === params[0]);
-      if (p) p.image_url = null;
+      if (p) {
+        p.image_url = null;
+        saveMemoryDbToFile();
+      }
       return { rows: [], rowCount: p ? 1 : 0 };
     }
     return { rows: [], rowCount: 0 };
   }
 
   if (lowerSql.startsWith('delete from products where id=$1')) {
-    const idx = data.products.findIndex((p) => p.id === params[0]);
+    const pId = params[0];
+    const idx = data.products.findIndex((p) => p.id === pId);
     if (idx >= 0) {
       const removed = data.products.splice(idx, 1)[0];
+      data.product_images = data.product_images.filter((img) => img.product_id !== pId);
+      saveMemoryDbToFile();
       return { rows: [{ id: removed.id }], rowCount: 1 };
     }
     return { rows: [], rowCount: 0 };

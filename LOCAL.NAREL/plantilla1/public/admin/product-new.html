@@ -111,19 +111,19 @@
             </label>
           </div>
 
-          <!-- COMPRA DIRECTA -->
+          <!-- FORMA DE PAGO, CUOTAS Y DESCUENTOS -->
           <div class="form-group full" style="background:#161616;border:1px solid #333;padding:18px;border-radius:4px;margin-top:6px;">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
               <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;font-weight:600;">
                 <input type="checkbox" id="direct_purchase" name="direct_purchase" style="width:18px;height:18px;accent-color:#fff;background:#111;border:1px solid #fff;">
-                ⚡ Compra Directa
+                ⚡ Habilitar Compra Directa (Checkout individual)
               </label>
               <span style="font-family:'DM Mono',monospace;font-size:11px;color:#888;letter-spacing:.03em;">
-                (No se agrega al carrito · Botón "Comprar" directo al checkout)
+                Activado: botón "Comprar" directo al checkout · Desactivado: botón "AGREGAR" al carrito
               </span>
             </div>
 
-            <div id="directPurchaseConfigBox" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #282828;">
+            <div id="directPurchaseConfigBox" style="display:block;margin-top:16px;padding-top:16px;border-top:1px solid #282828;">
               <div style="margin-bottom:16px;">
                 <label style="display:block;font-size:11px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;margin-bottom:8px;">
                   Métodos de pago permitidos para este producto:
@@ -167,15 +167,22 @@
                 </div>
               </div>
 
-              <!-- PERSONALIZACIÓN VISUAL DE COMPRA DIRECTA (FORMATO TARJETA) -->
+              <!-- PERSONALIZACIÓN VISUAL DE FORMATO, DESCUENTOS Y CUOTAS -->
               <div style="margin-top:20px;padding:16px;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:6px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid #222;padding-bottom:10px;flex-wrap:wrap;gap:8px;">
                   <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em;">
                     🎨 Formato e Información de Pago (Bajo el Producto)
                   </span>
                   <span style="font-family:'DM Mono',monospace;font-size:10px;color:#888;">
-                    Personalizable por producto
+                    Disponible para productos con y sin compra directa
                   </span>
+                </div>
+
+                <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#fff;font-weight:600;">
+                    <input type="checkbox" id="direct_discount_enabled" checked style="accent-color:#fff;">
+                    Activar descuento por transferencia
+                  </label>
                 </div>
 
                 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:14px;margin-bottom:16px;">
@@ -244,6 +251,9 @@
                   </div>
                   
                   <div id="directCardPreviewBox" style="background:#000;border:1px solid #222;border-radius:8px;padding:16px;max-width:340px;color:#fff;font-family:system-ui,-apple-system,sans-serif;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                      <span id="previewTopBadge" style="font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.06em;font-weight:700;padding:2px 8px;border-radius:3px;background:#222;color:#fff;">NUEVO</span>
+                    </div>
                     <div id="previewProdName" style="font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#ddd;margin-bottom:8px;">
                       NOMBRE DEL PRODUCTO
                     </div>
@@ -264,8 +274,9 @@
                     <div id="previewTransferLine" style="font-size:14px;font-weight:700;color:#ff3366;margin-bottom:12px;">
                       $84.375,00 con Transferencia
                     </div>
-                    <button type="button" style="width:100%;padding:10px;background:#232733;color:#fff;border:1px solid #3d4354;border-radius:20px;font-size:13px;font-weight:700;cursor:default;">
-                      Comprar
+                    <button type="button" id="previewActionBtn" style="width:100%;padding:10px;background:#232733;color:#fff;border:1px solid #3d4354;border-radius:20px;font-size:13px;font-weight:700;cursor:default;display:flex;align-items:center;justify-content:center;gap:8px;">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+                      <span>AGREGAR</span>
                     </button>
                   </div>
                 </div>

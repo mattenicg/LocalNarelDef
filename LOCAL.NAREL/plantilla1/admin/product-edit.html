@@ -7,8 +7,8 @@
   <title>Editar Producto — Panel Admin | NAREL LOCAL</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/auth-shared.css">
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/auth-shared.css">
 </head>
 <body>
 
@@ -17,7 +17,7 @@
   </div>
 
   <header>
-    <a class="logo" href="../plantilla-1.html">
+    <a class="logo" href="/">
       <div class="logo-circle"><img src="/assets/img/logo-ngl-diamond.jpeg" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;background:#000;" onerror="this.onerror=null;this.src='/logo_1.jpeg';var s2=function(){this.onerror=null;this.src='/logo%20solo.jpeg';this.addEventListener('error',function(){this.style.display='none';});}.bind(this);this.addEventListener('error',s2,{once:true});" /></div>
       <div class="logo-text">
         <span class="brand">NAREL LOCAL</span>
@@ -27,7 +27,9 @@
     <nav class="nav-links">
       <a href="/admin/dashboard.html">DASHBOARD</a>
       <a href="/admin/products.html" class="active">PRODUCTOS</a>
-      <a href="/admin/promos.html">PROMOCIONES</a>
+      <a href="/admin/sections.html">SECCIONES</a>
+      <a href="/admin/banners.html">BANNERS</a>
+      <a href="/admin/orders.html">PEDIDOS</a>
       <a href="/admin/product-new.html">NUEVO</a>
       <a href="#" onclick="logout(); return false;">SALIR</a>
     </nav>
@@ -65,13 +67,37 @@
           <div class="form-group">
             <label for="category">Categoría (Sección de la tienda) *</label>
             <select id="category" name="category" class="form-control" required>
-              <option value="" disabled>Elegí una sección...</option>
-              <option value="pantalones">PANTALONES</option>
-              <option value="camperas">CAMPERAS</option>
-              <option value="buzos">BUZOS</option>
-              <option value="remeras">REMERAS</option>
-              <option value="accesorios">ACCESORIOS</option>
+              <option value="" disabled selected>Cargando secciones...</option>
             </select>
+          </div>
+
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <label for="subcategory" style="margin-bottom:0;">Subcategoría (Opcional)</label>
+              <button type="button" id="openNewSubcategoryBtn" class="button secondary" style="width:auto;padding:4px 10px;font-size:11px;letter-spacing:.05em;cursor:pointer;">
+                + CREAR SUBCATEGORÍA
+              </button>
+            </div>
+            <select id="subcategory" name="subcategory" class="form-control">
+              <option value="">Sin subcategoría (General)</option>
+            </select>
+
+            <!-- Box inline para crear nueva subcategoría -->
+            <div id="newSubcategoryBox" style="display:none;margin-top:10px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.15);border-radius:4px;">
+              <div style="font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--grey,#888);margin-bottom:8px;">
+                Nueva subcategoría para: <span id="newSubcatParentLabel" style="color:#fff;font-weight:600;">—</span>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <input type="text" id="newSubcategoryInput" class="form-control" placeholder="Ej: Cargo, Bomber, Oversized..." style="flex:1;min-width:180px;height:38px;padding:8px 12px;font-size:13px;" maxlength="50" autocomplete="off">
+                <button type="button" id="saveSubcategoryBtn" class="button primary" style="width:auto;padding:8px 16px;font-size:11px;white-space:nowrap;height:38px;cursor:pointer;">
+                  CREAR Y ASIGNAR
+                </button>
+                <button type="button" id="cancelSubcategoryBtn" class="button secondary" style="width:auto;padding:8px 12px;font-size:11px;height:38px;cursor:pointer;">
+                  CANCELAR
+                </button>
+              </div>
+              <div id="newSubcategoryError" style="color:#ff5555;font-size:11px;margin-top:6px;font-family:'DM Mono',monospace;display:none;"></div>
+            </div>
           </div>
 
           <div class="form-group" style="display:flex;align-items:flex-start;gap:28px;padding-top:28px;">
@@ -85,23 +111,196 @@
             </label>
           </div>
 
+          <!-- FORMA DE PAGO, CUOTAS Y DESCUENTOS -->
+          <div class="form-group full" style="background:#161616;border:1px solid #333;padding:18px;border-radius:4px;margin-top:6px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;font-weight:600;">
+                <input type="checkbox" id="direct_purchase" name="direct_purchase" style="width:18px;height:18px;accent-color:#fff;background:#111;border:1px solid #fff;">
+                ⚡ Habilitar Compra Directa (Checkout individual)
+              </label>
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:#888;letter-spacing:.03em;">
+                Activado: botón "Comprar" directo al checkout · Desactivado: botón "AGREGAR" al carrito
+              </span>
+            </div>
+
+            <div id="directPurchaseConfigBox" style="display:block;margin-top:16px;padding-top:16px;border-top:1px solid #282828;">
+              <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:11px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;margin-bottom:8px;">
+                  Métodos de pago permitidos para este producto:
+                </label>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-pay-method" value="tarjeta_debito" checked style="accent-color:#fff;"> Débito
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-pay-method" value="tarjeta_credito" checked style="accent-color:#fff;"> Crédito
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-pay-method" value="transferencia" checked style="accent-color:#fff;"> Transferencia
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-pay-method" value="efectivo" checked style="accent-color:#fff;"> Efectivo
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label style="display:block;font-size:11px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;margin-bottom:8px;">
+                  Opciones de cuotas permitidas (Tarjeta de Crédito):
+                </label>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-installment" value="1" checked style="accent-color:#fff;"> 1 cuota
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-installment" value="3" checked style="accent-color:#fff;"> 3 cuotas
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-installment" value="6" checked style="accent-color:#fff;"> 6 cuotas
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-installment" value="9" style="accent-color:#fff;"> 9 cuotas
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#ccc;">
+                    <input type="checkbox" class="direct-installment" value="12" style="accent-color:#fff;"> 12 cuotas
+                  </label>
+                </div>
+              </div>
+
+              <!-- PERSONALIZACIÓN VISUAL DE FORMATO, DESCUENTOS Y CUOTAS -->
+              <div style="margin-top:20px;padding:16px;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:6px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid #222;padding-bottom:10px;flex-wrap:wrap;gap:8px;">
+                  <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em;">
+                    🎨 Formato e Información de Pago (Bajo el Producto)
+                  </span>
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;color:#888;">
+                    Disponible para productos con y sin compra directa
+                  </span>
+                </div>
+
+                <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#fff;font-weight:600;">
+                    <input type="checkbox" id="direct_discount_enabled" checked style="accent-color:#fff;">
+                    Activar descuento por transferencia
+                  </label>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:14px;margin-bottom:16px;">
+                  <div>
+                    <label for="direct_discount_percent" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      % Descuento Transferencia:
+                    </label>
+                    <input type="number" id="direct_discount_percent" name="direct_discount_percent" class="form-control" value="25" min="0" max="100" step="0.5" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                  </div>
+
+                  <div>
+                    <label for="direct_discount_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      Texto Descuento:
+                    </label>
+                    <input type="text" id="direct_discount_text" name="direct_discount_text" class="form-control" value="con transferencia" placeholder="con transferencia" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                    <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "25% OFF con transferencia"</span>
+                  </div>
+
+                  <div>
+                    <label for="direct_installments_count" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      Cuotas a mostrar:
+                    </label>
+                    <input type="number" id="direct_installments_count" name="direct_installments_count" class="form-control" value="6" min="1" max="24" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                  </div>
+
+                  <div>
+                    <label for="direct_installments_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      Texto de Cuotas:
+                    </label>
+                    <input type="text" id="direct_installments_text" name="direct_installments_text" class="form-control" value="sin interés" placeholder="sin interés" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                    <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "6 x $18.750,00 sin interés"</span>
+                  </div>
+
+                  <div>
+                    <label for="direct_custom_transfer_price" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      Precio Transferencia Manual (Opcional):
+                    </label>
+                    <input type="number" id="direct_custom_transfer_price" name="direct_custom_transfer_price" class="form-control" placeholder="Dejar vacío para calcular auto" step="0.01" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                  </div>
+
+                  <div>
+                    <label for="direct_transfer_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                      Texto Final Transferencia:
+                    </label>
+                    <input type="text" id="direct_transfer_text" name="direct_transfer_text" class="form-control" value="con Transferencia" placeholder="con Transferencia" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                    <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "$84.375,00 con Transferencia"</span>
+                  </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:18px;margin-bottom:16px;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#fff;">
+                    <input type="checkbox" id="direct_show_promo_badge" name="direct_show_promo_badge" checked style="accent-color:#fff;">
+                    Mostrar Badge "PROMO ACTIVA"
+                  </label>
+
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <label for="direct_promo_badge_text" style="font-size:11px;font-family:'DM Mono',monospace;color:#aaa;">Texto Badge:</label>
+                    <input type="text" id="direct_promo_badge_text" name="direct_promo_badge_text" class="form-control" value="PROMO ACTIVA" style="width:160px;background:#1a1a1a;border-color:#333;color:#fff;padding:6px 8px;font-size:12px;">
+                  </div>
+                </div>
+
+                <!-- VISTA PREVIA EN VIVO -->
+                <div style="margin-top:14px;padding:14px;background:#050505;border:1px dashed #333;border-radius:6px;">
+                  <div style="font-size:10px;font-family:'DM Mono',monospace;text-transform:uppercase;color:#888;margin-bottom:10px;letter-spacing:.05em;">
+                    👁️ Vista Previa en Tienda (Bajo el Producto):
+                  </div>
+                  
+                  <div id="directCardPreviewBox" style="background:#000;border:1px solid #222;border-radius:8px;padding:16px;max-width:340px;color:#fff;font-family:system-ui,-apple-system,sans-serif;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                      <span id="previewTopBadge" style="font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.06em;font-weight:700;padding:2px 8px;border-radius:3px;background:#222;color:#fff;">NUEVO</span>
+                    </div>
+                    <div id="previewProdName" style="font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#ddd;margin-bottom:8px;">
+                      PANTALON BAGGY IGOR PINK
+                    </div>
+                    <div id="previewProdPrice" style="font-size:22px;font-weight:800;letter-spacing:-.02em;color:#fff;margin-bottom:10px;">
+                      $112.500,00
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
+                      <div id="previewDiscountBadge" style="background:#141414;border:1px solid #333;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;color:#eee;">
+                        25% OFF con transferencia
+                      </div>
+                      <div id="previewPromoBadge" style="background:#e50914;color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:12px;letter-spacing:.05em;text-align:center;line-height:1.1;">
+                        PROMO ACTIVA
+                      </div>
+                    </div>
+                    <div id="previewInstallmentsLine" style="font-size:12px;color:#999;margin-bottom:6px;">
+                      6 x $18.750,00 sin interés
+                    </div>
+                    <div id="previewTransferLine" style="font-size:14px;font-weight:700;color:#ff3366;margin-bottom:12px;">
+                      $84.375,00 con Transferencia
+                    </div>
+                    <button type="button" id="previewActionBtn" style="width:100%;padding:10px;background:#232733;color:#fff;border:1px solid #3d4354;border-radius:20px;font-size:13px;font-weight:700;cursor:default;display:flex;align-items:center;justify-content:center;gap:8px;">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+                      <span>AGREGAR</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="form-group full">
             <label for="sizes">Talles (ej: S, M, L, XL / Único / 38 al 44)</label>
             <input type="text" id="sizes" name="sizes" class="form-control" maxlength="200" placeholder="S · M · L · XL">
           </div>
 
           <div class="form-group full">
-            <label for="image">Imagen del Producto</label>
-            <input type="file" id="image" name="image" class="form-control" accept="image/jpeg,image/png,image/webp">
-            <div class="image-preview" id="imagePreviewWrap" style="display:none;">
-              <img id="imagePreviewImg" alt="Vista previa">
-              <div class="image-info">
-                <span id="imageInfoText">—</span>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                  <button type="button" class="button secondary" id="removeImageBtn" style="width:auto;padding:8px 14px;font-size:10px;">QUITAR NUEVA</button>
-                  <button type="button" class="button secondary" id="deleteCurrentImageBtn" style="width:auto;padding:8px 14px;font-size:10px;display:none;">ELIMINAR IMAGEN ACTUAL</button>
-                </div>
+            <label for="imagesInput" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Fotos del Producto (Permite 2 o más fotos)</span>
+              <span style="font-size:11px;color:#888;font-weight:normal;font-family:'DM Mono',monospace;">Primera foto = Portada principal</span>
+            </label>
+            <input type="file" id="imagesInput" name="images" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+            <div id="imagesGalleryContainer" style="display:none;margin-top:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div style="font-size:11px;font-family:'DM Mono',monospace;color:#aaa;" id="galleryCountText">0 fotos</div>
+                <button type="button" id="deleteAllImagesBtn" class="button secondary" style="width:auto;padding:4px 10px;font-size:10px;color:#ff6666;border-color:#550000;display:none;">ELIMINAR TODAS</button>
               </div>
+              <div id="imagesGrid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:12px;"></div>
             </div>
           </div>
         </div>
@@ -118,8 +317,8 @@
     <strong>NAREL LOCAL</strong> · Panel Administrador · © 2026
   </footer>
 
-  <script src="../assets/js/supabaseClientBrowser.js"></script>
-  <script src="../assets/js/authGuard.js"></script>
-  <script src="./assets/js/admin/productEdit.js"></script>
+  <script src="/assets/js/supabaseClientBrowser.js"></script>
+  <script src="/assets/js/authGuard.js"></script>
+  <script src="/admin/assets/js/admin/productEdit.js"></script>
 </body>
 </html>

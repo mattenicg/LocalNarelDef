@@ -2,6 +2,14 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const { query } = require('../db/postgres');
 const { authenticate, requireAdmin } = require('../middleware/postgresAuth');
+const {
+  getProductImages,
+  syncProductImages,
+  addProductImages,
+  deleteProductImage,
+  reorderProductImages,
+  deleteProductImagesForProduct,
+} = require('../services/productImages.service');
 
 const router = express.Router();
 
@@ -134,6 +142,19 @@ router.get('/:id', [param('id').isUUID()], async (req, res) => {
     const r = await query(`SELECT ${fields} FROM products WHERE id=$1`, [req.params.id]);
     if (!r.rows[0]) return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
     const product = r.rows[0];
+
+    // Load persistent product_images
+    try {
+      const pImages = await getProductImages(product.id);
+      product.product_images = pImages;
+      if (pImages && pImages.length > 0) {
+        product.images = pImages.map((img) => img.image_url);
+        product.image_url = pImages[0].image_url;
+      }
+    } catch (imgErr) {
+      console.warn('[admin/product-get] warn loading product_images:', imgErr.message);
+      product.product_images = [];
+    }
 
     // Check if there is an existing promotion linked to this product (in promotions / promotion_products)
     try {
@@ -277,7 +298,21 @@ router.post('/', rules, async (req, res) => {
         directTransferText,
       ]
     );
-    res.status(201).json({ ok: true, message: 'Producto creado correctamente', data: r.rows[0] });
+    const createdProduct = r.rows[0];
+    if (images.length > 0) {
+      try {
+        const synced = await syncProductImages(createdProduct.id, images);
+        createdProduct.product_images = synced;
+        createdProduct.images = synced.map((img) => img.image_url);
+        createdProduct.image_url = synced[0]?.image_url || null;
+      } catch (imgErr) {
+        console.warn('[admin/product-create] syncProductImages warn:', imgErr.message);
+      }
+    } else {
+      createdProduct.product_images = [];
+    }
+
+    res.status(201).json({ ok: true, message: 'Producto creado correctamente', data: createdProduct });
   } catch (err) {
     console.error('[admin/product-create] error:', err);
     res.status(500).json({ ok: false, message: 'Error al crear producto' });
@@ -401,7 +436,31 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
         req.params.id,
       ]
     );
-    res.json({ ok: true, message: 'Producto actualizado correctamente', data: r.rows[0] });
+
+    const updatedProd = r.rows[0];
+
+    // Synchronize persistent product_images table if images provided
+    if (req.body.images !== undefined || req.body.product_images !== undefined) {
+      const targetImages = req.body.product_images !== undefined
+        ? req.body.product_images
+        : (imagesJson ? JSON.parse(imagesJson) : []);
+      try {
+        const synced = await syncProductImages(req.params.id, targetImages);
+        updatedProd.product_images = synced;
+        updatedProd.images = synced.map((img) => img.image_url);
+        updatedProd.image_url = synced[0]?.image_url || null;
+      } catch (imgErr) {
+        console.warn('[admin/product-update] syncProductImages warn:', imgErr.message);
+      }
+    } else {
+      try {
+        updatedProd.product_images = await getProductImages(req.params.id);
+      } catch (_) {
+        updatedProd.product_images = [];
+      }
+    }
+
+    res.json({ ok: true, message: 'Producto actualizado correctamente', data: updatedProd });
   } catch (err) {
     console.error('[admin/product-update] error:', err);
     res.status(500).json({ ok: false, message: 'Error al actualizar producto' });
@@ -411,6 +470,9 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
 router.delete('/:id', [param('id').isUUID()], async (req, res) => {
   if (fail(req, res)) return;
   try {
+    // Clean up physical images from disk before product row deletion
+    await deleteProductImagesForProduct(req.params.id);
+
     const r = await query('DELETE FROM products WHERE id=$1 RETURNING id', [req.params.id]);
     if (!r.rows[0]) return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
     res.json({ ok: true, message: 'Producto eliminado correctamente' });
@@ -419,6 +481,67 @@ router.delete('/:id', [param('id').isUUID()], async (req, res) => {
     res.status(500).json({ ok: false, message: 'Error al eliminar producto' });
   }
 });
+
+// ================= PRODUCT IMAGES DIRECT CRUD =================
+router.get('/:id/images', [param('id').isUUID()], async (req, res) => {
+  if (fail(req, res)) return;
+  try {
+    const images = await getProductImages(req.params.id);
+    res.json({ ok: true, data: images });
+  } catch (err) {
+    console.error('[admin/product-images-get] error:', err);
+    res.status(500).json({ ok: false, message: 'Error al obtener imágenes del producto' });
+  }
+});
+
+router.post('/:id/images', [param('id').isUUID()], async (req, res) => {
+  if (fail(req, res)) return;
+  try {
+    const newImages = req.body.images || req.body.image_url || req.body.url;
+    if (!newImages) return res.status(400).json({ ok: false, message: 'Faltan imágenes' });
+    const updated = await addProductImages(req.params.id, newImages);
+    res.json({ ok: true, message: 'Imágenes agregadas correctamente', data: updated });
+  } catch (err) {
+    console.error('[admin/product-images-add] error:', err);
+    res.status(500).json({ ok: false, message: 'Error al agregar imágenes' });
+  }
+});
+
+router.delete('/:id/images/:imageId', [param('id').isUUID()], async (req, res) => {
+  if (fail(req, res)) return;
+  try {
+    const result = await deleteProductImage(req.params.id, req.params.imageId);
+    res.json({ ok: true, message: 'Imagen eliminada correctamente', data: result.remaining });
+  } catch (err) {
+    console.error('[admin/product-images-delete] error:', err);
+    res.status(500).json({ ok: false, message: 'Error al eliminar imagen' });
+  }
+});
+
+router.put(
+  '/:id/images/reorder',
+  [
+    param('id').isUUID(),
+    body().custom((_, { req }) => {
+      const list = req.body.order || req.body.ordered_image_ids || req.body.images;
+      if (!Array.isArray(list)) {
+        throw new Error('Debe proporcionar un array en order, ordered_image_ids o images');
+      }
+      return true;
+    }),
+  ],
+  async (req, res) => {
+    if (fail(req, res)) return;
+    try {
+      const orderList = req.body.order || req.body.ordered_image_ids || req.body.images;
+      const updated = await reorderProductImages(req.params.id, orderList);
+      res.json({ ok: true, message: 'Orden de imágenes actualizado', images: updated, data: updated });
+    } catch (err) {
+      console.error('[admin/product-images-reorder] error:', err);
+      res.status(500).json({ ok: false, message: 'Error al reordenar imágenes' });
+    }
+  }
+);
 
 module.exports = router;
 

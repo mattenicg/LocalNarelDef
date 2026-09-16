@@ -130,6 +130,43 @@ CREATE INDEX IF NOT EXISTS idx_products_cat_subcat ON products(category, subcate
 CREATE INDEX IF NOT EXISTS idx_products_active ON products(active);
 CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured DESC);
 
+-- ================= PRODUCT IMAGES (Relación 1 a N) =================
+CREATE TABLE IF NOT EXISTS product_images (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  image_url TEXT NOT NULL,
+  storage_path TEXT,
+  alt_text VARCHAR(255) DEFAULT '',
+  position INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_product_images_product_id ON product_images(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_images_position ON product_images(product_id, position ASC);
+
+-- Migración segura de imágenes existentes de products a product_images si no existen
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'product_images') THEN
+    INSERT INTO product_images (product_id, image_url, storage_path, position)
+    SELECT p.id, img.url, img.url, (img.pos - 1)::integer
+    FROM products p,
+    LATERAL jsonb_array_elements_text(
+      CASE
+        WHEN jsonb_typeof(p.images) = 'array' AND jsonb_array_length(p.images) > 0 THEN p.images
+        WHEN p.image_url IS NOT NULL AND p.image_url <> '' THEN jsonb_build_array(p.image_url)
+        ELSE '[]'::jsonb
+      END
+    ) WITH ORDINALITY AS img(url, pos)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM product_images pi WHERE pi.product_id = p.id
+    ) AND img.url IS NOT NULL AND img.url <> '';
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END
+$$;
+
 CREATE TABLE IF NOT EXISTS promo_banners (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title VARCHAR(120) NOT NULL DEFAULT 'PROMOS EXCLUSIVAS',

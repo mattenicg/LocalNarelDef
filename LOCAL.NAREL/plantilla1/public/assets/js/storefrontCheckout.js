@@ -546,10 +546,14 @@
     if (savings > 0) {
       discountRows += `<div class="row"><span>Descuento promos</span><strong>- ${formatCurrency(savings)}</strong></div>`;
     }
-    if (directItem && method === 'transferencia') {
-      const transferDiscount = (directItem.price - getItemTransferPrice(directItem)) * directItem.qty;
-      if (transferDiscount > 0) {
-        discountRows += `<div class="row" style="color:#f43f5e;font-weight:700;"><span>Descuento Transferencia (${directItem.direct_discount_percent || 25}% OFF)</span><strong>- ${formatCurrency(transferDiscount)}</strong></div>`;
+    if (method === 'transferencia') {
+      let totalTransferDiscount = 0;
+      state.items.forEach(it => {
+        const disc = (it.price - getItemTransferPrice(it)) * it.qty;
+        if (disc > 0) totalTransferDiscount += disc;
+      });
+      if (totalTransferDiscount > 0) {
+        discountRows += `<div class="row" style="color:#f43f5e;font-weight:700;"><span>Descuento Transferencia</span><strong>- ${formatCurrency(totalTransferDiscount)}</strong></div>`;
       }
     }
 
@@ -877,22 +881,23 @@
     state.cardPaymentEl = null;
 
     const directItem = state.items.find((i) => i.direct_purchase) || (state.isDirectPurchase ? state.items[0] : null);
+    const configuredItem = state.items.find((i) => (i.allowed_payment_methods && i.allowed_payment_methods.length) || (i.direct_discount_percent !== undefined && i.direct_discount_percent !== null)) || directItem || state.items[0];
     let allowedMethods = ['tarjeta_debito', 'tarjeta_credito', 'transferencia', 'efectivo'];
     let allowedInstallments = [1, 3, 6];
 
-    if (directItem) {
-      if (directItem.allowed_payment_methods) {
-        allowedMethods = Array.isArray(directItem.allowed_payment_methods)
-          ? directItem.allowed_payment_methods
-          : (typeof directItem.allowed_payment_methods === 'string'
-              ? (directItem.allowed_payment_methods.startsWith('[') ? JSON.parse(directItem.allowed_payment_methods) : directItem.allowed_payment_methods.split(','))
+    if (configuredItem) {
+      if (configuredItem.allowed_payment_methods) {
+        allowedMethods = Array.isArray(configuredItem.allowed_payment_methods)
+          ? configuredItem.allowed_payment_methods
+          : (typeof configuredItem.allowed_payment_methods === 'string'
+              ? (configuredItem.allowed_payment_methods.startsWith('[') ? JSON.parse(configuredItem.allowed_payment_methods) : configuredItem.allowed_payment_methods.split(','))
               : allowedMethods);
       }
-      if (directItem.allowed_installments) {
-        allowedInstallments = Array.isArray(directItem.allowed_installments)
-          ? directItem.allowed_installments.map(Number)
-          : (typeof directItem.allowed_installments === 'string'
-              ? (directItem.allowed_installments.startsWith('[') ? JSON.parse(directItem.allowed_installments).map(Number) : directItem.allowed_installments.split(',').map(Number))
+      if (configuredItem.allowed_installments) {
+        allowedInstallments = Array.isArray(configuredItem.allowed_installments)
+          ? configuredItem.allowed_installments.map(Number)
+          : (typeof configuredItem.allowed_installments === 'string'
+              ? (configuredItem.allowed_installments.startsWith('[') ? JSON.parse(configuredItem.allowed_installments).map(Number) : configuredItem.allowed_installments.split(',').map(Number))
               : allowedInstallments);
       }
     }
@@ -922,7 +927,7 @@
     }
 
     let paymentSubtitle = 'Cuotas disponibles según tarjeta y banco · Procesado de forma segura por Mercado Pago';
-    if (directItem && allowedInstallments.length) {
+    if (configuredItem && allowedInstallments.length) {
       paymentSubtitle = `Cuotas habilitadas por el comercio: ${allowedInstallments.join(', ')} cuota${allowedInstallments.length > 1 ? 's' : ''} · Mercado Pago`;
     }
 
@@ -941,14 +946,14 @@
           <button type="button" class="btn-pay-tab ${tabTransferActive ? 'active' : ''}" data-method="transferencia" style="padding:10px 8px;border-radius:8px;border:2px solid ${tabTransferActive ? '#f43f5e' : '#333'};background:${tabTransferActive ? 'rgba(244,63,94,0.15)' : '#18181b'};color:${tabTransferActive ? '#fff' : '#aaa'};cursor:pointer;text-align:center;transition:all .15s ease;">
             <div style="font-size:12px;font-weight:800;color:${tabTransferActive ? '#fff' : '#eee'};">🏦 TRANSFERENCIA</div>
             <div style="font-size:13px;font-weight:800;color:#f43f5e;margin-top:2px;">${transferPriceFormatted}</div>
-            ${directItem ? `<div style="font-size:10px;font-weight:700;color:#f43f5e;margin-top:1px;">${directItem.direct_discount_percent || 25}% OFF</div>` : ''}
+            ${configuredItem && configuredItem.direct_discount_percent > 0 ? `<div style="font-size:10px;font-weight:700;color:#f43f5e;margin-top:1px;">${configuredItem.direct_discount_percent}% OFF</div>` : ''}
           </button>
         ` : ''}
         ${allowsCard ? `
           <button type="button" class="btn-pay-tab ${tabCardActive ? 'active' : ''}" data-method="tarjeta" style="padding:10px 8px;border-radius:8px;border:2px solid ${tabCardActive ? '#fff' : '#333'};background:${tabCardActive ? '#27272a' : '#18181b'};color:${tabCardActive ? '#fff' : '#aaa'};cursor:pointer;text-align:center;transition:all .15s ease;">
             <div style="font-size:12px;font-weight:800;color:${tabCardActive ? '#fff' : '#eee'};">💳 TARJETA</div>
             <div style="font-size:13px;font-weight:800;color:#fff;margin-top:2px;">${cardPriceFormatted}</div>
-            ${directItem && directItem.direct_installments_count ? `<div style="font-size:10px;color:#9ca3af;margin-top:1px;">${directItem.direct_installments_count} cuotas</div>` : ''}
+            ${configuredItem && configuredItem.direct_installments_count ? `<div style="font-size:10px;color:#9ca3af;margin-top:1px;">${configuredItem.direct_installments_count} cuotas</div>` : ''}
           </button>
         ` : ''}
         ${allowsCash ? `
@@ -1200,19 +1205,19 @@
     cardEl.setAttribute('locale', state.publicConfig.MERCADO_PAGO_LOCALE || 'es-AR');
     cardEl.setAttribute('max-installments', '24');
 
-    const directItem = state.items.find((i) => i.direct_purchase) || (state.isDirectPurchase ? state.items[0] : null);
-    if (directItem) {
-      if (directItem.allowed_payment_methods) {
-        const methodsStr = Array.isArray(directItem.allowed_payment_methods)
-          ? directItem.allowed_payment_methods.join(',')
-          : String(directItem.allowed_payment_methods);
+    const configuredItem = state.items.find((i) => i.direct_purchase) || state.items.find((i) => i.allowed_payment_methods || i.allowed_installments) || (state.isDirectPurchase ? state.items[0] : null);
+    if (configuredItem) {
+      if (configuredItem.allowed_payment_methods) {
+        const methodsStr = Array.isArray(configuredItem.allowed_payment_methods)
+          ? configuredItem.allowed_payment_methods.join(',')
+          : String(configuredItem.allowed_payment_methods);
         cardEl.setAttribute('allowed-methods', methodsStr);
       }
-      if (directItem.allowed_installments) {
-        const instList = Array.isArray(directItem.allowed_installments)
-          ? directItem.allowed_installments
-          : (typeof directItem.allowed_installments === 'string'
-              ? (directItem.allowed_installments.startsWith('[') ? JSON.parse(directItem.allowed_installments) : directItem.allowed_installments.split(','))
+      if (configuredItem.allowed_installments) {
+        const instList = Array.isArray(configuredItem.allowed_installments)
+          ? configuredItem.allowed_installments
+          : (typeof configuredItem.allowed_installments === 'string'
+              ? (configuredItem.allowed_installments.startsWith('[') ? JSON.parse(configuredItem.allowed_installments) : configuredItem.allowed_installments.split(','))
               : [1, 3, 6]);
         cardEl.setAttribute('allowed-installments', instList.join(','));
         const maxI = Math.max(...instList.map(Number).filter(n => Number.isInteger(n) && n > 0));

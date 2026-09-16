@@ -107,7 +107,7 @@
     const q = (query || '').trim().toLowerCase();
     const list = q
       ? productsAll.filter((p) =>
-          ((p.name || '') + ' ' + (p.description || '') + ' ' + (p.sizes || '')).toLowerCase().includes(q)
+          ((p.name || '') + ' ' + (p.description || '') + ' ' + (p.sizes || '') + ' ' + (p.category || '') + ' ' + (p.subcategory || '')).toLowerCase().includes(q)
         )
       : productsAll;
 
@@ -156,7 +156,14 @@
       }
 
       const nameCell = document.createElement('td');
-      nameCell.innerHTML = `<div class="td-name">${escapeHtml(p.name || '(Sin nombre)')}</div><div class="td-meta">${escapeHtml((p.description || '').slice(0, 90))}${p.description && p.description.length > 90 ? '…' : ''}</div>`;
+      const catBadge = p.category ? `<span style="display:inline-block;font-size:10px;padding:2px 6px;border:1px solid rgba(255,255,255,0.18);border-radius:2px;letter-spacing:.05em;text-transform:uppercase;color:var(--grey,#aaa);">${escapeHtml(p.category)}</span>` : '';
+      const subBadge = p.subcategory ? `<span style="display:inline-block;font-size:10px;padding:2px 6px;background:rgba(255,255,255,0.08);border-radius:2px;letter-spacing:.05em;text-transform:uppercase;color:#fff;">↳ ${escapeHtml(p.subcategory)}</span>` : '';
+      const directBadge = p.direct_purchase ? `<span style="display:inline-block;font-size:10px;padding:2px 6px;background:#fff;color:#000;font-weight:700;border-radius:2px;letter-spacing:.05em;text-transform:uppercase;">⚡ COMPRA DIRECTA</span>` : '';
+      nameCell.innerHTML = `
+        <div class="td-name">${escapeHtml(p.name || '(Sin nombre)')}</div>
+        <div class="td-meta">${escapeHtml((p.description || '').slice(0, 90))}${p.description && p.description.length > 90 ? '…' : ''}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap;">${catBadge}${subBadge}${directBadge}</div>
+      `;
 
       const priceCell = document.createElement('td');
       priceCell.innerHTML = `<span class="td-price">${escapeHtml(priceStr)}</span>`;

@@ -4,6 +4,7 @@ const { param, validationResult } = require('express-validator');
 const { authenticate, requireAdmin } = require('../middleware/postgresAuth');
 const { query } = require('../db/postgres');
 const { MAX_BYTES, MIME_ALLOWED, uploadProductImage, uploadProductImages, deleteObjectByPublicUrl } = require('../services/localStorage');
+const { deleteProductImage, syncProductImages } = require('../services/productImages.service');
 
 const router = express.Router();
 router.use(authenticate, requireAdmin);
@@ -59,30 +60,21 @@ router.delete('/:id/image', [param('id').isUUID()], async (req, res) => {
   const targetUrl = typeof req.query.url === 'string' && req.query.url.trim() ? req.query.url.trim() : null;
 
   if (targetUrl) {
-    deleteObjectByPublicUrl(targetUrl);
-    let currentImages = [];
-    if (Array.isArray(rows[0].images)) currentImages = rows[0].images;
-    else if (typeof rows[0].images === 'string' && rows[0].images.startsWith('[')) {
-      try { currentImages = JSON.parse(rows[0].images); } catch (_) {}
-    } else if (rows[0].image_url) {
-      currentImages = [rows[0].image_url];
-    }
-    const filtered = currentImages.filter((u) => u !== targetUrl);
-    const newMain = filtered[0] || null;
-    await query('UPDATE products SET image_url=$1, images=$2, updated_at=now() WHERE id=$3', [newMain, JSON.stringify(filtered), req.params.id]);
-    return res.json({ ok: true, message: 'Imagen eliminada correctamente', images: filtered, image_url: newMain });
+    const result = await deleteProductImage(req.params.id, targetUrl);
+    const remainingUrls = result.remaining.map((img) => img.image_url);
+    const newMain = remainingUrls[0] || null;
+    return res.json({
+      ok: true,
+      message: 'Imagen eliminada correctamente',
+      images: remainingUrls,
+      image_url: newMain,
+      product_images: result.remaining,
+    });
   }
 
   // Delete all images
-  if (rows[0].image_url) deleteObjectByPublicUrl(rows[0].image_url);
-  if (Array.isArray(rows[0].images)) {
-    rows[0].images.forEach((u) => deleteObjectByPublicUrl(u));
-  } else if (typeof rows[0].images === 'string' && rows[0].images.startsWith('[')) {
-    try { JSON.parse(rows[0].images).forEach((u) => deleteObjectByPublicUrl(u)); } catch (_) {}
-  }
-
-  await query('UPDATE products SET image_url=NULL, images=\'[]\'::jsonb, updated_at=now() WHERE id=$1', [req.params.id]);
-  res.json({ ok: true, message: 'Imágenes eliminadas correctamente', images: [], image_url: null });
+  const remaining = await syncProductImages(req.params.id, []);
+  res.json({ ok: true, message: 'Imágenes eliminadas correctamente', images: [], image_url: null, product_images: remaining });
 });
 
 module.exports = router;

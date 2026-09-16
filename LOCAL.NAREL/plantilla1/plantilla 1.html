@@ -8191,6 +8191,44 @@
         return '$' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       }
 
+      // Single source of truth for product pricing, discounts, installments, and promo calculation
+      function getProductPricing(p) {
+        const basePrice = Number(p.price) || 0;
+        const discountPercent = (p.direct_discount_percent !== undefined && p.direct_discount_percent !== null && p.direct_discount_percent !== '')
+          ? Number(p.direct_discount_percent)
+          : 25;
+        const hasDiscount = discountPercent > 0;
+        const discountText = htmlEscape(p.direct_discount_text || 'con transferencia');
+        const showPromoBadge = p.direct_show_promo_badge !== false && String(p.direct_show_promo_badge) !== 'false';
+        const promoBadgeText = htmlEscape(p.direct_promo_badge_text || 'PROMO ACTIVA');
+        const installmentsCount = Number(p.direct_installments_count) > 0 ? Number(p.direct_installments_count) : 6;
+        const installmentsText = htmlEscape(p.direct_installments_text || 'sin interés');
+        const installmentPrice = installmentsCount > 0 ? (basePrice / installmentsCount) : basePrice;
+
+        let transferPrice = hasDiscount ? (basePrice * (1 - (discountPercent / 100))) : basePrice;
+        if (p.direct_custom_transfer_price !== undefined && p.direct_custom_transfer_price !== null && p.direct_custom_transfer_price !== '' && Number(p.direct_custom_transfer_price) > 0) {
+          transferPrice = Number(p.direct_custom_transfer_price);
+        }
+        const transferText = htmlEscape(p.direct_transfer_text || 'con Transferencia');
+
+        return {
+          basePrice,
+          priceFormatted: fmtPriceAR(basePrice),
+          discountPercent,
+          hasDiscount,
+          discountText,
+          showPromoBadge,
+          promoBadgeText,
+          installmentsCount,
+          installmentsText,
+          installmentPrice,
+          installmentPriceStr: fmtPriceAR(installmentPrice),
+          transferPrice,
+          transferPriceStr: fmtPriceAR(transferPrice),
+          transferText,
+        };
+      }
+
       function productCardHTML(p) {
         const cat = (p.category || guessCategory(p.name, p.description) || 'remeras').toLowerCase();
         const isDirect = !!(p.direct_purchase === true || p.direct_purchase === 1 || p.direct_purchase === 'true');
@@ -8202,81 +8240,49 @@
         const stock = Number(p.stock) || 0;
         const disabledBtn = stock <= 0 ? ' disabled' : '';
         const imgUrl = (p.image_url && typeof p.image_url === 'string' && p.image_url.trim()) ? p.image_url.trim() : '';
-        const sizesLine = sizes ? (' · ' + sizes) : '';
         const innerImg = imgUrl
           ? `<img src="${htmlEscape(imgUrl)}" alt="${name}" loading="lazy" onerror="this.remove(); this.parentElement.querySelector('.placeholder') && (this.parentElement.querySelector('.placeholder').style.display='flex');">
              <div class="placeholder" style="display:none;">${PLACEHOLDER_IMG_SVG}<span>IMAGEN</span></div>`
           : `<div class="placeholder">${PLACEHOLDER_IMG_SVG}<span>IMAGEN</span></div>`;
 
-        if (isDirect) {
-          const basePrice = Number(p.price) || 0;
-          const priceFormatted = fmtPriceAR(basePrice);
-          const discountPercent = p.direct_discount_percent !== undefined && p.direct_discount_percent !== null ? Number(p.direct_discount_percent) : 25;
-          const discountText = htmlEscape(p.direct_discount_text || 'con transferencia');
-          const showPromoBadge = p.direct_show_promo_badge !== false && String(p.direct_show_promo_badge) !== 'false';
-          const promoBadgeText = htmlEscape(p.direct_promo_badge_text || 'PROMO ACTIVA');
-          const installmentsCount = Number(p.direct_installments_count) > 0 ? Number(p.direct_installments_count) : 6;
-          const installmentsText = htmlEscape(p.direct_installments_text || 'sin interés');
-          const installmentPrice = installmentsCount > 0 ? (basePrice / installmentsCount) : basePrice;
-          const installmentPriceStr = fmtPriceAR(installmentPrice);
+        const pricing = getProductPricing(p);
 
-          let transferPrice = basePrice * (1 - (discountPercent / 100));
-          if (p.direct_custom_transfer_price !== undefined && p.direct_custom_transfer_price !== null && Number(p.direct_custom_transfer_price) > 0) {
-            transferPrice = Number(p.direct_custom_transfer_price);
-          }
-          const transferPriceStr = fmtPriceAR(transferPrice);
-          const transferText = htmlEscape(p.direct_transfer_text || 'con Transferencia');
-          const directAttrs = ` data-direct="1" data-allowed-methods="${htmlEscape(JSON.stringify(p.allowed_payment_methods || []))}" data-allowed-installments="${htmlEscape(JSON.stringify(p.allowed_installments || []))}" data-discount-percent="${discountPercent}" data-discount-text="${discountText}" data-custom-transfer="${p.direct_custom_transfer_price || ''}" data-installments-count="${installmentsCount}" data-installments-text="${installmentsText}"`;
+        const directAttrs = ` data-direct="${isDirect ? '1' : '0'}" data-allowed-methods="${htmlEscape(JSON.stringify(p.allowed_payment_methods || []))}" data-allowed-installments="${htmlEscape(JSON.stringify(p.allowed_installments || []))}" data-discount-percent="${pricing.discountPercent}" data-discount-text="${pricing.discountText}" data-custom-transfer="${p.direct_custom_transfer_price || ''}" data-installments-count="${pricing.installmentsCount}" data-installments-text="${pricing.installmentsText}"`;
 
-          const promoBadgeHTML = showPromoBadge
-            ? `<div class="direct-promo-pill" style="background:#e50914;color:#fff;font-size:10px;font-weight:800;padding:4px 9px;border-radius:12px;letter-spacing:.05em;text-transform:uppercase;line-height:1.1;text-align:center;box-shadow:0 2px 8px rgba(229,9,20,0.3);white-space:nowrap;">${promoBadgeText}</div>`
-            : '';
+        const promoBadgeHTML = (pricing.showPromoBadge && pricing.promoBadgeText)
+          ? `<div class="direct-promo-pill" style="background:#e50914;color:#fff;font-size:10px;font-weight:800;padding:4px 9px;border-radius:12px;letter-spacing:.05em;text-transform:uppercase;line-height:1.1;text-align:center;box-shadow:0 2px 8px rgba(229,9,20,0.3);white-space:nowrap;">${pricing.promoBadgeText}</div>`
+          : '';
 
-          return (
-            `<article class="product product-direct" data-id="${htmlEscape(p.id || '')}" data-price="${basePrice}" data-stock="${stock}" data-name="${name}" data-image="${htmlEscape(imgUrl)}" data-sizes="${sizes}"${directAttrs} style="cursor:pointer;" title="Click para ver detalle y comprar">` +
-            `<span class="product-shine" aria-hidden="true"></span>` +
-            `<span class="product-badge"${badgeStyle}>${badge}</span>` +
-            `<div class="product-image">${innerImg}</div>` +
-            `<div class="product-body" style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;">` +
-            `<h4 class="product-name" style="font-size:14px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#fff;margin:0;line-height:1.3;">${name}</h4>` +
-            `<div class="direct-price-main" style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#fff;margin-top:2px;">${priceFormatted}</div>` +
-            `<div class="direct-promo-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;">` +
-            `<div class="direct-discount-box" style="background:#141414;border:1px solid #2e2e2e;color:#eee;font-size:12px;font-weight:600;padding:6px 10px;border-radius:6px;letter-spacing:.02em;">${discountPercent}% OFF ${discountText}</div>` +
-            promoBadgeHTML +
-            `</div>` +
-            `<div class="direct-installments-line" style="font-size:12.5px;color:#9ca3af;letter-spacing:.01em;margin-top:2px;">${installmentsCount} x ${installmentPriceStr} ${installmentsText}</div>` +
-            `<div class="direct-transfer-line" style="font-size:14px;font-weight:700;color:#f43f5e;letter-spacing:.01em;margin-top:1px;">${transferPriceStr} ${transferText}</div>` +
-            `<div class="product-bottom" style="margin-top:8px;padding-top:4px;border:none;">` +
-            `<button type="button" class="btn-add btn-buy-direct"${disabledBtn} data-action="buy-direct" aria-label="Comprar ${name}" style="width:100%;background:#232733;color:#fff;border:1px solid #3d4354;border-radius:20px;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s ease;">` +
-            `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>` +
-            `<span>${stock <= 0 ? 'SIN STOCK' : 'Comprar'}</span>` +
-            `</button>` +
-            `</div>` +
-            `</div>` +
-            `</article>`
-          );
-        }
+        const discountBadgeHTML = pricing.hasDiscount
+          ? `<div class="direct-discount-box" style="background:#141414;border:1px solid #2e2e2e;color:#eee;font-size:12px;font-weight:600;padding:6px 10px;border-radius:6px;letter-spacing:.02em;">${pricing.discountPercent}% OFF ${pricing.discountText}</div>`
+          : '';
 
-        const priceStr = fmtPriceClean(p.price) || '';
-        const btnText = stock <= 0 ? 'SIN STOCK' : 'AGREGAR';
-        const btnAction = 'add';
-        const btnAria = `Agregar ${name} al carrito`;
-        const btnIcon = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>`;
+        const buttonHTML = isDirect
+          ? `<button type="button" class="btn-add btn-buy-direct"${disabledBtn} data-action="buy-direct" aria-label="Comprar ${name}" style="width:100%;background:#232733;color:#fff;border:1px solid #3d4354;border-radius:20px;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s ease;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span>${stock <= 0 ? 'SIN STOCK' : 'Comprar'}</span>
+            </button>`
+          : `<button type="button" class="btn-add"${disabledBtn} data-action="add" aria-label="Agregar ${name} al carrito" style="width:100%;background:#232733;color:#fff;border:1px solid #3d4354;border-radius:20px;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s ease;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+              <span>${stock <= 0 ? 'SIN STOCK' : 'AGREGAR'}</span>
+            </button>`;
 
         return (
-          `<article class="product" data-id="${htmlEscape(p.id || '')}" data-price="${Number(p.price || 0)}" data-stock="${stock}" data-name="${name}" data-image="${htmlEscape(imgUrl)}" data-sizes="${sizes}" style="cursor:pointer;" title="Click para ver detalle">` +
+          `<article class="product product-direct" data-id="${htmlEscape(p.id || '')}" data-price="${pricing.basePrice}" data-stock="${stock}" data-name="${name}" data-image="${htmlEscape(imgUrl)}" data-sizes="${sizes}"${directAttrs} style="cursor:pointer;" title="Click para ver detalle">` +
           `<span class="product-shine" aria-hidden="true"></span>` +
           `<span class="product-badge"${badgeStyle}>${badge}</span>` +
           `<div class="product-image">${innerImg}</div>` +
-          `<div class="product-body">` +
-          `<h4 class="product-name">${name}</h4>` +
-          `<p class="product-desc">${desc}${sizesLine}</p>` +
-          `<div class="product-bottom">` +
-          `<span class="product-price">${priceStr}</span>` +
-          `<button type="button" class="btn-add"${disabledBtn} data-action="${btnAction}" aria-label="${btnAria}">` +
-          btnIcon +
-          `<span>${btnText}</span>` +
-          `</button>` +
+          `<div class="product-body" style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;">` +
+          `<h4 class="product-name" style="font-size:14px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#fff;margin:0;line-height:1.3;">${name}</h4>` +
+          `<div class="direct-price-main" style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#fff;margin-top:2px;">${pricing.priceFormatted}</div>` +
+          `<div class="direct-promo-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;">` +
+          discountBadgeHTML +
+          promoBadgeHTML +
+          `</div>` +
+          `<div class="direct-installments-line" style="font-size:12.5px;color:#9ca3af;letter-spacing:.01em;margin-top:2px;">${pricing.installmentsCount} x ${pricing.installmentPriceStr} ${pricing.installmentsText}</div>` +
+          `<div class="direct-transfer-line" style="font-size:14px;font-weight:700;color:#f43f5e;letter-spacing:.01em;margin-top:1px;">${pricing.transferPriceStr} ${pricing.transferText}</div>` +
+          `<div class="product-bottom" style="margin-top:8px;padding-top:4px;border:none;">` +
+          buttonHTML +
           `</div>` +
           `</div>` +
           `</article>`
@@ -8520,51 +8526,30 @@
         const mainBtnText = stock <= 0 ? 'SIN STOCK' : (isDirect ? 'COMPRAR AHORA' : 'AGREGAR AL CARRITO');
         const mainBtnStyle = isDirect ? ' style="background:#fff;color:#000;font-weight:700;"' : '';
 
-        let priceAndPromoHTML = `
-          <div class="pm-price-wrap">
-            <span class="pm-price">${priceStr}</span>
-            <span class="pm-stock-pill">${stockText}</span>
+        const pricing = getProductPricing(p);
+
+        const promoBadgeModalHTML = (pricing.showPromoBadge && pricing.promoBadgeText)
+          ? `<div style="background:#e50914;color:#fff;font-size:10px;font-weight:800;padding:4px 9px;border-radius:12px;letter-spacing:.05em;text-transform:uppercase;line-height:1.1;text-align:center;box-shadow:0 2px 8px rgba(229,9,20,0.3);white-space:nowrap;">${pricing.promoBadgeText}</div>`
+          : '';
+
+        const discountBadgeModalHTML = pricing.hasDiscount
+          ? `<div style="background:#141414;border:1px solid #2e2e2e;color:#eee;font-size:12px;font-weight:600;padding:6px 10px;border-radius:6px;letter-spacing:.02em;">${pricing.discountPercent}% OFF ${pricing.discountText}</div>`
+          : '';
+
+        const priceAndPromoHTML = `
+          <div style="background:#000;border:1px solid #222;border-radius:8px;padding:16px;margin:12px 0 16px;display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+              <span style="font-size:26px;font-weight:800;letter-spacing:-0.02em;color:#fff;">${pricing.priceFormatted}</span>
+              <span class="pm-stock-pill">${stockText}</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;">
+              ${discountBadgeModalHTML}
+              ${promoBadgeModalHTML}
+            </div>
+            <div style="font-size:13px;color:#9ca3af;letter-spacing:.01em;margin-top:2px;">${pricing.installmentsCount} x ${pricing.installmentPriceStr} ${pricing.installmentsText}</div>
+            <div style="font-size:15px;font-weight:700;color:#f43f5e;letter-spacing:.01em;margin-top:2px;">${pricing.transferPriceStr} ${pricing.transferText}</div>
           </div>
         `;
-
-        if (isDirect) {
-          const basePrice = Number(p.price) || 0;
-          const priceFormatted = fmtPriceAR(basePrice);
-          const discountPercent = p.direct_discount_percent !== undefined && p.direct_discount_percent !== null ? Number(p.direct_discount_percent) : 25;
-          const discountText = htmlEscape(p.direct_discount_text || 'con transferencia');
-          const showPromoBadge = p.direct_show_promo_badge !== false && String(p.direct_show_promo_badge) !== 'false';
-          const promoBadgeText = htmlEscape(p.direct_promo_badge_text || 'PROMO ACTIVA');
-          const installmentsCount = Number(p.direct_installments_count) > 0 ? Number(p.direct_installments_count) : 6;
-          const installmentsText = htmlEscape(p.direct_installments_text || 'sin interés');
-          const installmentPrice = installmentsCount > 0 ? (basePrice / installmentsCount) : basePrice;
-          const installmentPriceStr = fmtPriceAR(installmentPrice);
-
-          let transferPrice = basePrice * (1 - (discountPercent / 100));
-          if (p.direct_custom_transfer_price !== undefined && p.direct_custom_transfer_price !== null && Number(p.direct_custom_transfer_price) > 0) {
-            transferPrice = Number(p.direct_custom_transfer_price);
-          }
-          const transferPriceStr = fmtPriceAR(transferPrice);
-          const transferText = htmlEscape(p.direct_transfer_text || 'con Transferencia');
-
-          const promoBadgeModalHTML = showPromoBadge
-            ? `<div style="background:#e50914;color:#fff;font-size:10px;font-weight:800;padding:4px 9px;border-radius:12px;letter-spacing:.05em;text-transform:uppercase;line-height:1.1;text-align:center;box-shadow:0 2px 8px rgba(229,9,20,0.3);white-space:nowrap;">${promoBadgeText}</div>`
-            : '';
-
-          priceAndPromoHTML = `
-            <div style="background:#000;border:1px solid #222;border-radius:8px;padding:16px;margin:12px 0 16px;display:flex;flex-direction:column;gap:6px;">
-              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
-                <span style="font-size:26px;font-weight:800;letter-spacing:-0.02em;color:#fff;">${priceFormatted}</span>
-                <span class="pm-stock-pill">${stockText}</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;">
-                <div style="background:#141414;border:1px solid #2e2e2e;color:#eee;font-size:12px;font-weight:600;padding:6px 10px;border-radius:6px;letter-spacing:.02em;">${discountPercent}% OFF ${discountText}</div>
-                ${promoBadgeModalHTML}
-              </div>
-              <div style="font-size:13px;color:#9ca3af;letter-spacing:.01em;margin-top:2px;">${installmentsCount} x ${installmentPriceStr} ${installmentsText}</div>
-              <div style="font-size:15px;font-weight:700;color:#f43f5e;letter-spacing:.01em;margin-top:2px;">${transferPriceStr} ${transferText}</div>
-            </div>
-          `;
-        }
 
         body.innerHTML = `
           <div class="pm-main">
@@ -8651,7 +8636,9 @@
               }
 
               if (window.shop && typeof window.shop.addToCart === 'function') {
+                const pricing = getProductPricing(currentModalProduct);
                 window.shop.addToCart({
+                  ...currentModalProduct,
                   id: currentModalProduct.id,
                   name: currentModalProduct.name,
                   price: Number(currentModalProduct.price) || 0,
@@ -8659,7 +8646,16 @@
                   stock: Number(currentModalProduct.stock) || 0,
                   sizes: currentModalProduct.sizes || '',
                   size: selectedModalSize || '',
-                  qty: 1
+                  qty: 1,
+                  direct_purchase: false,
+                  allowed_payment_methods: currentModalProduct.allowed_payment_methods,
+                  allowed_installments: currentModalProduct.allowed_installments,
+                  direct_discount_percent: pricing.discountPercent,
+                  direct_discount_text: pricing.discountText,
+                  direct_custom_transfer_price: currentModalProduct.direct_custom_transfer_price,
+                  direct_transfer_price: pricing.transferPrice,
+                  direct_installments_count: pricing.installmentsCount,
+                  direct_installments_text: pricing.installmentsText,
                 });
                 mainAdd.classList.add('added-feedback');
                 const span = mainAdd.querySelector('span');

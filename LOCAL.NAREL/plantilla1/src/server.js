@@ -110,6 +110,11 @@ app.use('/api', limiterGeneral);
 const publicDir = path.join(__dirname, '..', 'public');
 app.use('/assets', express.static(path.join(publicDir, 'assets')));
 app.use('/admin/assets', express.static(path.join(publicDir, 'admin', 'assets')));
+try {
+  if (!fs.existsSync(env.UPLOADS_DIR)) {
+    fs.mkdirSync(env.UPLOADS_DIR, { recursive: true });
+  }
+} catch (_) {}
 app.use('/uploads', express.static(env.UPLOADS_DIR));
 app.use(express.static(publicDir, { index: false }));
 
@@ -170,24 +175,48 @@ app.get('/api/products/public', async (req, res) => {
     const querySql = `SELECT id,name,description,price,sizes,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at FROM products ${conditions} ORDER BY featured DESC,updated_at DESC LIMIT $${params.length}`;
 
     const result = await query(querySql, params);
+
+    const productIds = result.rows.map((r) => r.id);
+    const imagesByProduct = new Map();
+    if (productIds.length > 0) {
+      try {
+        const imgRes = await query(
+          'SELECT id, product_id, image_url, storage_path, alt_text, position FROM product_images WHERE product_id = ANY($1) ORDER BY position ASC, created_at ASC',
+          [productIds]
+        );
+        (imgRes.rows || []).forEach((img) => {
+          if (!imagesByProduct.has(img.product_id)) {
+            imagesByProduct.set(img.product_id, []);
+          }
+          imagesByProduct.get(img.product_id).push(img);
+        });
+      } catch (imgErr) {
+        console.warn('[products-public] fallback imágenes:', imgErr.message);
+      }
+    }
+
     const mapped = result.rows.map((p) => {
+      const dedicatedImages = imagesByProduct.get(p.id) || [];
       let imagesList = [];
-      if (Array.isArray(p.images)) {
-        imagesList = p.images;
+      if (dedicatedImages.length > 0) {
+        imagesList = dedicatedImages.map((img) => img.image_url).filter(Boolean);
+      } else if (Array.isArray(p.images)) {
+        imagesList = p.images.filter(Boolean);
       } else if (typeof p.images === 'string' && p.images.startsWith('[')) {
-        try { imagesList = JSON.parse(p.images); } catch (_) {}
+        try { imagesList = JSON.parse(p.images).filter(Boolean); } catch (_) {}
       } else if (p.images && typeof p.images === 'string') {
         imagesList = [p.images];
       }
       if (p.image_url && !imagesList.includes(p.image_url)) {
         imagesList.unshift(p.image_url);
       }
-      const mainImageUrl = p.image_url || imagesList[0] || null;
+      const mainImageUrl = imagesList[0] || p.image_url || null;
 
       return {
         ...p,
         image_url: mainImageUrl,
         images: imagesList,
+        product_images: dedicatedImages,
         direct_purchase: Boolean(p.direct_purchase),
         allowed_payment_methods: typeof p.allowed_payment_methods === 'string'
           ? JSON.parse(p.allowed_payment_methods)
@@ -304,8 +333,6 @@ function guessCategoryFallback(name, description){
 app.use('/api/auth', supabaseAuthRoutes);
 // Categories / Sections (admin) - CRUD
 app.use('/api/admin/categories', supabaseCategoriesRoutes);
-// Products (admin) - CRUD + imagen
-app.use('/api/admin/products', supabaseProductsRoutes);
 // Banners (admin) - CRUD
 app.use('/api/admin/banners', supabaseBannersRoutes);
 // Promotions (admin) - CRUD + productos
@@ -316,6 +343,8 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/admin/orders', supabaseOrdersAdminRoutes);
 // upload imagen y delete imagen producto
 app.use('/api/admin/products', supabaseStorageRoutes);
+// Products (admin) - CRUD
+app.use('/api/admin/products', supabaseProductsRoutes);
 // Promoción de envíos gratis y contador (público y admin)
 app.use('/api/shipping-promo', shippingPromoPublicRoutes);
 app.use('/api/admin/shipping-promo', shippingPromoAdminRoutes);

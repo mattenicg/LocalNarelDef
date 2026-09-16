@@ -35,18 +35,22 @@
   function bindDirectPurchase() {
     const chk = document.getElementById('direct_purchase');
     const box = document.getElementById('directPurchaseConfigBox');
-    if (!chk || !box) return;
+    if (!box) return;
     
     function updateVisibility() {
-      box.style.display = chk.checked ? 'block' : 'none';
+      box.style.display = 'block';
       updateDirectPreview();
     }
 
-    chk.addEventListener('change', updateVisibility);
+    if (chk) {
+      chk.addEventListener('change', updateVisibility);
+    }
 
     // Bind inputs for live preview
     const inputsToWatch = [
       'name', 'price',
+      'direct_purchase',
+      'direct_discount_enabled',
       'direct_discount_percent', 'direct_discount_text',
       'direct_show_promo_badge', 'direct_promo_badge_text',
       'direct_installments_count', 'direct_installments_text',
@@ -70,6 +74,8 @@
   function updateDirectPreview() {
     const nameEl = document.getElementById('name');
     const priceEl = document.getElementById('price');
+    const directChk = document.getElementById('direct_purchase');
+    const discEnabledEl = document.getElementById('direct_discount_enabled');
     const discPctEl = document.getElementById('direct_discount_percent');
     const discTxtEl = document.getElementById('direct_discount_text');
     const showPromoEl = document.getElementById('direct_show_promo_badge');
@@ -85,12 +91,15 @@
     const prevPromo = document.getElementById('previewPromoBadge');
     const prevInst = document.getElementById('previewInstallmentsLine');
     const prevTrans = document.getElementById('previewTransferLine');
+    const prevBtn = document.getElementById('previewActionBtn');
 
     if (!prevPrice) return;
 
+    const isDirect = directChk ? directChk.checked : false;
+    const isDiscEnabled = discEnabledEl ? discEnabledEl.checked : true;
     const basePrice = Number(priceEl?.value) || 0;
     const name = (nameEl?.value || '').trim() || 'PANTALON BAGGY IGOR PINK';
-    const discPct = discPctEl ? Number(discPctEl.value) || 0 : 25;
+    const discPct = isDiscEnabled && discPctEl ? Number(discPctEl.value) || 0 : 0;
     const discTxt = (discTxtEl?.value || 'con transferencia').trim();
     const showPromo = showPromoEl ? showPromoEl.checked : true;
     const promoTxt = (promoTxtEl?.value || 'PROMO ACTIVA').trim();
@@ -103,7 +112,12 @@
     if (prevPrice) prevPrice.textContent = fmtPriceAR(basePrice);
 
     if (prevDisc) {
-      prevDisc.textContent = `${discPct}% OFF ${discTxt}`;
+      if (isDiscEnabled && discPct > 0) {
+        prevDisc.style.display = 'block';
+        prevDisc.textContent = `${discPct}% OFF ${discTxt}`;
+      } else {
+        prevDisc.style.display = 'none';
+      }
     }
 
     if (prevPromo) {
@@ -121,6 +135,24 @@
         ? customTrans
         : (basePrice * (1 - (discPct / 100)));
       prevTrans.textContent = `${fmtPriceAR(finalTransVal)} ${transTxt}`;
+    }
+
+    if (prevBtn) {
+      if (isDirect) {
+        prevBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span>COMPRAR</span>
+        `;
+        prevBtn.style.background = '#ffffff';
+        prevBtn.style.color = '#000000';
+      } else {
+        prevBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+          <span>AGREGAR</span>
+        `;
+        prevBtn.style.background = '#232733';
+        prevBtn.style.color = '#ffffff';
+      }
     }
   }
 
@@ -362,7 +394,11 @@
     const directEl = document.getElementById('direct_purchase');
     const boxEl = document.getElementById('directPurchaseConfigBox');
     if (directEl) directEl.checked = isDirect;
-    if (boxEl) boxEl.style.display = isDirect ? 'block' : 'none';
+    if (boxEl) boxEl.style.display = 'block';
+
+    const discEnabledEl = document.getElementById('direct_discount_enabled');
+    const hasDiscount = p.direct_discount_percent !== undefined && p.direct_discount_percent !== null ? Number(p.direct_discount_percent) > 0 : true;
+    if (discEnabledEl) discEnabledEl.checked = hasDiscount;
 
     const discPctEl = document.getElementById('direct_discount_percent');
     if (discPctEl) {
@@ -420,7 +456,9 @@
     });
 
     let initialImages = [];
-    if (Array.isArray(p.images)) {
+    if (Array.isArray(p.product_images) && p.product_images.length > 0) {
+      initialImages = p.product_images.map((img) => (typeof img === 'string' ? img : img.image_url)).filter(Boolean);
+    } else if (Array.isArray(p.images)) {
       initialImages = p.images.filter(Boolean);
     } else if (typeof p.images === 'string' && p.images.trim()) {
       try {
@@ -652,6 +690,7 @@
     window.auth.setMessage(msgId, 'Procesando...', 'info');
 
     try {
+      const discEnabledEl = document.getElementById('direct_discount_enabled');
       const discPctEl = document.getElementById('direct_discount_percent');
       const discTxtEl = document.getElementById('direct_discount_text');
       const showPromoEl = document.getElementById('direct_show_promo_badge');
@@ -661,7 +700,8 @@
       const custTransEl = document.getElementById('direct_custom_transfer_price');
       const transTxtEl = document.getElementById('direct_transfer_text');
 
-      const direct_discount_percent = discPctEl && discPctEl.value !== '' ? Number(discPctEl.value) : 25;
+      const isDiscEnabled = discEnabledEl ? discEnabledEl.checked : true;
+      const direct_discount_percent = isDiscEnabled && discPctEl && discPctEl.value !== '' ? Number(discPctEl.value) : (isDiscEnabled ? 25 : 0);
       const direct_discount_text = discTxtEl && discTxtEl.value ? discTxtEl.value.trim() : 'con transferencia';
       const direct_show_promo_badge = showPromoEl ? showPromoEl.checked : true;
       const direct_promo_badge_text = promoTxtEl && promoTxtEl.value ? promoTxtEl.value.trim() : 'PROMO ACTIVA';

@@ -1,0 +1,683 @@
+{
+  "products": [
+    {
+      "id": "507a0e12-d3a1-43cf-8e02-2e36f3017f44",
+      "name": "Test Pantalón Cargo Persistente",
+      "description": "Pantalón de prueba para persistencia de imágenes",
+      "price": 35000,
+      "sizes": "M,L,XL",
+      "stock": 10,
+      "image_url": "/uploads/test-img-1.jpg",
+      "images": [
+        "/uploads/test-img-1.jpg",
+        "/uploads/test-img-2.jpg",
+        "/uploads/test-img-3.jpg"
+      ],
+      "category": "pantalones",
+      "subcategory": "cargo",
+      "subcategory_id": "s1111111-1111-4111-8111-111111111111",
+      "active": true,
+      "featured": false,
+      "direct_purchase": false,
+      "allowed_payment_methods": [
+        "tarjeta_credito",
+        "tarjeta_debito",
+        "transferencia",
+        "efectivo"
+      ],
+      "allowed_installments": [
+        1,
+        3,
+        6
+      ],
+      "direct_discount_percent": 25,
+      "direct_discount_text": "con transferencia",
+      "direct_show_promo_badge": true,
+      "direct_promo_badge_text": "PROMO ACTIVA",
+      "direct_installments_count": 6,
+      "direct_installments_text": "sin interés",
+      "direct_custom_transfer_price": null,
+      "direct_transfer_text": "con Transferencia",
+      "created_at": "2026-09-16T01:14:03.538Z",
+      "updated_at": "2026-09-16T01:14:03.539Z"
+    },
+    {
+      "id": "8b7a3e17-9063-4710-abb1-0957a83b064c",
+      "name": "Test Pantalón Cargo Persistente",
+      "description": "Pantalón de prueba para persistencia de imágenes",
+      "price": 35000,
+      "sizes": "M,L,XL",
+      "stock": 10,
+      "image_url": "/uploads/test-img-1.jpg",
+      "images": [
+        "/uploads/test-img-1.jpg",
+        "/uploads/test-img-2.jpg",
+        "/uploads/test-img-3.jpg"
+      ],
+      "category": "pantalones",
+      "subcategory": "cargo",
+      "subcategory_id": "s1111111-1111-4111-8111-111111111111",
+      "active": true,
+      "featured": false,
+      "direct_purchase": false,
+      "allowed_payment_methods": [
+        "tarjeta_credito",
+        "tarjeta_debito",
+        "transferencia",
+        "efectivo"
+      ],
+      "allowed_installments": [
+        1,
+        3,
+        6
+      ],
+      "direct_discount_percent": 25,
+      "direct_discount_text": "con transferencia",
+      "direct_show_promo_badge": true,
+      "direct_promo_badge_text": "PROMO ACTIVA",
+      "direct_installments_count": 6,
+      "direct_installments_text": "sin interés",
+      "direct_custom_transfer_price": null,
+      "direct_transfer_text": "con Transferencia",
+      "created_at": "2026-09-16T01:13:38.790Z",
+      "updated_at": "2026-09-16T01:13:38.792Z"
+    },
+    {
+      "id": "a1111111-1111-4111-8111-111111111111",
+      "name": "Remera Oversized NGL Diamond",
+      "description": "Remera corte oversized de algodón premium 24/1 peinado con estampa frontal en serigrafía.",
+      "price": 28500,
+      "sizes": "S,M,L,XL",
+      "stock": 25,
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "images": [
+        "/assets/img/logo-ngl-diamond.jpeg",
+        "/assets/img/bg-remeras.png"
+      ],
+      "category": "remeras",
+      "subcategory": "oversized",
+      "subcategory_id": "s4444444-4444-4444-8444-111111111111",
+      "active": true,
+      "featured": true,
+      "direct_purchase": false,
+      "allowed_payment_methods": [
+        "tarjeta_credito",
+        "tarjeta_debito",
+        "transferencia",
+        "efectivo"
+      ],
+      "allowed_installments": [
+        1,
+        3,
+        6
+      ],
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "a2222222-2222-4222-8222-222222222222",
+      "name": "Buzo Hoodie Gothic Heavyweight",
+      "description": "Buzo hoodie con friza pesada, bordado gótico en pecho y capucha forrada doble.",
+      "price": 49900,
+      "sizes": "M,L,XL,XXL",
+      "stock": 15,
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "images": [
+        "/assets/img/logo-ngl-diamond.jpeg",
+        "/assets/img/bg-buzos.png"
+      ],
+      "category": "buzos",
+      "subcategory": "hoodies",
+      "subcategory_id": "s3333333-3333-4333-8333-111111111111",
+      "active": true,
+      "featured": true,
+      "direct_purchase": false,
+      "allowed_payment_methods": [
+        "tarjeta_credito",
+        "tarjeta_debito",
+        "transferencia",
+        "efectivo"
+      ],
+      "allowed_installments": [
+        1,
+        3,
+        6
+      ],
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "a3333333-3333-4333-8333-333333333333",
+      "name": "Pantalón Cargo Tactical Black",
+      "description": "Pantalón cargo ripstop técnico con 6 bolsillos funcionales y ajuste regulable en tobillos.",
+      "price": 42000,
+      "sizes": "38,40,42,44",
+      "stock": 18,
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "images": [
+        "/assets/img/logo-ngl-diamond.jpeg",
+        "/assets/img/bg-pantalones.png"
+      ],
+      "category": "pantalones",
+      "subcategory": "cargo",
+      "subcategory_id": "s1111111-1111-4111-8111-111111111111",
+      "active": true,
+      "featured": true,
+      "direct_purchase": false,
+      "allowed_payment_methods": [
+        "tarjeta_credito",
+        "tarjeta_debito",
+        "transferencia",
+        "efectivo"
+      ],
+      "allowed_installments": [
+        1,
+        3,
+        6
+      ],
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "a4444444-4444-4444-8444-444444444444",
+      "name": "Campera Bomber Oversized Leather",
+      "description": "Campera bomber de ecocuero importado con forrería matelasseada y cierre metálico YKK.",
+      "price": 68000,
+      "sizes": "M,L,XL",
+      "stock": 8,
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "images": [
+        "/assets/img/logo-ngl-diamond.jpeg",
+        "/assets/img/bg-camperas.png"
+      ],
+      "category": "camperas",
+      "subcategory": "bomber",
+      "subcategory_id": "s2222222-2222-4222-8222-111111111111",
+      "active": true,
+      "featured": false,
+      "direct_purchase": false,
+      "allowed_payment_methods": [
+        "tarjeta_credito",
+        "tarjeta_debito",
+        "transferencia",
+        "efectivo"
+      ],
+      "allowed_installments": [
+        1,
+        3,
+        6
+      ],
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "a5555555-5555-4555-8555-555555555555",
+      "name": "Gorra Trucker Gothic Patch",
+      "description": "Gorra trucker con frente de gabardina, parche en relieve y red microperforada trasera.",
+      "price": 16500,
+      "sizes": "Único",
+      "stock": 30,
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "images": [
+        "/assets/img/logo-ngl-diamond.jpeg",
+        "/assets/img/bg-accesorios.png"
+      ],
+      "category": "accesorios",
+      "subcategory": "gorras",
+      "subcategory_id": "s5555555-5555-4555-8555-111111111111",
+      "active": true,
+      "featured": true,
+      "direct_purchase": false,
+      "allowed_payment_methods": [
+        "tarjeta_credito",
+        "tarjeta_debito",
+        "transferencia",
+        "efectivo"
+      ],
+      "allowed_installments": [
+        1,
+        3,
+        6
+      ],
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "a6666666-6666-4666-8666-666666666666",
+      "name": "Remera Acid Wash Raw Cut",
+      "description": "Remera con proceso acid wash artesanal, terminaciones al corte y corte boxy fit.",
+      "price": 31000,
+      "sizes": "S,M,L,XL",
+      "stock": 20,
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "images": [
+        "/assets/img/logo-ngl-diamond.jpeg"
+      ],
+      "category": "remeras",
+      "subcategory": null,
+      "subcategory_id": null,
+      "active": true,
+      "featured": false,
+      "direct_purchase": false,
+      "allowed_payment_methods": [
+        "tarjeta_credito",
+        "tarjeta_debito",
+        "transferencia",
+        "efectivo"
+      ],
+      "allowed_installments": [
+        1,
+        3,
+        6
+      ],
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    }
+  ],
+  "product_images": [
+    {
+      "id": "54eb5245-b251-47e3-8645-0afc9b06724d",
+      "product_id": "a1111111-1111-4111-8111-111111111111",
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "storage_path": "/assets/img/logo-ngl-diamond.jpeg",
+      "alt_text": "",
+      "position": 0,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "79081dfd-ff83-40df-88ba-7b2fe63cec16",
+      "product_id": "a1111111-1111-4111-8111-111111111111",
+      "image_url": "/assets/img/bg-remeras.png",
+      "storage_path": "/assets/img/bg-remeras.png",
+      "alt_text": "",
+      "position": 1,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "5b6d0a55-6c80-42e9-acd7-5d31431c4016",
+      "product_id": "a2222222-2222-4222-8222-222222222222",
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "storage_path": "/assets/img/logo-ngl-diamond.jpeg",
+      "alt_text": "",
+      "position": 0,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "0b98e67a-cd36-432d-b512-66bb3389b306",
+      "product_id": "a2222222-2222-4222-8222-222222222222",
+      "image_url": "/assets/img/bg-buzos.png",
+      "storage_path": "/assets/img/bg-buzos.png",
+      "alt_text": "",
+      "position": 1,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "7eed0550-4507-42b8-abc7-bf14a216e01e",
+      "product_id": "a3333333-3333-4333-8333-333333333333",
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "storage_path": "/assets/img/logo-ngl-diamond.jpeg",
+      "alt_text": "",
+      "position": 0,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "ef1ce96f-b2e6-457b-b6a9-141ccd2f89bb",
+      "product_id": "a3333333-3333-4333-8333-333333333333",
+      "image_url": "/assets/img/bg-pantalones.png",
+      "storage_path": "/assets/img/bg-pantalones.png",
+      "alt_text": "",
+      "position": 1,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "71340a0d-0270-48d3-b9b4-aa4e84a0d520",
+      "product_id": "a4444444-4444-4444-8444-444444444444",
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "storage_path": "/assets/img/logo-ngl-diamond.jpeg",
+      "alt_text": "",
+      "position": 0,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "4347a1d7-2eb6-449b-a950-381dfe2a0891",
+      "product_id": "a4444444-4444-4444-8444-444444444444",
+      "image_url": "/assets/img/bg-camperas.png",
+      "storage_path": "/assets/img/bg-camperas.png",
+      "alt_text": "",
+      "position": 1,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "a9ac9946-9534-421f-ac4b-bc1d977f80fa",
+      "product_id": "a5555555-5555-4555-8555-555555555555",
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "storage_path": "/assets/img/logo-ngl-diamond.jpeg",
+      "alt_text": "",
+      "position": 0,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "7147d236-2504-47d9-b8f6-ad0d45182908",
+      "product_id": "a5555555-5555-4555-8555-555555555555",
+      "image_url": "/assets/img/bg-accesorios.png",
+      "storage_path": "/assets/img/bg-accesorios.png",
+      "alt_text": "",
+      "position": 1,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "7dcc223e-bd69-4b53-9044-c0d09992a571",
+      "product_id": "a6666666-6666-4666-8666-666666666666",
+      "image_url": "/assets/img/logo-ngl-diamond.jpeg",
+      "storage_path": "/assets/img/logo-ngl-diamond.jpeg",
+      "alt_text": "",
+      "position": 0,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "d7c71d9f-2034-4b45-9992-d3c8bfae236c",
+      "product_id": "8b7a3e17-9063-4710-abb1-0957a83b064c",
+      "image_url": "/uploads/test-img-1.jpg",
+      "storage_path": "/uploads/test-img-1.jpg",
+      "alt_text": "",
+      "position": 0,
+      "created_at": "2026-09-16T01:13:38.791Z",
+      "updated_at": "2026-09-16T01:13:38.791Z"
+    },
+    {
+      "id": "2b2d7f2c-834e-4e42-bcb4-f46f987924d8",
+      "product_id": "8b7a3e17-9063-4710-abb1-0957a83b064c",
+      "image_url": "/uploads/test-img-2.jpg",
+      "storage_path": "/uploads/test-img-2.jpg",
+      "alt_text": "",
+      "position": 1,
+      "created_at": "2026-09-16T01:13:38.791Z",
+      "updated_at": "2026-09-16T01:13:38.791Z"
+    },
+    {
+      "id": "42b20f34-7ff6-40c2-8825-d8649d893874",
+      "product_id": "8b7a3e17-9063-4710-abb1-0957a83b064c",
+      "image_url": "/uploads/test-img-3.jpg",
+      "storage_path": "/uploads/test-img-3.jpg",
+      "alt_text": "",
+      "position": 2,
+      "created_at": "2026-09-16T01:13:38.792Z",
+      "updated_at": "2026-09-16T01:13:38.792Z"
+    },
+    {
+      "id": "119ad491-dfbc-4ddf-9582-1df60b5a2e32",
+      "product_id": "507a0e12-d3a1-43cf-8e02-2e36f3017f44",
+      "image_url": "/uploads/test-img-1.jpg",
+      "storage_path": "/uploads/test-img-1.jpg",
+      "alt_text": "",
+      "position": 0,
+      "created_at": "2026-09-16T01:14:03.538Z",
+      "updated_at": "2026-09-16T01:14:03.538Z"
+    },
+    {
+      "id": "b75fddbf-e49b-4a31-a326-ea5905adcdb2",
+      "product_id": "507a0e12-d3a1-43cf-8e02-2e36f3017f44",
+      "image_url": "/uploads/test-img-2.jpg",
+      "storage_path": "/uploads/test-img-2.jpg",
+      "alt_text": "",
+      "position": 1,
+      "created_at": "2026-09-16T01:14:03.539Z",
+      "updated_at": "2026-09-16T01:14:03.539Z"
+    },
+    {
+      "id": "bf7ddf9b-fc67-4b24-8872-39f57e02c94c",
+      "product_id": "507a0e12-d3a1-43cf-8e02-2e36f3017f44",
+      "image_url": "/uploads/test-img-3.jpg",
+      "storage_path": "/uploads/test-img-3.jpg",
+      "alt_text": "",
+      "position": 2,
+      "created_at": "2026-09-16T01:14:03.539Z",
+      "updated_at": "2026-09-16T01:14:03.539Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": "c1111111-1111-4111-8111-111111111111",
+      "name": "Pantalones",
+      "slug": "pantalones",
+      "subtitle": "CARGADO DESDE PANEL ADMIN",
+      "sort_order": 1,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "c2222222-2222-4222-8222-222222222222",
+      "name": "Camperas",
+      "slug": "camperas",
+      "subtitle": "CARGADO DESDE PANEL ADMIN",
+      "sort_order": 2,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "c3333333-3333-4333-8333-333333333333",
+      "name": "Buzos",
+      "slug": "buzos",
+      "subtitle": "CARGADO DESDE PANEL ADMIN",
+      "sort_order": 3,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "c4444444-4444-4444-8444-444444444444",
+      "name": "Remeras",
+      "slug": "remeras",
+      "subtitle": "CARGADO DESDE PANEL ADMIN",
+      "sort_order": 4,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "c5555555-5555-4555-8555-555555555555",
+      "name": "Accesorios",
+      "slug": "accesorios",
+      "subtitle": "CARGADO DESDE PANEL ADMIN",
+      "sort_order": 5,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    }
+  ],
+  "subcategories": [
+    {
+      "id": "s1111111-1111-4111-8111-111111111111",
+      "category_id": "c1111111-1111-4111-8111-111111111111",
+      "category_slug": "pantalones",
+      "name": "Cargo",
+      "slug": "cargo",
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "s1111111-1111-4111-8111-222222222222",
+      "category_id": "c1111111-1111-4111-8111-111111111111",
+      "category_slug": "pantalones",
+      "name": "Jeans",
+      "slug": "jeans",
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "s1111111-1111-4111-8111-333333333333",
+      "category_id": "c1111111-1111-4111-8111-111111111111",
+      "category_slug": "pantalones",
+      "name": "Joggers",
+      "slug": "joggers",
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "s2222222-2222-4222-8222-111111111111",
+      "category_id": "c2222222-2222-4222-8222-222222222222",
+      "category_slug": "camperas",
+      "name": "Bomber",
+      "slug": "bomber",
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "s2222222-2222-4222-8222-222222222222",
+      "category_id": "c2222222-2222-4222-8222-222222222222",
+      "category_slug": "camperas",
+      "name": "Puffer",
+      "slug": "puffer",
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "s3333333-3333-4333-8333-111111111111",
+      "category_id": "c3333333-3333-4333-8333-333333333333",
+      "category_slug": "buzos",
+      "name": "Hoodies",
+      "slug": "hoodies",
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "s4444444-4444-4444-8444-111111111111",
+      "category_id": "c4444444-4444-4444-8444-444444444444",
+      "category_slug": "remeras",
+      "name": "Oversized",
+      "slug": "oversized",
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "s5555555-5555-4555-8555-111111111111",
+      "category_id": "c5555555-5555-4555-8555-555555555555",
+      "category_slug": "accesorios",
+      "name": "Gorras",
+      "slug": "gorras",
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    }
+  ],
+  "promotions": [
+    {
+      "id": "p1111111-1111-4111-8111-111111111111",
+      "title": "COMBO STREETWEAR TEMPORADA",
+      "slug": "combo-streetwear-temporada",
+      "short_description": "Precios especiales llevando conjuntos",
+      "description": "Llevate remera y buzo con descuento directo en el checkout.",
+      "terms_and_conditions": "Hasta agotar stock de talles disponibles.",
+      "discount_type": "override_products",
+      "discount_value": 15,
+      "banner_image_url": "/assets/img/promo-title-promos-exclusivas-removebg.png",
+      "cta_text": "APROVECHAR",
+      "cta_link": "#remeras",
+      "badge_label": "COMBO",
+      "badge_color": "#6366f1",
+      "start_date": "2026-09-16T01:13:08.999Z",
+      "end_date": "2026-09-23T01:13:08.999Z",
+      "active": true,
+      "featured": true,
+      "sort_order": 0,
+      "created_by": "b8c4d29e-47f2-4e08-9b87-4e782d2f7a01",
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    }
+  ],
+  "promotion_products": [
+    {
+      "id": "fa43af15-0007-408b-8443-a38482b1a34e",
+      "promotion_id": "p1111111-1111-4111-8111-111111111111",
+      "product_id": "a1111111-1111-4111-8111-111111111111",
+      "override_price": null,
+      "discount_percentage": 15,
+      "product_note": "Descuento especial combo",
+      "sort_order": 0,
+      "active": true,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "23573f0f-ed96-4830-97b3-33ee2e80c3d7",
+      "promotion_id": "p1111111-1111-4111-8111-111111111111",
+      "product_id": "a2222222-2222-4222-8222-222222222222",
+      "override_price": null,
+      "discount_percentage": 15,
+      "product_note": "Descuento especial combo",
+      "sort_order": 1,
+      "active": true,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    }
+  ],
+  "promo_banners": [
+    {
+      "id": "b1111111-1111-4111-8111-111111111111",
+      "title": "PROMOS EXCLUSIVAS",
+      "subtitle": "Prendas seleccionadas con descuento especial por tiempo limitado.",
+      "cta_text": "VER LAS PROMOS",
+      "link": "#pantalones",
+      "image_url": "/assets/img/promo-title-promos-exclusivas-removebg.png",
+      "active": true,
+      "banner_type": "oferta",
+      "short_description": "Prendas urbanas con precio exclusivo",
+      "description": "Promoción válida en catálogo online hasta agotar stock.",
+      "terms_and_conditions": "No acumulable con otros cupones.",
+      "discount_type": "override_products",
+      "discount_value": 20,
+      "badge_label": "OFERTA",
+      "badge_color": "#ef4444",
+      "start_date": "2026-09-16T01:13:08.999Z",
+      "end_date": "2026-09-30T01:13:08.999Z",
+      "sort_order": 0,
+      "featured": true,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    }
+  ],
+  "promo_banner_items": [
+    {
+      "id": "3af7a548-1328-46da-a6c2-f298cf31aad2",
+      "banner_id": "b1111111-1111-4111-8111-111111111111",
+      "product_id": "a1111111-1111-4111-8111-111111111111",
+      "promo_price": 24200,
+      "sort_order": 0,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    },
+    {
+      "id": "4e976cde-674d-460c-bb16-4a2994774197",
+      "banner_id": "b1111111-1111-4111-8111-111111111111",
+      "product_id": "a2222222-2222-4222-8222-222222222222",
+      "promo_price": 42400,
+      "sort_order": 1,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    }
+  ],
+  "orders": [],
+  "order_items": [],
+  "profiles": [
+    {
+      "id": "b8c4d29e-47f2-4e08-9b87-4e782d2f7a01",
+      "first_name": "Administrador",
+      "last_name": "",
+      "email": "admin@narel.local",
+      "password_hash": "$2a$10$K2AESCe5znDOgdSJIB1vZ.zUZ8zaJjJPhT0D/fK4DdYaBjVp9nxby",
+      "role": "admin",
+      "reset_token_hash": null,
+      "reset_token_expires_at": null,
+      "created_at": "2026-09-16T01:13:08.999Z",
+      "updated_at": "2026-09-16T01:13:08.999Z"
+    }
+  ],
+  "orderSequence": 1
+}
