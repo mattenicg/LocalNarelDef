@@ -2939,18 +2939,16 @@
     body.is-category-page #secciones-grid {
       display: none !important;
     }
-    body.is-category-page .catalog-section:not(#remeras):not(#otros-servicios) {
+    body.is-category-page .catalog-section:not(#remeras) {
       display: none !important;
     }
-    body.is-category-page #remeras,
-    body.is-category-page #otros-servicios {
+    body.is-category-page #remeras {
       display: block !important;
     }
     body.is-category-page #como-comprar,
     body.is-category-page #politicas-cambio {
       display: block !important;
     }
-    body.is-category-page #otros-servicios .scroll-reveal,
     body.is-category-page #como-comprar .scroll-reveal,
     body.is-category-page #politicas-cambio .scroll-reveal {
       opacity: 1 !important;
@@ -6759,10 +6757,9 @@
       }
     }
     /* FORZAR APARICION DE SECCIONES AL FINAL */
-    #otros-servicios, #como-comprar, #politicas-cambio {
+    #como-comprar, #politicas-cambio {
       display: block !important;
     }
-    #otros-servicios .scroll-reveal,
     #como-comprar .scroll-reveal,
     #politicas-cambio .scroll-reveal {
       opacity: 1 !important;
@@ -6856,13 +6853,7 @@
                 <span class="nav-dd-desc">Gorras, medias, cadenas</span>
               </div>
             </a>
-            <a href="/#otros-servicios" class="nav-dropdown-item" role="menuitem" id="navItemOtrosServicios">
-              <span class="nav-dd-badge">06</span>
-              <div class="nav-dd-info">
-                <span class="nav-dd-name">OTROS SERVICIOS</span>
-                <span class="nav-dd-desc">Atención y servicios especiales</span>
-              </div>
-            </a>
+
           </div>
           <div class="nav-dropdown-footer">
             <button type="button" class="nav-dropdown-panel-btn" id="openDrawerFromNavBtn">
@@ -6959,7 +6950,6 @@
       <a href="/buzos">BUZOS</a>
       <a href="/remeras">REMERAS</a>
       <a href="/accesorios">ACCESORIOS</a>
-      <a href="/#otros-servicios">OTROS SERVICIOS</a>
       <a href="/#como-comprar">¿CÓMO COMPRAR?</a>
       <a href="/#politicas-cambio">POLÍTICAS DE CAMBIO</a>
       <a href="/#contacto">CONTACTO</a>
@@ -7094,11 +7084,7 @@
           <h3>ACCESORIOS</h3>
           <span class="view">VER MÁS <span>↗</span></span>
         </a>
-        <a href="/#otros-servicios" class="category scroll-reveal" id="cardOtrosServicios">
-          <span class="num">06</span>
-          <h3>OTROS<br>SERVICIOS</h3>
-          <span class="view">VER MÁS <span>↗</span></span>
-        </a>
+
       </div>
     </section>
 
@@ -7176,83 +7162,24 @@
       </div>
     </section>
 
-    <!-- ===== SECCIÓN: OTROS SERVICIOS ===== -->
-    <section class="catalog-section services-section" id="otros-servicios">
-      <div class="section-label scroll-reveal">
-        <span class="bar"></span>
-        <div>
-          <h3>OTROS SERVICIOS</h3>
-          <small>· BARBERÍA · PIERCING · TATUAJES · MÁS</small>
-        </div>
-      </div>
-      <p class="services-intro scroll-reveal">
-        ✦ El <b>único espacio</b> en Santa Fe Capital que combina indumentaria con experiencia completa de estilo y
-        cuidado personal. Reservá tu turno por WhatsApp. ✦
-      </p>
-      <div class="services-grid">
-        <a href="https://wa.me/5493425285118" target="_blank" rel="noopener" class="service-card scroll-reveal">
-          <div class="service-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path d="M12 2a4 4 0 0 0-4 4c0 2.2 1.8 4 4 4s4-1.8 4-4a4 4 0 0 0-4-4z" />
-              <path d="M4 22c0-4 4-6 8-6s8 2 8 6" />
-              <circle cx="18" cy="8" r="1.2" />
-              <path d="M17 10.5l2 2M15 12l1-1.5" />
-            </svg>
-          </div>
-          <span class="service-num">S 01</span>
-          <h4>BARBERIA</h4>
-          <p>Turnos de corte, perfilado de barba, estilo y terminación premium.</p>
-          <span class="service-cta">RESERVAR TURNO ↗</span>
-        </a>
-        <a href="https://wa.me/543424782470" target="_blank" rel="noopener" class="service-card scroll-reveal">
-          <div class="service-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path d="M12 2c2 2 4 4 4 7a4 4 0 1 1-8 0c0-3 2-5 4-7z" />
-              <circle cx="12" cy="9" r="1.3" />
-              <path d="M9 17c-1 0-3 0-3 3v2h12v-2c0-3-2-3-3-3" />
-            </svg>
-          </div>
-          <span class="service-num">S 02</span>
-          <h4>PIERCING</h4>
-          <p>Colocación profesional con material de calidad, higiene y asesoramiento.</p>
-          <span class="service-cta">RESERVAR TURNO ↗</span>
-        </a>
-        <a href="https://wa.me/543424782470" target="_blank" rel="noopener" class="service-card scroll-reveal">
-          <div class="service-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path d="M14 4c4 4 4 8 0 12l-6 4 4-6c-4-4-4-8 0-12l2-1z" />
-              <path d="M7 15l2-3" />
-              <circle cx="11" cy="12" r="1" />
-              <path d="M3 20l3-1" />
-            </svg>
-          </div>
-          <span class="service-num">S 03</span>
-          <h4>TATTOO</h4>
-          <p>Diseños personalizados, cover-ups y tinta con artistas profesionales.</p>
-          <span class="service-cta">RESERVAR TURNO ↗</span>
-        </a>
-      </div>
-    </section>
+
 
     <!-- ===== ¿CÓMO COMPRAR? ===== -->
     <section class="how-to-buy" id="como-comprar" aria-labelledby="howToBuyTitle">
-      <div class="section-label scroll-reveal">
+      <div class="section-label">
         <span class="bar"></span>
         <div>
           <h3 id="howToBuyTitle">¿COMO COMPRAR?</h3>
           <small>· PASO A PASO · FÁCIL PARA TODOS</small>
         </div>
       </div>
-      <p class="how-to-buy-intro scroll-reveal">
+      <p class="how-to-buy-intro">
         Comprar en NAREL es <b>simple y seguro</b>. Son cuatro pasos, no hace falta ser experto y siempre podés
         pedirnos ayuda por WhatsApp.
       </p>
 
       <ol class="how-steps">
-        <li class="how-step scroll-reveal">
+        <li class="how-step">
           <span class="how-step-num" aria-hidden="true">1</span>
           <div class="how-step-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -7264,7 +7191,7 @@
             una para ver la foto, el precio y los talles disponibles.</p>
         </li>
 
-        <li class="how-step scroll-reveal">
+        <li class="how-step">
           <span class="how-step-num" aria-hidden="true">2</span>
           <div class="how-step-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -7277,7 +7204,7 @@
           <span class="how-demo-btn" aria-hidden="true">Agregar</span>
         </li>
 
-        <li class="how-step scroll-reveal">
+        <li class="how-step">
           <span class="how-step-num" aria-hidden="true">3</span>
           <div class="how-step-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -7290,7 +7217,7 @@
           <span class="how-demo-btn ghost" aria-hidden="true">Finalizar compra</span>
         </li>
 
-        <li class="how-step scroll-reveal">
+        <li class="how-step">
           <span class="how-step-num" aria-hidden="true">4</span>
           <div class="how-step-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -7303,7 +7230,7 @@
         </li>
       </ol>
 
-      <div class="how-timeline scroll-reveal" aria-label="Resumen: elegí, pagá, recibí">
+      <div class="how-timeline" aria-label="Resumen: elegí, pagá, recibí">
         <div class="how-timeline-item">
           <strong>Elegí</strong>
           <span>Tu prenda y tu talle</span>
@@ -7320,7 +7247,7 @@
         </div>
       </div>
 
-      <div class="how-help scroll-reveal">
+      <div class="how-help">
         <p>¿Te trabaste en algún paso o preferís que te ayudemos? <b>Escribinos por WhatsApp</b> y te acompañamos con la
           compra.</p>
         <a href="https://wa.me/5493425567173?text=%C2%A1Buenas%2C%20NAREL%21%20Quiero%20comprar%20por%20la%20web%20y%20necesito%20una%20mano%20con%20los%20pasos."
@@ -7335,19 +7262,19 @@
 
     <!-- ===== POLÍTICAS DE CAMBIO ===== -->
     <section class="return-policy" id="politicas-cambio" aria-labelledby="returnPolicyTitle">
-      <div class="section-label scroll-reveal">
+      <div class="section-label">
         <span class="bar"></span>
         <div>
           <h3 id="returnPolicyTitle">POLITICAS DE CAMBIO</h3>
           <small>· TÉRMINOS Y CONDICIONES · CLARO Y TRANSPARENTE</small>
         </div>
       </div>
-      <p class="return-policy-intro scroll-reveal">
+      <p class="return-policy-intro">
         Para que tu experiencia de compra sea clara y segura, conocé los puntos a tener en cuenta para realizar cambios de prendas o talles:
       </p>
 
       <div class="return-policy-grid">
-        <div class="return-policy-card scroll-reveal">
+        <div class="return-policy-card">
           <span class="return-policy-num" aria-hidden="true">1</span>
           <div class="return-policy-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -7358,7 +7285,7 @@
           <p>El envío por cambios de prenda o talles queda a cargo exclusivamente del cliente.</p>
         </div>
 
-        <div class="return-policy-card scroll-reveal">
+        <div class="return-policy-card">
           <span class="return-policy-num" aria-hidden="true">2</span>
           <div class="return-policy-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -7369,7 +7296,7 @@
           <p>Si notan que la prenda al momento de abrirla está fallada, manchada o con algún defecto de fábrica, se debe informar al momento de recibirla. <b>(Si esto no sucede, corre por cuenta del cliente los gastos.)</b></p>
         </div>
 
-        <div class="return-policy-card scroll-reveal">
+        <div class="return-policy-card">
           <span class="return-policy-num" aria-hidden="true">3</span>
           <div class="return-policy-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -7562,7 +7489,6 @@
         <a href="/buzos">Buzos</a>
         <a href="/remeras">Remeras</a>
         <a href="/accesorios">Accesorios</a>
-        <a href="/#otros-servicios">Otros Servicios</a>
       </div>
       <div class="foot-col">
         <h5>Info</h5>
@@ -8073,7 +7999,7 @@
     const sections = document.querySelectorAll('.catalog-section, .services-section, .hero, .info-strip');
     const allNavLinks = document.querySelectorAll('nav > a, .nav-secciones-dropdown a, #mobileNavLinks a');
     const navSectionsBtnEl = document.getElementById('navSectionsBtn');
-    const catalogSectionIds = ['pantalones', 'camperas', 'buzos', 'remeras', 'accesorios', 'otros-servicios'];
+    const catalogSectionIds = ['pantalones', 'camperas', 'buzos', 'remeras', 'accesorios'];
 
     const navObserver = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -9025,7 +8951,7 @@
           return sec;
         }
 
-        // Si es una categoría nueva agregada dinámicamente, la creamos antes de otros-servicios
+        // Si es una categoría nueva agregada dinámicamente, la creamos antes de como-comprar
         sec = document.createElement('section');
         sec.className = 'catalog-section';
         sec.id = catSlug;
@@ -9039,7 +8965,7 @@
           </div>
           <div class="products" data-category="${htmlEscape(catSlug)}"></div>
         `;
-        const refSection = document.getElementById('otros-servicios') || document.getElementById('como-comprar');
+        const refSection = document.getElementById('como-comprar');
         if (refSection && refSection.parentElement) {
           refSection.parentElement.insertBefore(sec, refSection);
         } else {
@@ -9051,9 +8977,6 @@
 
       function syncCatalogWithCategories(categories) {
         if (!Array.isArray(categories) || !categories.length) return;
-
-        // Número dinámico para la tarjeta de OTROS SERVICIOS / Cómo comprar (N de secciones + 1)
-        const nextNum = String(categories.length + 1).padStart(2, '0');
 
         // 1. Sincronizar Header Dropdown
         const navGrid = document.getElementById('navDropdownGrid');
@@ -9070,15 +8993,7 @@
                 </div>
               </a>
             `;
-          }).join('') + `
-            <a href="/#otros-servicios" class="nav-dropdown-item" role="menuitem" id="navItemOtrosServicios">
-              <span class="nav-dd-badge">${nextNum}</span>
-              <div class="nav-dd-info">
-                <span class="nav-dd-name">OTROS SERVICIOS</span>
-                <span class="nav-dd-desc">Venta mayorista y consultas</span>
-              </div>
-            </a>
-          `;
+          }).join('');
         }
 
         // 2. Sincronizar grilla de Categorías (Acceso Rápido)
@@ -9093,13 +9008,7 @@
                 <span class="view">VER MÁS <span>↗</span></span>
               </a>
             `;
-          }).join('') + `
-            <a href="/#otros-servicios" class="category scroll-reveal is-visible" id="cardOtrosServicios">
-              <span class="num">${nextNum}</span>
-              <h3>OTROS<br>SERVICIOS</h3>
-              <span class="view">VER MÁS <span>↗</span></span>
-            </a>
-          `;
+          }).join('');
           if (typeof window.initScrollReveal === 'function') {
             window.initScrollReveal(secGrid);
           }
@@ -9111,7 +9020,6 @@
           mobNav.innerHTML = `
             <a href="/" class="active" id="mobileNavInicioLink">INICIO</a>
             ${categories.map(c => `<a href="/${htmlEscape(c.slug)}">${htmlEscape(c.name.toUpperCase())}</a>`).join('')}
-            <a href="/#otros-servicios">OTROS SERVICIOS</a>
             <a href="/#como-comprar">¿CÓMO COMPRAR?</a>
             <a href="/#politicas-cambio">POLÍTICAS DE CAMBIO</a>
             <a href="/#contacto">CONTACTO</a>
@@ -9163,7 +9071,6 @@
         const categoriesGrid = document.querySelector('.categories');
         const promoBannerSec = document.getElementById('promo-banner');
         const shippingPromo = document.getElementById('shippingPromoBanner');
-        const otherServices = document.getElementById('otros-servicios');
         const howToBuy = document.getElementById('como-comprar');
         const returnPolicy = document.getElementById('politicas-cambio');
         const navInicio = document.getElementById('navInicioLink');
@@ -9206,7 +9113,6 @@
           if (categoriesGrid) categoriesGrid.style.display = 'none';
           if (promoBannerSec) promoBannerSec.style.display = 'none';
           if (shippingPromo) shippingPromo.style.display = 'none';
-          if (otherServices) otherServices.style.display = 'block';
           if (howToBuy) howToBuy.style.display = 'block';
           if (returnPolicy) returnPolicy.style.display = 'block';
 
@@ -9223,10 +9129,10 @@
             }
           });
 
-          // Show target category section and general sections (otros-servicios, etc.)
+          // Show target category section and general sections
           document.querySelectorAll('.catalog-section').forEach((sec) => {
             const secId = sec.id.toLowerCase();
-            if (secId === catSlug || secId === 'otros-servicios' || secId === 'como-comprar' || secId === 'politicas-cambio') {
+            if (secId === catSlug || secId === 'como-comprar' || secId === 'politicas-cambio') {
               sec.style.display = 'block';
               if (secId === catSlug) {
                 const label = sec.querySelector('.section-label');
@@ -9271,7 +9177,6 @@
           if (heroEl) heroEl.style.display = '';
           if (categoriesGrid) categoriesGrid.style.display = '';
           if (shippingPromo) shippingPromo.style.display = '';
-          if (otherServices) otherServices.style.display = '';
           if (howToBuy) howToBuy.style.display = '';
           if (returnPolicy) returnPolicy.style.display = '';
 
@@ -9363,11 +9268,11 @@
             });
           });
 
-          // Bind smooth scroll for hash section links (otros-servicios, como-comprar, politicas-cambio)
-          document.querySelectorAll('a[href*="#otros-servicios"], a[href*="#como-comprar"], a[href*="#politicas-cambio"]').forEach((a) => {
+          // Bind smooth scroll for hash section links (como-comprar, politicas-cambio)
+          document.querySelectorAll('a[href*="#como-comprar"], a[href*="#politicas-cambio"]').forEach((a) => {
             a.addEventListener('click', (e) => {
               const href = a.getAttribute('href') || '';
-              const hashMatch = href.match(/#(otros-servicios|como-comprar|politicas-cambio)/);
+              const hashMatch = href.match(/#(como-comprar|politicas-cambio)/);
               if (hashMatch && hashMatch[1]) {
                 const targetId = hashMatch[1];
                 const targetEl = document.getElementById(targetId);

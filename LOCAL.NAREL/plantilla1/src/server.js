@@ -470,22 +470,7 @@ async function servirTienda(_req, res) {
     const promoConfig = await getShippingPromoConfig();
     let html = fs.readFileSync(storefrontFile, 'utf8');
 
-    // Calcular número dinámico para la tarjeta OTROS SERVICIOS (cantidad de categorías + 1)
-    try {
-      const catCountRes = await query('SELECT count(*)::int AS count FROM categories');
-      const catCount = (catCountRes && catCountRes.rows && Number(catCountRes.rows[0]?.count)) || 0;
-      if (catCount > 0) {
-        const nextNum = String(catCount + 1).padStart(2, '0');
-        html = html.replace(
-          /(<a\s+href="\/#otros-servicios"[^>]*id="cardOtrosServicios"[^>]*>[\s\S]*?<span\s+class="num">)[^<]*(<\/span>)/i,
-          `$1${nextNum}$2`
-        );
-        html = html.replace(
-          /(<a\s+href="\/#otros-servicios"[^>]*id="navItemOtrosServicios"[^>]*>[\s\S]*?<span\s+class="nav-dd-badge">)[^<]*(<\/span>)/i,
-          `$1${nextNum}$2`
-        );
-      }
-    } catch (_countErr) {}
+
 
     const safeConfig = JSON.stringify(promoConfig).replace(/<\/script/gi, '<\\/script');
     const injection = `<script id="__promo_config_injected">window.__SHIPPING_PROMO_CONFIG__ = ${safeConfig};</script>`;
@@ -624,18 +609,16 @@ async function servirCategoriaOTienda(req, res, next) {
       body.is-category-page #secciones-grid {
         display: none !important;
       }
-      body.is-category-page .catalog-section:not(#${cat.slug}):not(#otros-servicios) {
+      body.is-category-page .catalog-section:not(#${cat.slug}) {
         display: none !important;
       }
-      body.is-category-page #${cat.slug},
-      body.is-category-page #otros-servicios {
+      body.is-category-page #${cat.slug} {
         display: block !important;
       }
       body.is-category-page #como-comprar,
       body.is-category-page #politicas-cambio {
         display: block !important;
       }
-      body.is-category-page #otros-servicios .scroll-reveal,
       body.is-category-page #como-comprar .scroll-reveal,
       body.is-category-page #politicas-cambio .scroll-reveal {
         opacity: 1 !important;

@@ -26,18 +26,16 @@ categories.forEach(cat => {
     body.is-category-page #secciones-grid {
       display: none !important;
     }
-    body.is-category-page .catalog-section:not(#${cat.slug}):not(#otros-servicios) {
+    body.is-category-page .catalog-section:not(#${cat.slug}) {
       display: none !important;
     }
-    body.is-category-page #${cat.slug},
-    body.is-category-page #otros-servicios {
+    body.is-category-page #${cat.slug} {
       display: block !important;
     }
     body.is-category-page #como-comprar,
     body.is-category-page #politicas-cambio {
       display: block !important;
     }
-    body.is-category-page #otros-servicios .scroll-reveal,
     body.is-category-page #como-comprar .scroll-reveal,
     body.is-category-page #politicas-cambio .scroll-reveal {
       opacity: 1 !important;
