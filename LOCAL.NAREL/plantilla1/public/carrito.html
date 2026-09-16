@@ -14,10 +14,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500;700&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/storefront-checkout.css?v=20260916-1">
-  <link rel="stylesheet" href="/assets/css/storefront-promo-banners.css?v=20260916-1">
-  <link rel="stylesheet" href="/assets/css/storefront-how-to-buy.css?v=20260916-1">
-  <link rel="stylesheet" href="/assets/css/storefront-sections-menu.css?v=20260916-1">
+  <link rel="stylesheet" href="/assets/css/storefront-checkout.css?v=20260916-2">
+  <link rel="stylesheet" href="/assets/css/storefront-promo-banners.css?v=20260916-2">
+  <link rel="stylesheet" href="/assets/css/storefront-promo-shipping.css?v=20260916-2">
 
   <style>
     :root {
@@ -26,7 +25,8 @@
       --dark2: #161616;
       --dark3: #1a1a1a;
       --yellow: #eab308;
-      --yellow-glow: rgba(234, 179, 8, 0.2);
+      --yellow-glow: rgba(234, 179, 8, 0.18);
+      --green-free: #4ade80;
       --white: #ffffff;
       --grey: #a1a1aa;
       --grey-light: #d4d4d8;
@@ -130,7 +130,7 @@
       color: var(--yellow);
     }
 
-    .bag b, .badge-circle {
+    .bag b {
       background: var(--yellow);
       color: var(--black);
       padding: 2px 6px;
@@ -161,7 +161,7 @@
     .cart-page-title {
       margin: 0;
       font-family: var(--fuente-fraktur);
-      font-size: clamp(24px, 4vw, 36px);
+      font-size: clamp(24px, 4vw, 34px);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -211,7 +211,7 @@
       gap: 32px;
     }
 
-    /* CART ITEMS SECTION */
+    /* CART ITEMS CARD */
     .cart-items-card {
       background: var(--dark1);
       border: 1px solid var(--border);
@@ -306,7 +306,6 @@
       align-items: center;
       gap: 16px;
       margin-top: 4px;
-      flex-wrap: wrap;
     }
 
     .qty-picker {
@@ -382,15 +381,15 @@
       stroke-width: 2;
     }
 
-    /* SECCIÓN DE OPCIONES DE ENTREGA */
+    /* SECCIÓN DE ENTREGA (DISEÑO FIEL A REFERENCIA VISUAL) */
     .delivery-section-card {
       background: var(--dark1);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 24px;
+      border-radius: 6px;
+      padding: 28px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 24px;
     }
 
     .delivery-section-header {
@@ -398,23 +397,27 @@
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 16px;
+      padding-bottom: 20px;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 16px;
     }
 
     .delivery-title-box {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+    }
+
+    .delivery-title-box svg {
+      color: var(--white);
     }
 
     .delivery-title {
       margin: 0;
-      font-family: 'Oswald', sans-serif;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+      font-family: 'Bebas Neue', 'Oswald', sans-serif;
+      font-size: 26px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--white);
     }
@@ -422,29 +425,31 @@
     .cp-badge-bar {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .cp-badge {
       background: var(--dark2);
       border: 1px solid var(--border);
-      padding: 4px 10px;
+      padding: 6px 14px;
       border-radius: 3px;
       font-family: 'DM Mono', monospace;
-      font-size: 12px;
+      font-size: 13px;
       color: var(--yellow);
       font-weight: 700;
+      letter-spacing: 0.05em;
     }
 
     .btn-change-cp {
-      background: transparent;
+      background: var(--dark2);
       border: 1px solid var(--border);
       color: var(--grey-light);
-      padding: 4px 10px;
+      padding: 6px 14px;
       border-radius: 3px;
       font-family: 'Oswald', sans-serif;
       font-size: 11px;
-      letter-spacing: 0.1em;
+      font-weight: 600;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       cursor: pointer;
       transition: all 0.2s;
@@ -455,25 +460,26 @@
       color: var(--yellow);
     }
 
-    /* INPUT DE CÓDIGO POSTAL */
+    /* FORMULARIO DE CÓDIGO POSTAL */
     .cp-input-box {
       background: var(--dark2);
       border: 1px solid var(--border);
-      padding: 20px;
+      padding: 24px;
       border-radius: 4px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
 
     .cp-input-label {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--grey-light);
+      line-height: 1.5;
     }
 
     .cp-input-group {
       display: flex;
-      gap: 8px;
+      gap: 10px;
     }
 
     .cp-input-group input {
@@ -481,11 +487,12 @@
       background: var(--black);
       border: 1px solid var(--border);
       color: var(--white);
-      padding: 12px 14px;
+      padding: 14px 16px;
       font-family: 'DM Mono', monospace;
-      font-size: 14px;
+      font-size: 15px;
       outline: none;
       transition: border-color 0.2s;
+      border-radius: 2px;
     }
 
     .cp-input-group input:focus {
@@ -496,15 +503,16 @@
       background: var(--yellow);
       color: var(--black);
       border: none;
-      padding: 12px 20px;
+      padding: 14px 24px;
       font-family: 'Oswald', sans-serif;
       font-weight: 700;
-      font-size: 12px;
+      font-size: 13px;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       cursor: pointer;
       transition: background 0.2s;
       white-space: nowrap;
+      border-radius: 2px;
     }
 
     .btn-submit-cp:hover {
@@ -516,34 +524,34 @@
       color: #fca5a5;
       background: rgba(239, 68, 68, 0.12);
       border: 1px solid rgba(239, 68, 68, 0.3);
-      padding: 8px 12px;
+      padding: 10px 14px;
       border-radius: 3px;
       display: none;
     }
 
-    /* CATEGORÍAS Y TARJETAS DE OPCIÓN DE ENTREGA */
+    /* CATEGORÍAS DE ENTREGA Y TARJETAS */
     .delivery-options-container {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 24px;
     }
 
     .delivery-category-group {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
 
     .delivery-category-title {
-      font-family: 'Oswald', sans-serif;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.15em;
+      font-family: 'Bebas Neue', 'Oswald', sans-serif;
+      font-size: 17px;
+      font-weight: 400;
+      letter-spacing: 0.12em;
       color: var(--grey);
       text-transform: uppercase;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
     }
 
     .delivery-category-title::after {
@@ -556,11 +564,11 @@
     .delivery-option-card {
       background: var(--dark2);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 16px 20px;
+      border-radius: 6px;
+      padding: 18px 22px;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 18px;
       cursor: pointer;
       transition: all 0.2s ease;
       position: relative;
@@ -573,13 +581,14 @@
 
     .delivery-option-card.selected {
       border-color: var(--yellow);
-      background: rgba(234, 179, 8, 0.05);
-      box-shadow: 0 0 12px var(--yellow-glow);
+      background: rgba(234, 179, 8, 0.04);
+      box-shadow: 0 0 16px var(--yellow-glow);
     }
 
+    /* RADIO BUTTON CON PUNTO AMARILLO (⊙) */
     .custom-radio {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       border: 2px solid var(--grey);
       border-radius: 50%;
       display: flex;
@@ -587,6 +596,7 @@
       justify-content: center;
       flex-shrink: 0;
       transition: all 0.2s;
+      background: transparent;
     }
 
     .delivery-option-card.selected .custom-radio {
@@ -594,8 +604,8 @@
     }
 
     .custom-radio-dot {
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       background: var(--yellow);
       border-radius: 50%;
       display: none;
@@ -614,13 +624,13 @@
 
     .delivery-option-name {
       font-family: 'Oswald', sans-serif;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
       color: var(--white);
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
@@ -631,26 +641,33 @@
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--border);
       color: var(--grey-light);
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 2px;
+      text-transform: uppercase;
     }
 
     .delivery-option-desc {
-      font-size: 12px;
-      color: var(--grey);
+      font-size: 13px;
+      color: var(--grey-light);
       line-height: 1.4;
     }
 
-    .delivery-option-eta {
+    .delivery-option-hours {
       font-size: 11px;
+      color: var(--grey);
+      margin-top: 2px;
+    }
+
+    .delivery-option-eta {
+      font-size: 12px;
       color: var(--yellow);
       font-weight: 500;
-      margin-top: 2px;
+      margin-top: 4px;
     }
 
     .delivery-option-price {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
+      font-size: 26px;
       letter-spacing: 0.05em;
       color: var(--yellow);
       text-align: right;
@@ -658,15 +675,16 @@
     }
 
     .delivery-option-price.free {
-      color: #4ade80;
+      color: var(--green-free);
+      font-weight: 700;
     }
 
-    /* ESTADO DE CARGA / ERROR */
+    /* CARGA Y ERRORES */
     .delivery-loading-box {
-      padding: 24px;
+      padding: 28px;
       text-align: center;
       color: var(--grey);
-      font-size: 13px;
+      font-size: 14px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -677,7 +695,7 @@
       background: transparent;
       border: 1px solid var(--yellow);
       color: var(--yellow);
-      padding: 8px 16px;
+      padding: 8px 18px;
       font-family: 'Oswald', sans-serif;
       font-size: 11px;
       letter-spacing: 0.1em;
@@ -686,7 +704,7 @@
       margin-top: 8px;
     }
 
-    /* EMPTY CART STATE */
+    /* ESTADO VACÍO */
     .empty-cart-view {
       padding: 60px 24px;
       text-align: center;
@@ -766,7 +784,6 @@
       color: var(--white);
     }
 
-    /* TOTALS BREAKDOWN */
     .summary-rows {
       display: flex;
       flex-direction: column;
@@ -861,9 +878,12 @@
       .delivery-option-card {
         padding: 14px;
         gap: 12px;
+        flex-wrap: wrap;
       }
       .delivery-option-price {
-        font-size: 18px;
+        font-size: 20px;
+        width: 100%;
+        text-align: right;
       }
     }
   </style>
@@ -932,11 +952,11 @@
           </div>
         </section>
 
-        <!-- SECCIÓN DE SELECCIÓN DE ENTREGA -->
+        <!-- SECCIÓN DE OPCIONES DE ENTREGA -->
         <section id="deliverySectionCard" class="delivery-section-card">
           <div class="delivery-section-header">
             <div class="delivery-title-box">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="1" y="3" width="15" height="13" />
                 <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
                 <circle cx="5.5" cy="18.5" r="2.5" />
@@ -947,21 +967,21 @@
             
             <div id="cpBadgeBar" class="cp-badge-bar" style="display:none;">
               <span id="cpBadgeText" class="cp-badge">CP ----</span>
-              <button type="button" id="changeCpBtn" class="btn-change-cp">Cambiar CP</button>
+              <button type="button" id="changeCpBtn" class="btn-change-cp">CAMBIAR CP</button>
             </div>
           </div>
 
           <!-- BLOQUE DE INGRESAR CÓDIGO POSTAL -->
           <div id="cpInputBox" class="cp-input-box">
-            <span class="cp-input-label">Ingresá tu código postal para ver las opciones de entrega disponibles para tu localidad:</span>
+            <span class="cp-input-label">Ingresá tu código postal para cotizar en tiempo real todas las opciones de entrega disponibles:</span>
             <div class="cp-input-group">
-              <input type="text" id="cpInput" placeholder="Código postal (ej: 2300)" maxlength="8">
-              <button type="button" id="submitCpBtn" class="btn-submit-cp">VER OPCIONES</button>
+              <input type="text" id="cpInput" placeholder="Código postal (ej: 2300 o 3000)" maxlength="8">
+              <button type="button" id="submitCpBtn" class="btn-submit-cp">CALCULAR ENVÍO</button>
             </div>
             <div id="cpErrorMsg" class="cp-error-msg"></div>
           </div>
 
-          <!-- BLOQUE DE LISTA DE OPCIONES DE ENTREGA -->
+          <!-- BLOQUE DE LISTA DE OPCIONES DE ENTREGA DE REFERENCIA -->
           <div id="deliveryOptionsContainer" class="delivery-options-container" style="display:none;">
             <!-- Renderizado dinámico por categorías -->
           </div>
@@ -974,7 +994,6 @@
       <aside class="summary-card">
         <h2 class="summary-title">RESUMEN DE COMPRA</h2>
 
-        <!-- DESGLOSE DE TOTALES -->
         <div class="summary-rows">
           <div class="summary-row">
             <span>Subtotal de productos</span>
@@ -990,7 +1009,6 @@
           </div>
         </div>
 
-        <!-- BOTÓN DE SALIDA A PAGO -->
         <button type="button" id="cartPageCheckoutBtn" class="btn-checkout-primary" disabled>
           CONTINUAR PARA EL PAGO
         </button>
@@ -998,7 +1016,7 @@
     </div>
   </main>
 
-  <!-- ===== PAYMENT MODAL EXISTENTE ===== -->
+  <!-- ===== PAYMENT MODAL ===== -->
   <div class="payment-modal" id="paymentModal" aria-hidden="true">
     <div class="payment-panel" role="dialog" aria-modal="true" aria-labelledby="payTitle">
       <div class="payment-header">
@@ -1078,9 +1096,9 @@
   <script src="/components/narel-card-payment.js"></script>
   <script src="/assets/js/storefrontCheckout.js"></script>
   <script src="/assets/js/storefrontPromoBanners.js"></script>
-  <script src="/assets/js/shippingPromo.js?v=20260916-1"></script>
+  <script src="/assets/js/shippingPromo.js?v=20260916-2"></script>
 
-  <!-- LÓGICA COMPLETA DE CARRITO Y SISTEMA DE ENTREGA -->
+  <!-- LÓGICA DE DÍAS Y FORMATO DINÁMICO DE FECHAS -->
   <script>
     (function () {
       'use strict';
@@ -1106,10 +1124,39 @@
       function formatMoney(num) {
         const n = Number(num) || 0;
         if (n === 0) return 'GRATIS';
-        return '$ ' + Math.round(n).toLocaleString('es-AR').replace(/,/g, '.');
+        return '$' + Math.round(n).toLocaleString('es-AR').replace(/,/g, '.');
       }
 
-      // Render de la lista de productos y totales
+      // Calcula rango de fechas reales hábiles
+      function getDeliveryDateRangeText(minDays, maxDays) {
+        if (!minDays || minDays === 0) return 'Plazo estimado: Inmediato (Horarios de atención)';
+
+        const now = new Date();
+        function addBusinessDays(date, days) {
+          let result = new Date(date);
+          let added = 0;
+          while (added < days) {
+            result.setDate(result.getDate() + 1);
+            const dayOfWeek = result.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+              added++;
+            }
+          }
+          return result;
+        }
+
+        const dMin = addBusinessDays(now, minDays);
+        const dMax = addBusinessDays(now, maxDays || (minDays + 2));
+
+        const daysOfWeek = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+        const minStr = `${daysOfWeek[dMin.getDay()]} ${String(dMin.getDate()).padStart(2, '0')}/${String(dMin.getMonth() + 1).padStart(2, '0')}`;
+        const maxStr = `${daysOfWeek[dMax.getDay()]} ${String(dMax.getDate()).padStart(2, '0')}/${String(dMax.getMonth() + 1).padStart(2, '0')}`;
+
+        return `Llega entre el ${minStr} y el ${maxStr}`;
+      }
+
+      // Renderizado del Carrito
       function renderCartPage() {
         const items = getCart();
         const container = document.getElementById('cartPageItems');
@@ -1126,9 +1173,8 @@
 
         if (headerQty) headerQty.textContent = `(${totalQty})`;
         if (countBadge) countBadge.textContent = String(totalQty);
-        if (subtotalEl) subtotalEl.textContent = '$ ' + Math.round(subtotal).toLocaleString('es-AR').replace(/,/g, '.');
+        if (subtotalEl) subtotalEl.textContent = '$' + Math.round(subtotal).toLocaleString('es-AR').replace(/,/g, '.');
 
-        // Si no hay productos
         if (items.length === 0) {
           if (container) {
             container.innerHTML = `
@@ -1170,7 +1216,7 @@
               <div class="cart-item-details">
                 <h4 class="cart-item-name">${item.name}</h4>
                 ${item.size ? `<span class="cart-item-badge">Talle ${item.size}</span>` : ''}
-                <div class="cart-item-unit-price">Precio unitario: $ ${Math.round(price).toLocaleString('es-AR').replace(/,/g, '.')}</div>
+                <div class="cart-item-unit-price">Precio unitario: $${Math.round(price).toLocaleString('es-AR').replace(/,/g, '.')}</div>
                 <div class="cart-item-controls">
                   <div class="qty-picker">
                     <button type="button" class="btn-dec" data-key="${itemKey}">−</button>
@@ -1183,29 +1229,28 @@
                 <button type="button" class="btn-remove-item" data-remove="${itemKey}" title="Eliminar producto">
                   <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
-                <div class="cart-item-total">$ ${Math.round(itemSubtotal).toLocaleString('es-AR').replace(/,/g, '.')}</div>
+                <div class="cart-item-total">$${Math.round(itemSubtotal).toLocaleString('es-AR').replace(/,/g, '.')}</div>
               </div>
             `;
             container.appendChild(row);
           });
         }
 
-        // Obtener opción seleccionada
         const selectedOpt = availableDeliveryOptions.find(o => o.id === selectedOptionId);
 
         if (selectedOpt) {
           const shippingCost = Number(selectedOpt.price) || 0;
           if (shippingEl) shippingEl.textContent = formatMoney(shippingCost);
-          if (totalEl) totalEl.textContent = '$ ' + Math.round(subtotal + shippingCost).toLocaleString('es-AR').replace(/,/g, '.');
+          if (totalEl) totalEl.textContent = '$' + Math.round(subtotal + shippingCost).toLocaleString('es-AR').replace(/,/g, '.');
           if (checkoutBtn) checkoutBtn.disabled = false;
         } else {
           if (shippingEl) shippingEl.textContent = 'Seleccionar entrega';
-          if (totalEl) totalEl.textContent = '$ ' + Math.round(subtotal).toLocaleString('es-AR').replace(/,/g, '.');
+          if (totalEl) totalEl.textContent = '$' + Math.round(subtotal).toLocaleString('es-AR').replace(/,/g, '.');
           if (checkoutBtn) checkoutBtn.disabled = true;
         }
       }
 
-      // Eventos de modificación de items
+      // Handlers de botones de cantidad
       document.addEventListener('click', (e) => {
         const dec = e.target.closest('.btn-dec');
         const inc = e.target.closest('.btn-inc');
@@ -1235,7 +1280,7 @@
         }
       });
 
-      // Consulta de Opciones de Entrega al Backend
+      // Petición al backend
       async function fetchDeliveryOptions(cp) {
         const container = document.getElementById('deliveryOptionsContainer');
         const cpInputBox = document.getElementById('cpInputBox');
@@ -1248,12 +1293,11 @@
 
         if (cpErrorMsg) cpErrorMsg.style.display = 'none';
 
-        // Mostrar spinner / cargando
         container.style.display = 'block';
         container.innerHTML = `
           <div class="delivery-loading-box">
             <span style="font-size: 24px; animation: spin 1s linear infinite; display: inline-block;">⚙</span>
-            <b>Buscando opciones de entrega...</b>
+            <b>Cotizando opciones de entrega para CP ${cp}...</b>
           </div>
         `;
 
@@ -1270,12 +1314,11 @@
             currentPostalCode = cp;
             availableDeliveryOptions = json.data.options;
 
-            // Actualizar vista
             if (cpInputBox) cpInputBox.style.display = 'none';
             if (cpBadgeBar) cpBadgeBar.style.display = 'flex';
             if (cpBadgeText) cpBadgeText.textContent = `CP ${cp}`;
 
-            // Seleccionar por defecto la primera opción disponible si la anterior no existe
+            // Seleccionar por defecto Retiro en Local o primera opción si la anterior no aplica
             if (!availableDeliveryOptions.some(o => o.id === selectedOptionId)) {
               selectedOptionId = availableDeliveryOptions[0]?.id || null;
             }
@@ -1306,7 +1349,7 @@
         renderCartPage();
       }
 
-      // Renderizado dinámico por categorías
+      // Renderizado por categorías estilo Narel / TiendaNube
       function renderDeliveryOptionsList(options) {
         const container = document.getElementById('deliveryOptionsContainer');
         if (!container) return;
@@ -1317,7 +1360,7 @@
         const domicilioOpts = options.filter(o => o.type === 'domicilio');
         const retiroOpts = options.filter(o => o.type === 'retiro');
 
-        // Grupo ENVIAR A DOMICILIO
+        // GRUPO 1: ENVIAR A DOMICILIO
         if (domicilioOpts.length > 0) {
           const domGroup = document.createElement('div');
           domGroup.className = 'delivery-category-group';
@@ -1329,7 +1372,7 @@
           container.appendChild(domGroup);
         }
 
-        // Grupo RETIRAR
+        // GRUPO 2: RETIRAR
         if (retiroOpts.length > 0) {
           const retGroup = document.createElement('div');
           retGroup.className = 'delivery-category-group';
@@ -1352,6 +1395,7 @@
 
         const priceText = Number(opt.price) === 0 ? 'GRATIS' : formatMoney(opt.price);
         const priceClass = Number(opt.price) === 0 ? 'free' : '';
+        const etaText = getDeliveryDateRangeText(opt.minDays, opt.maxDays);
 
         card.innerHTML = `
           <div class="custom-radio">
@@ -1363,7 +1407,8 @@
               <span class="provider-tag">${opt.provider}</span>
             </div>
             <div class="delivery-option-desc">${opt.description}</div>
-            ${opt.estimatedDays ? `<div class="delivery-option-eta">Plazo estimado: ${opt.estimatedDays}</div>` : ''}
+            ${opt.hours ? `<div class="delivery-option-hours">Horarios: ${opt.hours}</div>` : ''}
+            <div class="delivery-option-eta">${etaText}</div>
           </div>
           <div class="delivery-option-price ${priceClass}">
             ${priceText}
@@ -1380,7 +1425,7 @@
         return card;
       }
 
-      // Eventos de botones
+      // Eventos de botones de CP
       const submitCpBtn = document.getElementById('submitCpBtn');
       const cpInput = document.getElementById('cpInput');
       const changeCpBtn = document.getElementById('changeCpBtn');
@@ -1417,7 +1462,7 @@
         });
       }
 
-      // Disparador de pago
+      // Confirmar orden y pasar a pago
       const cartPageCheckoutBtn = document.getElementById('cartPageCheckoutBtn');
       if (cartPageCheckoutBtn) {
         cartPageCheckoutBtn.addEventListener('click', () => {
@@ -1442,9 +1487,14 @@
         });
       }
 
-      // Inicialización
+      // Cargar CP predeterminado '3000' para mostrar de inmediato la interfaz de la captura si hay productos
       document.addEventListener('DOMContentLoaded', () => {
         renderCartPage();
+        const items = getCart();
+        if (items.length > 0) {
+          // Cotizar para CP 3000 (Santa Fe) de inicio
+          fetchDeliveryOptions('3000');
+        }
       });
     })();
   </script>
