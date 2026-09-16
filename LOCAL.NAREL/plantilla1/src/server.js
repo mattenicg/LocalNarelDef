@@ -41,6 +41,7 @@ const paymentsRoutes = require('./routes/payments.pg.routes');
 const {
   shippingPromoPublicRoutes,
   shippingPromoAdminRoutes,
+  getShippingPromoConfig,
 } = require('./routes/shippingPromo.pg.routes');
 const shippingRoutes = require('./routes/shipping.pg.routes');
 const notificationsAdminRoutes = require('./routes/notifications.pg.routes');
@@ -172,7 +173,7 @@ app.get('/api/products/public', async (req, res) => {
     }
 
     params.push(limit);
-    const querySql = `SELECT id,name,description,price,sizes,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at FROM products ${conditions} ORDER BY featured DESC,updated_at DESC LIMIT $${params.length}`;
+    const querySql = `SELECT id,name,description,price,sizes,size_guide,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at FROM products ${conditions} ORDER BY featured DESC,updated_at DESC LIMIT $${params.length}`;
 
     const result = await query(querySql, params);
 

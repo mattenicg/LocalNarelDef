@@ -877,46 +877,56 @@ function executeMemoryQuery(rawText, params = []) {
   if (lowerSql.startsWith('insert into products')) {
     const id = uuid();
     const now = nowIso();
+    const hasSizeGuide = lowerSql.includes('size_guide');
     const hasImagesCol = lowerSql.includes('images');
     const isExtended = lowerSql.includes('subcategory');
     const hasDirect = lowerSql.includes('direct_purchase');
 
-    let rawImages = hasImagesCol ? params[6] : null;
+    const sgOffset = hasSizeGuide ? 1 : 0;
+    const name = params[0];
+    const description = params[1] || '';
+    const price = Number(params[2]) || 0;
+    const sizes = params[3] || '';
+    const size_guide = hasSizeGuide ? (params[4] || null) : null;
+    const stock = Number(params[4 + sgOffset]) || 0;
+
+    let rawImages = hasImagesCol ? params[6 + sgOffset] : null;
     let imagesList = [];
     if (Array.isArray(rawImages)) imagesList = rawImages;
     else if (typeof rawImages === 'string' && rawImages.startsWith('[')) {
       try { imagesList = JSON.parse(rawImages); } catch (_) {}
     } else if (rawImages) imagesList = [rawImages];
 
-    const offset = hasImagesCol ? 1 : 0;
-    const imageUrl = params[5] || (imagesList[0] || null);
+    const imgOffset = (hasImagesCol ? 1 : 0) + sgOffset;
+    const imageUrl = params[5 + sgOffset] || (imagesList[0] || null);
     if (imageUrl && !imagesList.includes(imageUrl)) imagesList.unshift(imageUrl);
 
     const newProduct = {
       id,
-      name: params[0],
-      description: params[1] || '',
-      price: Number(params[2]) || 0,
-      sizes: params[3] || '',
-      stock: Number(params[4]) || 0,
+      name,
+      description,
+      price,
+      sizes,
+      size_guide,
+      stock,
       image_url: imageUrl,
       images: imagesList,
-      category: params[6 + offset] || 'remeras',
-      subcategory: isExtended ? (params[7 + offset] || null) : null,
-      subcategory_id: isExtended ? (params[8 + offset] || null) : null,
-      active: (isExtended ? params[9 + offset] : params[7 + offset]) !== false,
-      featured: (isExtended ? params[10 + offset] : params[8 + offset]) === true,
-      direct_purchase: hasDirect ? params[11 + offset] === true : false,
-      allowed_payment_methods: hasDirect && params[12 + offset] ? (typeof params[12 + offset] === 'string' ? JSON.parse(params[12 + offset]) : params[12 + offset]) : ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
-      allowed_installments: hasDirect && params[13 + offset] ? (typeof params[13 + offset] === 'string' ? JSON.parse(params[13 + offset]) : params[13 + offset]) : [1, 3, 6],
-      direct_discount_percent: hasDirect && params[14 + offset] !== undefined && params[14 + offset] !== null ? Number(params[14 + offset]) : 25,
-      direct_discount_text: hasDirect && params[15 + offset] ? String(params[15 + offset]) : 'con transferencia',
-      direct_show_promo_badge: hasDirect && params[16 + offset] !== undefined ? params[16 + offset] === true : true,
-      direct_promo_badge_text: hasDirect && params[17 + offset] ? String(params[17 + offset]) : 'PROMO ACTIVA',
-      direct_installments_count: hasDirect && params[18 + offset] ? Number(params[18 + offset]) : 6,
-      direct_installments_text: hasDirect && params[19 + offset] ? String(params[19 + offset]) : 'sin interés',
-      direct_custom_transfer_price: hasDirect && params[20 + offset] !== undefined && params[20 + offset] !== null && params[20 + offset] !== '' ? Number(params[20 + offset]) : null,
-      direct_transfer_text: hasDirect && params[21 + offset] ? String(params[21 + offset]) : 'con Transferencia',
+      category: params[6 + imgOffset] || 'remeras',
+      subcategory: isExtended ? (params[7 + imgOffset] || null) : null,
+      subcategory_id: isExtended ? (params[8 + imgOffset] || null) : null,
+      active: (isExtended ? params[9 + imgOffset] : params[7 + imgOffset]) !== false,
+      featured: (isExtended ? params[10 + imgOffset] : params[8 + imgOffset]) === true,
+      direct_purchase: hasDirect ? params[11 + imgOffset] === true : false,
+      allowed_payment_methods: hasDirect && params[12 + imgOffset] ? (typeof params[12 + imgOffset] === 'string' ? JSON.parse(params[12 + imgOffset]) : params[12 + imgOffset]) : ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo'],
+      allowed_installments: hasDirect && params[13 + imgOffset] ? (typeof params[13 + imgOffset] === 'string' ? JSON.parse(params[13 + imgOffset]) : params[13 + imgOffset]) : [1, 3, 6],
+      direct_discount_percent: hasDirect && params[14 + imgOffset] !== undefined && params[14 + imgOffset] !== null ? Number(params[14 + imgOffset]) : 25,
+      direct_discount_text: hasDirect && params[15 + imgOffset] ? String(params[15 + imgOffset]) : 'con transferencia',
+      direct_show_promo_badge: hasDirect && params[16 + imgOffset] !== undefined ? params[16 + imgOffset] === true : true,
+      direct_promo_badge_text: hasDirect && params[17 + imgOffset] ? String(params[17 + imgOffset]) : 'PROMO ACTIVA',
+      direct_installments_count: hasDirect && params[18 + imgOffset] ? Number(params[18 + imgOffset]) : 6,
+      direct_installments_text: hasDirect && params[19 + imgOffset] ? String(params[19 + imgOffset]) : 'sin interés',
+      direct_custom_transfer_price: hasDirect && params[20 + imgOffset] !== undefined && params[20 + imgOffset] !== null && params[20 + imgOffset] !== '' ? Number(params[20 + imgOffset]) : null,
+      direct_transfer_text: hasDirect && params[21 + imgOffset] ? String(params[21 + imgOffset]) : 'con Transferencia',
       created_at: now,
       updated_at: now,
     };
@@ -1006,7 +1016,40 @@ function executeMemoryQuery(rawText, params = []) {
   }
 
   if (lowerSql.startsWith('update products')) {
-    if (lowerSql.includes('set image_url') && lowerSql.includes('images')) {
+    if (lowerSql.includes('where id=$25')) {
+      const p = data.products.find((x) => x.id === params[24]);
+      if (!p) return { rows: [], rowCount: 0 };
+      p.name = params[0];
+      p.description = params[1] || '';
+      p.price = Number(params[2]) || 0;
+      p.sizes = params[3] || '';
+      p.size_guide = params[4] || null;
+      p.stock = Number(params[5]) || 0;
+      if (params[6] !== null && params[6] !== undefined) p.image_url = params[6];
+      if (params[7] !== null && params[7] !== undefined) {
+        try { p.images = typeof params[7] === 'string' ? JSON.parse(params[7]) : params[7]; } catch (_) { p.images = [params[7]]; }
+      }
+      if (params[8]) p.category = params[8];
+      p.subcategory = params[9] || null;
+      p.subcategory_id = params[10] || null;
+      if (params[11] !== null && params[11] !== undefined) p.active = params[11];
+      if (params[12] !== null && params[12] !== undefined) p.featured = params[12];
+      if (params[13] !== null && params[13] !== undefined) p.direct_purchase = params[13] === true;
+      if (params[14]) p.allowed_payment_methods = typeof params[14] === 'string' ? JSON.parse(params[14]) : params[14];
+      if (params[15]) p.allowed_installments = typeof params[15] === 'string' ? JSON.parse(params[15]) : params[15];
+      if (params[16] !== undefined && params[16] !== null) p.direct_discount_percent = Number(params[16]);
+      if (params[17] !== undefined) p.direct_discount_text = String(params[17] || 'con transferencia');
+      if (params[18] !== undefined) p.direct_show_promo_badge = params[18] === true;
+      if (params[19] !== undefined) p.direct_promo_badge_text = String(params[19] || 'PROMO ACTIVA');
+      if (params[20] !== undefined) p.direct_installments_count = Number(params[20]) || 6;
+      if (params[21] !== undefined) p.direct_installments_text = String(params[21] || 'sin interés');
+      if (params[22] !== undefined) p.direct_custom_transfer_price = params[22] ? Number(params[22]) : null;
+      if (params[23] !== undefined) p.direct_transfer_text = String(params[23] || 'con Transferencia');
+      p.updated_at = nowIso();
+      saveMemoryDbToFile();
+      return { rows: [{ ...p }], rowCount: 1 };
+    }
+    if ((lowerSql.includes('set image_url') && lowerSql.includes('images')) && !lowerSql.includes('set name')) {
       const prodId = params[2];
       const p = data.products.find((x) => x.id === prodId);
       if (p) {

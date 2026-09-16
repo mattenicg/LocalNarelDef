@@ -51,6 +51,7 @@
     bindImages();
     bindForm();
     bindDirectPurchase();
+    bindPresets();
     await loadCategories();
     bindCategoryEvents();
 
@@ -118,6 +119,31 @@
           opt.selected = true;
         }
         subcatEl.appendChild(opt);
+      });
+    }
+  }
+
+  function bindPresets() {
+    const guideEl = document.getElementById('size_guide');
+    const btnRemeras = document.getElementById('btnPresetRemeras');
+    const btnPantalones = document.getElementById('btnPresetPantalones');
+    const btnBuzos = document.getElementById('btnPresetBuzos');
+
+    if (!guideEl) return;
+
+    if (btnRemeras) {
+      btnRemeras.addEventListener('click', () => {
+        guideEl.value = 'Talle | Pecho | Sisa | Largo\nS | 48 cm | 22 cm | 68 cm\nM | 51 cm | 23 cm | 71 cm\nL | 54 cm | 24 cm | 74 cm\nXL | 57 cm | 25 cm | 77 cm\nXXL | 60 cm | 26 cm | 80 cm';
+      });
+    }
+    if (btnPantalones) {
+      btnPantalones.addEventListener('click', () => {
+        guideEl.value = 'Talle | Cintura | Cadera | Largo\n38 | 38 cm | 48 cm | 100 cm\n40 | 40 cm | 50 cm | 102 cm\n42 | 42 cm | 52 cm | 104 cm\n44 | 44 cm | 54 cm | 106 cm\n46 | 46 cm | 56 cm | 108 cm';
+      });
+    }
+    if (btnBuzos) {
+      btnBuzos.addEventListener('click', () => {
+        guideEl.value = 'Talle | Pecho | Hombros | Largo | Manga\nS | 54 cm | 46 cm | 66 cm | 62 cm\nM | 57 cm | 48 cm | 69 cm | 64 cm\nL | 60 cm | 50 cm | 72 cm | 66 cm\nXL | 63 cm | 52 cm | 75 cm | 68 cm';
       });
     }
   }
@@ -376,6 +402,9 @@
 
       const sizesEl = document.getElementById('sizes');
       if (sizesEl) sizesEl.value = p.sizes || '';
+
+      const sizeGuideEl = document.getElementById('size_guide');
+      if (sizeGuideEl) sizeGuideEl.value = p.size_guide || '';
 
       const activeEl = document.getElementById('active');
       if (activeEl) activeEl.checked = p.active !== false && String(p.active) !== 'false';
@@ -650,6 +679,7 @@
     const priceEl = document.getElementById('price');
     const stockEl = document.getElementById('stock');
     const sizesEl = document.getElementById('sizes');
+    const sizeGuideEl = document.getElementById('size_guide');
     const categoryEl = document.getElementById('category');
     const subcatEl = document.getElementById('subcategory');
     const activeEl = document.getElementById('active');
@@ -661,6 +691,7 @@
     const priceRaw = priceEl ? priceEl.value : '';
     const stockRaw = stockEl ? stockEl.value : '';
     const sizes = (sizesEl ? sizesEl.value : '').trim();
+    const size_guide = (sizeGuideEl ? sizeGuideEl.value : '').trim() || null;
     const category = (categoryEl && categoryEl.value ? categoryEl.value : '').toLowerCase().trim();
     const subcategory = (subcatEl && subcatEl.value ? subcatEl.value : '').toLowerCase().trim() || null;
     const subcatSelectedOpt = subcatEl && subcatEl.selectedIndex >= 0 ? subcatEl.options[subcatEl.selectedIndex] : null;
@@ -777,6 +808,7 @@
         description,
         price,
         sizes,
+        size_guide,
         stock,
         category,
         subcategory,

@@ -299,6 +299,24 @@
             <input type="text" id="sizes" name="sizes" class="form-control" maxlength="200" placeholder="S · M · L · XL">
           </div>
 
+          <!-- TABLA DE TALLES EDITABLE POR ADMIN -->
+          <div class="form-group full" style="background:#161616;border:1px solid #333;padding:18px;border-radius:4px;margin-top:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+              <label for="size_guide" style="font-size:12px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;font-weight:600;margin:0;">
+                📏 Tabla de Talles / Guía de Medidas (Editable)
+              </label>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button type="button" id="btnPresetRemeras" class="button secondary" style="width:auto;padding:3px 8px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;">+ Plantilla Remeras</button>
+                <button type="button" id="btnPresetPantalones" class="button secondary" style="width:auto;padding:3px 8px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;">+ Plantilla Pantalones</button>
+                <button type="button" id="btnPresetBuzos" class="button secondary" style="width:auto;padding:3px 8px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;">+ Plantilla Buzos</button>
+              </div>
+            </div>
+            <div style="font-size:11px;color:#888;font-family:'DM Mono',monospace;margin-bottom:10px;">
+              Ingresá la tabla de medidas. Aparecerá a la derecha de los talles en la ficha del producto.
+            </div>
+            <textarea id="size_guide" name="size_guide" class="form-control" rows="4" style="font-family:'DM Mono',monospace;font-size:12px;" placeholder="Talle | Sombro a Hombro | Pecho | Largo&#10;S | 44 cm | 50 cm | 70 cm&#10;M | 46 cm | 53 cm | 72 cm&#10;L | 48 cm | 56 cm | 74 cm&#10;XL | 50 cm | 59 cm | 76 cm"></textarea>
+          </div>
+
           <div class="form-group full">
             <label for="imagesInput" style="display:flex;justify-content:space-between;align-items:center;">
               <span>Fotos del Producto (Permite 2 o más fotos)</span>

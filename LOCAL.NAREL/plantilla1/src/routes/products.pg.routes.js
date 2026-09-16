@@ -28,7 +28,7 @@ function fail(req, res) {
   return e.isEmpty() ? null : res.status(400).json({ ok: false, message: e.array()[0].msg });
 }
 
-const fields = 'id,name,description,price,sizes,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at';
+const fields = 'id,name,description,price,sizes,size_guide,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at';
 
 router.use(authenticate, requireAdmin);
 
@@ -186,6 +186,7 @@ const rules = [
     return true;
   }),
   body('sizes').optional({ nullable: true, checkFalsy: true }).isString(),
+  body('size_guide').optional({ nullable: true, checkFalsy: true }).isString(),
   body('stock').custom((v) => {
     if (!Number.isInteger(Number(v)) || Number(v) < 0) throw Error('Stock inválido');
     return true;
@@ -270,13 +271,16 @@ router.post('/', rules, async (req, res) => {
       images.unshift(mainImageUrl);
     }
 
+    const sizeGuide = req.body.size_guide ? String(req.body.size_guide).trim() : null;
+
     const r = await query(
-      `INSERT INTO products(name,description,price,sizes,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING ${fields}`,
+      `INSERT INTO products(name,description,price,sizes,size_guide,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24) RETURNING ${fields}`,
       [
         req.body.name.trim(),
         req.body.description || '',
         Number(req.body.price),
         req.body.sizes || '',
+        sizeGuide,
         Number(req.body.stock),
         mainImageUrl,
         JSON.stringify(images),
@@ -383,6 +387,8 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
       ? String(req.body.direct_transfer_text).trim()
       : (currentProd.direct_transfer_text || 'con Transferencia');
 
+    const sizeGuide = req.body.size_guide !== undefined ? (req.body.size_guide ? String(req.body.size_guide).trim() : null) : (currentProd.size_guide || null);
+
     let imagesJson = null;
     let mainImageUrl = req.body.image_url !== undefined ? req.body.image_url : currentProd.image_url;
 
@@ -408,12 +414,13 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
     }
 
     const r = await query(
-      `UPDATE products SET name=$1,description=$2,price=$3,sizes=$4,stock=$5,image_url=$6,images=COALESCE($7::jsonb,images),category=$8,subcategory=$9,subcategory_id=$10,active=COALESCE($11,active),featured=COALESCE($12,featured),direct_purchase=$13,allowed_payment_methods=$14,allowed_installments=$15,direct_discount_percent=$16,direct_discount_text=$17,direct_show_promo_badge=$18,direct_promo_badge_text=$19,direct_installments_count=$20,direct_installments_text=$21,direct_custom_transfer_price=$22,direct_transfer_text=$23,updated_at=now() WHERE id=$24 RETURNING ${fields}`,
+      `UPDATE products SET name=$1,description=$2,price=$3,sizes=$4,size_guide=$5,stock=$6,image_url=$7,images=COALESCE($8::jsonb,images),category=$9,subcategory=$10,subcategory_id=$11,active=COALESCE($12,active),featured=COALESCE($13,featured),direct_purchase=$14,allowed_payment_methods=$15,allowed_installments=$16,direct_discount_percent=$17,direct_discount_text=$18,direct_show_promo_badge=$19,direct_promo_badge_text=$20,direct_installments_count=$21,direct_installments_text=$22,direct_custom_transfer_price=$23,direct_transfer_text=$24,updated_at=now() WHERE id=$25 RETURNING ${fields}`,
       [
         req.body.name.trim(),
         req.body.description || '',
         Number(req.body.price),
         req.body.sizes || '',
+        sizeGuide,
         Number(req.body.stock),
         mainImageUrl,
         imagesJson,
