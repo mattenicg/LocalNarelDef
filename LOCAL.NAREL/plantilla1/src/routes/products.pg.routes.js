@@ -28,6 +28,41 @@ function fail(req, res) {
   return e.isEmpty() ? null : res.status(400).json({ ok: false, message: e.array()[0].msg });
 }
 
+async function saveProductSizeStock(productId, sizeStocks) {
+  const sizeStocksArray = Array.isArray(sizeStocks) ? sizeStocks : [];
+  const valid = sizeStocksArray.filter(item => item && typeof item.size_name === 'string' && item.size_name.trim() !== '');
+
+  await query('DELETE FROM product_size_stock WHERE product_id = $1', [productId]);
+
+  let totalStock = 0;
+  const sizeNamesList = [];
+
+  for (const item of valid) {
+    const sizeName = item.size_name.trim();
+    const stock = Math.max(0, parseInt(item.stock, 10) || 0);
+    totalStock += stock;
+    sizeNamesList.push(sizeName);
+
+    await query(
+      'INSERT INTO product_size_stock (product_id, size_name, stock) VALUES ($1, $2, $3)',
+      [productId, sizeName, stock]
+    );
+
+    await query(
+      'INSERT INTO sizes_master (name, active) VALUES ($1, true) ON CONFLICT (LOWER(name)) DO NOTHING',
+      [sizeName]
+    );
+  }
+
+  const sizesString = sizeNamesList.join(', ');
+  await query(
+    'UPDATE products SET stock = $1, sizes = $2 WHERE id = $3',
+    [totalStock, sizesString, productId]
+  );
+
+  return { totalStock, sizesString };
+}
+
 const fields = 'id,name,description,price,sizes,size_guide,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at';
 
 router.use(authenticate, requireAdmin);
@@ -119,7 +154,27 @@ router.get('/', async (req, res) => {
     const dir = req.query.desc ? 'DESC' : 'ASC';
     const count = await query('SELECT count(*)::int AS count FROM products');
     const r = await query(`SELECT ${fields} FROM products ORDER BY ${order} ${dir} LIMIT $1 OFFSET $2`, [limit, offset]);
-    res.json({ ok: true, data: r.rows, count: count.rows[0].count });
+    const products = r.rows;
+    const productIds = products.map((p) => p.id);
+    if (productIds.length > 0) {
+      try {
+        const sizeStockRes = await query(
+          'SELECT product_id, size_name, stock FROM product_size_stock WHERE product_id = ANY($1) ORDER BY size_name ASC',
+          [productIds]
+        );
+        const ssMap = new Map();
+        (sizeStockRes.rows || []).forEach((row) => {
+          if (!ssMap.has(row.product_id)) ssMap.set(row.product_id, []);
+          ssMap.get(row.product_id).push(row);
+        });
+        products.forEach((p) => {
+          p.size_stock = ssMap.get(p.id) || [];
+        });
+      } catch (ssErr) {
+        console.warn('[admin/products] fallback size stock error:', ssErr.message);
+      }
+    }
+    res.json({ ok: true, data: products, count: count.rows[0].count });
   } catch (err) {
     console.error('[admin/products] error:', err);
     res.status(500).json({ ok: false, message: 'Error al listar productos' });
@@ -142,6 +197,18 @@ router.get('/:id', [param('id').isUUID()], async (req, res) => {
     const r = await query(`SELECT ${fields} FROM products WHERE id=$1`, [req.params.id]);
     if (!r.rows[0]) return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
     const product = r.rows[0];
+
+    // Load size stock
+    try {
+      const sizeStockRes = await query(
+        'SELECT size_name, stock FROM product_size_stock WHERE product_id = $1 ORDER BY size_name ASC',
+        [product.id]
+      );
+      product.size_stock = sizeStockRes.rows || [];
+    } catch (ssErr) {
+      console.warn('[admin/product-get] warn loading size_stock:', ssErr.message);
+      product.size_stock = [];
+    }
 
     // Load persistent product_images
     try {
@@ -207,6 +274,7 @@ const rules = [
   body('direct_installments_text').optional({ nullable: true, checkFalsy: true }).isString(),
   body('direct_custom_transfer_price').optional({ nullable: true, checkFalsy: true }),
   body('direct_transfer_text').optional({ nullable: true, checkFalsy: true }).isString(),
+  body('size_stock').optional().isArray(),
 ];
 
 router.post('/', rules, async (req, res) => {
@@ -303,6 +371,25 @@ router.post('/', rules, async (req, res) => {
       ]
     );
     const createdProduct = r.rows[0];
+
+    // Save custom size stock array if passed, otherwise fall back to legacy/global size configuration
+    let sizeStockPayload = req.body.size_stock;
+    if (!sizeStockPayload || !sizeStockPayload.length) {
+      const rawSizes = req.body.sizes ? String(req.body.sizes).trim() : 'Único';
+      const parsedSizes = rawSizes.split(/\s*[-|/,]\s*/).map(s => s.trim()).filter(Boolean);
+      const isSingleSize = parsedSizes.length <= 1;
+      
+      sizeStockPayload = parsedSizes.map((s) => ({
+        size_name: s,
+        stock: isSingleSize ? Number(req.body.stock || 0) : 0
+      }));
+    }
+
+    const { totalStock, sizesString } = await saveProductSizeStock(createdProduct.id, sizeStockPayload);
+    createdProduct.stock = totalStock;
+    createdProduct.sizes = sizesString;
+    createdProduct.size_stock = sizeStockPayload;
+
     if (images.length > 0) {
       try {
         const synced = await syncProductImages(createdProduct.id, images);
@@ -445,6 +532,36 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
     );
 
     const updatedProd = r.rows[0];
+
+    // Save custom size stock array if passed, otherwise fall back to legacy/global sizes
+    let sizeStockPayload = req.body.size_stock;
+    if (sizeStockPayload !== undefined) {
+      if (!sizeStockPayload || !sizeStockPayload.length) {
+        const rawSizes = req.body.sizes ? String(req.body.sizes).trim() : 'Único';
+        const parsedSizes = rawSizes.split(/\s*[-|/,]\s*/).map(s => s.trim()).filter(Boolean);
+        const isSingleSize = parsedSizes.length <= 1;
+
+        sizeStockPayload = parsedSizes.map((s) => ({
+          size_name: s,
+          stock: isSingleSize ? Number(req.body.stock || 0) : 0
+        }));
+      }
+
+      const { totalStock, sizesString } = await saveProductSizeStock(req.params.id, sizeStockPayload);
+      updatedProd.stock = totalStock;
+      updatedProd.sizes = sizesString;
+      updatedProd.size_stock = sizeStockPayload;
+    } else {
+      try {
+        const sizeStockRes = await query(
+          'SELECT size_name, stock FROM product_size_stock WHERE product_id = $1 ORDER BY size_name ASC',
+          [req.params.id]
+        );
+        updatedProd.size_stock = sizeStockRes.rows || [];
+      } catch (ssErr) {
+        updatedProd.size_stock = [];
+      }
+    }
 
     // Synchronize persistent product_images table if images provided
     if (req.body.images !== undefined || req.body.product_images !== undefined) {

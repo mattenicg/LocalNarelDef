@@ -33,6 +33,7 @@ if (LEGACY_SQLITE_ENABLED) {
 const supabaseAuthRoutes = require('./routes/auth.pg.routes');
 const supabaseCategoriesRoutes = require('./routes/categories.pg.routes');
 const supabaseProductsRoutes = require('./routes/products.pg.routes');
+const supabaseSizesRoutes = require('./routes/sizes.pg.routes');
 const supabaseBannersRoutes = require('./routes/banners.pg.routes');
 const supabasePromotionsRoutes = require('./routes/promotions.pg.routes');
 const supabaseStorageRoutes = require('./routes/storage.pg.routes');
@@ -179,6 +180,7 @@ app.get('/api/products/public', async (req, res) => {
 
     const productIds = result.rows.map((r) => r.id);
     const imagesByProduct = new Map();
+    const sizeStockByProduct = new Map();
     if (productIds.length > 0) {
       try {
         const imgRes = await query(
@@ -194,10 +196,26 @@ app.get('/api/products/public', async (req, res) => {
       } catch (imgErr) {
         console.warn('[products-public] fallback imágenes:', imgErr.message);
       }
+
+      try {
+        const sizeStockRes = await query(
+          'SELECT product_id, size_name, stock FROM product_size_stock WHERE product_id = ANY($1) ORDER BY size_name ASC',
+          [productIds]
+        );
+        (sizeStockRes.rows || []).forEach((ss) => {
+          if (!sizeStockByProduct.has(ss.product_id)) {
+            sizeStockByProduct.set(ss.product_id, []);
+          }
+          sizeStockByProduct.get(ss.product_id).push(ss);
+        });
+      } catch (ssErr) {
+        console.warn('[products-public] fallback size stock:', ssErr.message);
+      }
     }
 
     const mapped = result.rows.map((p) => {
       const dedicatedImages = imagesByProduct.get(p.id) || [];
+      const productSizeStocks = sizeStockByProduct.get(p.id) || [];
       let imagesList = [];
       if (dedicatedImages.length > 0) {
         imagesList = dedicatedImages.map((img) => img.image_url).filter(Boolean);
@@ -218,6 +236,7 @@ app.get('/api/products/public', async (req, res) => {
         image_url: mainImageUrl,
         images: imagesList,
         product_images: dedicatedImages,
+        size_stock: productSizeStocks,
         direct_purchase: Boolean(p.direct_purchase),
         allowed_payment_methods: typeof p.allowed_payment_methods === 'string'
           ? JSON.parse(p.allowed_payment_methods)
@@ -334,6 +353,8 @@ function guessCategoryFallback(name, description){
 app.use('/api/auth', supabaseAuthRoutes);
 // Categories / Sections (admin) - CRUD
 app.use('/api/admin/categories', supabaseCategoriesRoutes);
+// Sizes (admin) - CRUD
+app.use('/api/admin/sizes', supabaseSizesRoutes);
 // Banners (admin) - CRUD
 app.use('/api/admin/banners', supabaseBannersRoutes);
 // Promotions (admin) - CRUD + productos

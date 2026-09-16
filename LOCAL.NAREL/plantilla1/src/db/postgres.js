@@ -90,6 +90,42 @@ async function withTransaction(callback) {
   }
 }
 
+async function migrateLegacyProducts() {
+  try {
+    const prods = await pool.query('SELECT id, sizes, stock FROM products');
+    logger.info(`[migration] Checking ${prods.rows.length} products for legacy sizes/stock migration...`);
+
+    for (const p of prods.rows) {
+      const existing = await pool.query('SELECT 1 FROM product_size_stock WHERE product_id = $1 LIMIT 1', [p.id]);
+      if (existing.rows.length > 0) {
+        continue;
+      }
+
+      logger.info(`[migration] Migrating product ${p.id} with sizes: "${p.sizes}" and stock: ${p.stock}`);
+      const rawSizes = p.sizes ? String(p.sizes).trim() : 'Único';
+      const parsedSizes = rawSizes.split(/\s*[-|/,]\s*/).map(s => s.trim()).filter(Boolean);
+      const isSingleSize = parsedSizes.length <= 1;
+
+      for (const sizeName of parsedSizes) {
+        const sizeStock = isSingleSize ? Number(p.stock || 0) : 0;
+        
+        await pool.query(
+          'INSERT INTO product_size_stock (product_id, size_name, stock) VALUES ($1, $2, $3)',
+          [p.id, sizeName, sizeStock]
+        );
+
+        await pool.query(
+          'INSERT INTO sizes_master (name, active) VALUES ($1, true) ON CONFLICT (LOWER(name)) DO NOTHING',
+          [sizeName]
+        );
+      }
+    }
+    logger.info('[migration] Legacy products migration completed successfully.');
+  } catch (err) {
+    logger.error('[migration] Error running legacy products migration:', err.message);
+  }
+}
+
 async function initPostgres() {
   if (useMock) {
     logger.info('[postgres] Almacenamiento en memoria activo.');
@@ -104,6 +140,9 @@ async function initPostgres() {
     const schema = fs.readFileSync(schemaPath, 'utf8');
     await pool.query(schema);
     logger.info('[postgres] Esquema PostgreSQL verificado correctamente en base de datos externa.');
+    
+    // Execute legacy sizes/stock migration
+    await migrateLegacyProducts();
   } catch (err) {
     logger.warn(`[postgres] PostgreSQL no disponible (${err.message}). Activando almacenamiento en memoria para vista previa.`);
     useMock = true;

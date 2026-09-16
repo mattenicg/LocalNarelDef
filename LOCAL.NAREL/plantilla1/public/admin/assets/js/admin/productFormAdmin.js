@@ -52,12 +52,15 @@
     bindForm();
     bindDirectPurchase();
     bindPresets();
+    initSizeStockWidget();
     await loadCategories();
     bindCategoryEvents();
 
     if (isEditMode) {
       await cargarProducto();
     } else {
+      activeSizeStocks = [{ size_name: 'Único', stock: 10 }];
+      renderSizeStockRows();
       updateDirectPreview();
     }
   }
@@ -402,6 +405,22 @@
 
       const sizesEl = document.getElementById('sizes');
       if (sizesEl) sizesEl.value = p.sizes || '';
+
+      if (p.size_stock && p.size_stock.length > 0) {
+        activeSizeStocks = p.size_stock.map(item => ({
+          size_name: item.size_name || '',
+          stock: Number(item.stock) || 0
+        }));
+      } else {
+        const rawSizes = p.sizes ? String(p.sizes).trim() : 'Único';
+        const parsedSizes = rawSizes.split(/\s*[-|/,]\s*/).map(s => s.trim()).filter(Boolean);
+        const isSingle = parsedSizes.length <= 1;
+        activeSizeStocks = parsedSizes.map(s => ({
+          size_name: s,
+          stock: isSingle ? Number(p.stock || 0) : 0
+        }));
+      }
+      renderSizeStockRows();
 
       const sizeGuideEl = document.getElementById('size_guide');
       if (sizeGuideEl) sizeGuideEl.value = p.size_guide || '';
@@ -829,6 +848,7 @@
         image_url: primaryImageUrl,
         images: finalImageUrls,
         product_images: finalImageUrls,
+        size_stock: activeSizeStocks,
       };
 
       let saveRes;
@@ -864,6 +884,139 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  let activeSizeStocks = [];
+
+  function initSizeStockWidget() {
+    const sizesEl = document.getElementById('sizes');
+    const stockEl = document.getElementById('stock');
+
+    if (sizesEl) {
+      sizesEl.readOnly = true;
+      sizesEl.style.background = '#0a0a0a';
+      sizesEl.style.color = '#888';
+      sizesEl.style.cursor = 'not-allowed';
+      sizesEl.placeholder = 'Se calcula automáticamente...';
+    }
+    if (stockEl) {
+      stockEl.readOnly = true;
+      stockEl.style.background = '#0a0a0a';
+      stockEl.style.color = '#888';
+      stockEl.style.cursor = 'not-allowed';
+      stockEl.placeholder = 'Se calcula automáticamente...';
+    }
+
+    const sizesFormGroup = sizesEl ? sizesEl.closest('.form-group') : null;
+    if (sizesFormGroup) {
+      const widgetHtml = `
+        <div class="form-group full" style="background:#111;border:1px solid #333;padding:16px;border-radius:6px;margin-top:16px;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;">
+            <label style="font-size:12px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;font-weight:700;margin:0;">
+              📦 Variante de Talles y Stock
+            </label>
+            <button type="button" id="btnAdminAddSize" class="button primary" style="width:auto;padding:6px 12px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;background:#ff3366;border:none;color:#fff;font-weight:700;border-radius:4px;">
+              + AGREGAR TALLE
+            </button>
+          </div>
+          <div style="font-size:11px;color:#999;font-family:'DM Mono',monospace;margin-bottom:14px;line-height:1.4;">
+            Creá tus talles personalizados (ej: XS, 38, 100 cm, "Único") y asigná el stock para cada uno. El stock general y la lista de talles de arriba se actualizarán automáticamente.
+          </div>
+          <div id="sizeStockContainer" style="display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;padding-right:4px;">
+            <!-- Rows will be rendered here -->
+          </div>
+        </div>
+      `;
+      sizesFormGroup.insertAdjacentHTML('afterend', widgetHtml);
+
+      const addBtn = document.getElementById('btnAdminAddSize');
+      if (addBtn) {
+        addBtn.addEventListener('click', () => {
+          activeSizeStocks.push({ size_name: '', stock: 0 });
+          renderSizeStockRows();
+        });
+      }
+    }
+  }
+
+  function renderSizeStockRows() {
+    const container = document.getElementById('sizeStockContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (activeSizeStocks.length === 0) {
+      container.innerHTML = `
+        <div id="sizeStockEmpty" style="font-size:12px;color:#666;font-style:italic;padding:8px 0;text-align:center;font-family:'DM Mono',monospace;">
+          No hay talles configurados. Agregá al menos uno.
+        </div>
+      `;
+      updateCalculatedFields();
+      return;
+    }
+
+    activeSizeStocks.forEach((item, index) => {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.gap = '10px';
+      row.style.alignItems = 'center';
+      row.style.background = '#181818';
+      row.style.padding = '8px 12px';
+      row.style.borderRadius = '4px';
+      row.style.border = '1px solid #282828';
+
+      row.innerHTML = `
+        <div style="flex:2; display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:10px; color:#aaa; font-family:'DM Mono',monospace;">TALLE / MEDIDA</span>
+          <input type="text" class="form-control admin-size-name-input" data-index="${index}" value="${escapeHtml(item.size_name)}" placeholder="Ej: M, 38, Único" style="margin:0; background:#000; color:#fff; border:1px solid #444; font-size:12px; padding:6px 10px; height:auto;">
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px; max-width:120px;">
+          <span style="font-size:10px; color:#aaa; font-family:'DM Mono',monospace;">STOCK</span>
+          <input type="number" class="form-control admin-size-stock-input" data-index="${index}" min="0" value="${item.stock}" placeholder="0" style="margin:0; background:#000; color:#fff; border:1px solid #444; font-size:12px; padding:6px 10px; height:auto;">
+        </div>
+        <button type="button" class="btn-remove-size-row" data-index="${index}" style="align-self:flex-end; width:34px; height:34px; background:#e50914; border:none; color:#fff; font-size:16px; font-weight:bold; cursor:pointer; border-radius:4px; display:flex; align-items:center; justify-content:center;" title="Eliminar talle">
+          &times;
+        </button>
+      `;
+      container.appendChild(row);
+    });
+
+    container.querySelectorAll('.admin-size-name-input').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const idx = parseInt(e.target.dataset.index, 10);
+        activeSizeStocks[idx].size_name = e.target.value;
+        updateCalculatedFields();
+      });
+    });
+
+    container.querySelectorAll('.admin-size-stock-input').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const idx = parseInt(e.target.dataset.index, 10);
+        activeSizeStocks[idx].stock = Math.max(0, parseInt(e.target.value, 10) || 0);
+        updateCalculatedFields();
+      });
+    });
+
+    container.querySelectorAll('.btn-remove-size-row').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(btn.dataset.index, 10);
+        activeSizeStocks.splice(idx, 1);
+        renderSizeStockRows();
+      });
+    });
+
+    updateCalculatedFields();
+  }
+
+  function updateCalculatedFields() {
+    const sizesEl = document.getElementById('sizes');
+    const stockEl = document.getElementById('stock');
+
+    const valid = activeSizeStocks.filter(item => item && item.size_name.trim() !== '');
+    const sizesStr = valid.map(item => item.size_name.trim()).join(', ');
+    const totalStock = valid.reduce((sum, item) => sum + item.stock, 0);
+
+    if (sizesEl) sizesEl.value = sizesStr;
+    if (stockEl) stockEl.value = totalStock;
   }
 })();
 

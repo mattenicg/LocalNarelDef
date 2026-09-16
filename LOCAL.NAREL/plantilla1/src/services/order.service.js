@@ -69,8 +69,28 @@ async function createOrderWithStock(payload, options = {}) {
       );
       const product = productResult.rows[0];
       if (!product) throw orderError('Producto no disponible', 409);
-      if (product.stock < quantity) {
-        throw orderError(`Stock insuficiente para: ${product.name}`, 409);
+
+      // Check size-specific stock if a size is chosen
+      const sizeName = item.size ? String(item.size).trim() : null;
+      let sizeStock = null;
+      if (sizeName) {
+        const sizeStockResult = await client.query(
+          'SELECT stock FROM product_size_stock WHERE product_id=$1 AND size_name=$2 FOR UPDATE',
+          [product.id, sizeName]
+        );
+        if (sizeStockResult.rows[0]) {
+          sizeStock = sizeStockResult.rows[0].stock;
+        }
+      }
+
+      if (sizeStock !== null) {
+        if (sizeStock < quantity) {
+          throw orderError(`Stock insuficiente para talle "${sizeName}" de: ${product.name}`, 409);
+        }
+      } else {
+        if (product.stock < quantity) {
+          throw orderError(`Stock insuficiente para: ${product.name}`, 409);
+        }
       }
 
       // Validar COMPRA DIRECTA en el backend y calcular precio según el método de pago elegido
@@ -179,7 +199,25 @@ async function createOrderWithStock(payload, options = {}) {
         ) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
         [order.id, product.id, product.name, product.image_url, unitPrice, quantity, item.size || null, lineTotal],
       );
+
+      // Deduct general products stock
       await client.query('UPDATE products SET stock=stock-$1 WHERE id=$2', [quantity, product.id]);
+
+      // Deduct size stock if it exists
+      if (item.size) {
+        const sizeName = String(item.size).trim();
+        const sizeStockResult = await client.query(
+          'SELECT id FROM product_size_stock WHERE product_id=$1 AND size_name=$2 FOR UPDATE',
+          [product.id, sizeName]
+        );
+        if (sizeStockResult.rows[0]) {
+          await client.query(
+            'UPDATE product_size_stock SET stock=stock-$1 WHERE product_id=$2 AND size_name=$3',
+            [quantity, product.id, sizeName]
+          );
+        }
+      }
+
       await client.query(
         `INSERT INTO stock_movements(
           product_id, order_id, movement_type, quantity_delta,
@@ -273,6 +311,22 @@ async function releaseOrderStock(orderId, paymentStatus = 'rechazado') {
         const stockBefore = Number(product.stock);
         const stockAfter = stockBefore + Number(item.quantity);
         await client.query('UPDATE products SET stock=$1 WHERE id=$2', [stockAfter, product.id]);
+
+        // Restore size stock if it exists
+        if (item.size) {
+          const sizeName = String(item.size).trim();
+          const sizeStockResult = await client.query(
+            'SELECT id FROM product_size_stock WHERE product_id=$1 AND size_name=$2 FOR UPDATE',
+            [product.id, sizeName]
+          );
+          if (sizeStockResult.rows[0]) {
+            await client.query(
+              'UPDATE product_size_stock SET stock=stock+$1 WHERE product_id=$2 AND size_name=$3',
+              [Number(item.quantity), product.id, sizeName]
+            );
+          }
+        }
+
         await client.query(
           `INSERT INTO stock_movements(
             product_id, order_id, movement_type, quantity_delta,

@@ -377,3 +377,29 @@ DROP TRIGGER IF EXISTS promotion_products_updated_at ON promotion_products;
 CREATE TRIGGER promotion_products_updated_at BEFORE UPDATE ON promotion_products FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 DROP TRIGGER IF EXISTS orders_updated_at ON orders;
 CREATE TRIGGER orders_updated_at BEFORE UPDATE ON orders FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ================= SYSTEM CUSTOM SIZES & VARIANT STOCK =================
+CREATE TABLE IF NOT EXISTS sizes_master (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT UNIQUE NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO sizes_master (name) VALUES 
+  ('XS'), ('S'), ('M'), ('L'), ('XL'), ('XXL'), ('Único')
+ON CONFLICT (name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS product_size_stock (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  size_name TEXT NOT NULL,
+  stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (product_id, size_name)
+);
+
+DROP TRIGGER IF EXISTS product_size_stock_updated_at ON product_size_stock;
+CREATE TRIGGER product_size_stock_updated_at BEFORE UPDATE ON product_size_stock FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
