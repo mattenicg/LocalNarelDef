@@ -116,7 +116,7 @@ try {
   }
 } catch (_) {}
 app.use('/uploads', express.static(env.UPLOADS_DIR));
-app.use(express.static(publicDir, { index: false }));
+app.use(express.static(publicDir, { index: false, extensions: ['html', 'htm'] }));
 
 if (LEGACY_SQLITE_ENABLED) {
   app.use('/api/public', publicRoutes);

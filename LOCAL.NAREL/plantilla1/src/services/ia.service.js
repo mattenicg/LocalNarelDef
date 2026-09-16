@@ -129,8 +129,8 @@ async function llamarOpenAI(systemPrompt, historial, mensaje) {
 function armarRespuestaHeuristica(intencion, contextoData, mensajeUsuario) {
   const { config, servicios, faqs } = contextoData;
   const tenant = contextoData.tenant;
-  const waCierre = `Si tenés más dudas escribinos por WhatsApp.`;
   const waLink = generarWhatsAppURL(tenant?.whatsapp, 'Hola, vengo del sitio web y necesito más información.');
+  const waCierre = waLink ? `Si tenés más dudas escribinos por WhatsApp: ${waLink}` : `Si tenés más dudas escribinos por WhatsApp.`;
 
   switch (intencion) {
     case 'precios': {

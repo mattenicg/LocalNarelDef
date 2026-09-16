@@ -7,7 +7,6 @@ const env = require('../config/env');
 const logger = require('../services/logger');
 const { query } = require('../db/postgres');
 const {
-  createCardPayment,
   processPayment,
   createPreference,
   getPayment,

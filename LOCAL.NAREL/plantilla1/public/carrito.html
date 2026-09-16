@@ -138,6 +138,80 @@
       font-size: 11px;
     }
 
+    /* ACCOUNT MENU DROPDOWN */
+    .account-menu {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      background: var(--dark1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      min-width: 220px;
+      padding: 12px 0;
+      z-index: 160;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-6px);
+      transition: all 0.18s ease;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+    }
+
+    .account-menu.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .account-menu .user-line {
+      padding: 10px 18px 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+    }
+
+    .account-menu .user-line b {
+      display: block;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      color: var(--white);
+    }
+
+    .account-menu .user-line small {
+      font-family: 'DM Mono', monospace;
+      font-weight: 400;
+      font-size: 10px;
+      color: var(--grey);
+      letter-spacing: 0.1em;
+    }
+
+    .account-menu a,
+    .account-menu button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 18px;
+      text-align: left;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--grey-light);
+      text-decoration: none;
+      border: none;
+      background: none;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .account-menu a:hover,
+    .account-menu button:hover {
+      color: var(--yellow);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
     /* MAIN CONTAINER */
     .cart-page-main {
       flex: 1;
@@ -848,6 +922,280 @@
       cursor: not-allowed;
       transform: none;
       box-shadow: none;
+    }
+
+    /* ===== PAYMENT MODAL & CHECKOUT FORM ===== */
+    .payment-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(10px);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .payment-modal.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .payment-panel {
+      width: min(640px, 100%);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: var(--dark1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+      transform: translateY(20px) scale(0.97);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .payment-modal.open .payment-panel {
+      transform: translateY(0) scale(1);
+    }
+
+    .payment-header {
+      padding: 24px 28px;
+      background: var(--dark2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .payment-header h3 {
+      font-family: 'Bebas Neue', 'Oswald', sans-serif;
+      font-size: 26px;
+      letter-spacing: 0.08em;
+      margin: 0;
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .payment-header h3::before {
+      content: "";
+      width: 4px;
+      height: 24px;
+      background: var(--yellow);
+      border-radius: 2px;
+    }
+
+    .close-cart {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--grey);
+      width: 36px;
+      height: 36px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .close-cart:hover {
+      border-color: var(--yellow);
+      color: var(--yellow);
+    }
+
+    .close-cart svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .payment-summary {
+      padding: 20px 28px;
+      background: var(--black);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .payment-summary .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--grey);
+    }
+
+    .payment-summary .row b {
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    .payment-summary .total-row {
+      margin-top: 6px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .payment-summary .total-row span {
+      font-family: 'Oswald', sans-serif;
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      color: var(--white);
+    }
+
+    .payment-summary .total-row b {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      color: var(--yellow);
+      letter-spacing: 0.05em;
+    }
+
+    .payment-methods {
+      padding: 24px 28px 16px;
+    }
+
+    .payment-methods h4 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--grey);
+      margin: 0 0 16px;
+    }
+
+    .method-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .method-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .method-card {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .method-card:hover {
+      border-color: var(--border-hover);
+      background: var(--dark3);
+    }
+
+    .method-card input[type="radio"] {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--grey);
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
+      margin-top: 2px;
+      flex-shrink: 0;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .method-card input[type="radio"]:checked {
+      border-color: var(--yellow);
+      background: var(--yellow);
+      box-shadow: inset 0 0 0 3px var(--black);
+    }
+
+    .method-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .method-info b {
+      font-family: 'Oswald', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--white);
+      letter-spacing: 0.04em;
+    }
+
+    .method-info small {
+      font-size: 12px;
+      color: var(--grey);
+      line-height: 1.4;
+    }
+
+    .checkout-instructions {
+      margin: 0 28px 20px;
+      padding: 12px 16px;
+      border-left: 3px solid var(--yellow);
+      background: rgba(234, 179, 8, 0.06);
+      color: var(--grey-light);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .checkout-form-container {
+      padding: 0 28px 28px;
+    }
+
+    .checkout-form-container form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-row input {
+      width: 100%;
+      background: var(--black);
+      border: 1px solid var(--border);
+      color: var(--white);
+      padding: 14px 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      border-radius: 4px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-row input:focus {
+      border-color: var(--yellow);
+    }
+
+    .btn.confirm {
+      background: var(--yellow);
+      color: var(--black);
+      border: none;
+      padding: 16px;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .btn.confirm:hover {
+      background: #facc15;
+      transform: translateY(-1px);
     }
 
     /* FOOTER */

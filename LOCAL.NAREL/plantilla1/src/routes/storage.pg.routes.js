@@ -3,7 +3,7 @@ const multer = require('multer');
 const { param, validationResult } = require('express-validator');
 const { authenticate, requireAdmin } = require('../middleware/postgresAuth');
 const { query } = require('../db/postgres');
-const { MAX_BYTES, MIME_ALLOWED, uploadProductImage, uploadProductImages, deleteObjectByPublicUrl } = require('../services/localStorage');
+const { MAX_BYTES, MIME_ALLOWED, uploadProductImage, uploadProductImages } = require('../services/localStorage');
 const { deleteProductImage, syncProductImages } = require('../services/productImages.service');
 
 const router = express.Router();

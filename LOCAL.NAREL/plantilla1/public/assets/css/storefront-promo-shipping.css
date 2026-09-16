@@ -1,0 +1,70 @@
+/* ===== STOREFRONT PROMO SHIPPING BANNER CSS ===== */
+#shippingPromoBanner {
+  background: #161616;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 10px 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  text-align: center;
+  position: relative;
+  z-index: 101;
+}
+
+.shipping-promo-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.shipping-promo-heading {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #eab308;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.shipping-promo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid #eab308;
+  color: #eab308;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.shipping-promo-detail {
+  color: #a1a1aa;
+}
+
+.shipping-promo-detail strong {
+  color: #ffffff;
+}
+
+.shipping-promo-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+
+.sp-time-unit {
+  color: #eab308;
+  font-weight: 700;
+}
