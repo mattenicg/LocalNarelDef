@@ -203,19 +203,14 @@
   function bindDirectPurchase() {
     const chk = document.getElementById('direct_purchase');
     const box = document.getElementById('directPurchaseBox');
-    const nameEl = document.getElementById('name');
-    const priceEl = document.getElementById('price');
-    const descEl = document.getElementById('description');
 
-    const discEnabledEl = document.getElementById('direct_discount_enabled');
-    const discPctEl = document.getElementById('direct_discount_percent');
-    const discTxtEl = document.getElementById('direct_discount_text');
-    const showPromoEl = document.getElementById('direct_show_promo_badge');
-    const promoTxtEl = document.getElementById('direct_promo_badge_text');
-    const instCountEl = document.getElementById('direct_installments_count');
-    const instTxtEl = document.getElementById('direct_installments_text');
-    const custTransEl = document.getElementById('direct_custom_transfer_price');
-    const transTxtEl = document.getElementById('direct_transfer_text');
+    const inputsToWatch = [
+      'name', 'price', 'description', 'direct_purchase',
+      'direct_discount_enabled', 'direct_discount_percent', 'direct_discount_text',
+      'direct_show_promo_badge', 'direct_promo_badge_text',
+      'direct_installments_count', 'direct_installments_text',
+      'direct_custom_transfer_price', 'direct_transfer_text'
+    ];
 
     function toggleBox() {
       if (!box) return;
@@ -226,83 +221,107 @@
     if (chk) chk.addEventListener('change', toggleBox);
     toggleBox();
 
-    [
-      nameEl, priceEl, descEl,
-      discEnabledEl, discPctEl, discTxtEl,
-      showPromoEl, promoTxtEl,
-      instCountEl, instTxtEl,
-      custTransEl, transTxtEl,
-    ].forEach((el) => {
-      if (el) el.addEventListener('input', updateDirectPreview);
-      if (el) el.addEventListener('change', updateDirectPreview);
+    inputsToWatch.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', updateDirectPreview);
+        el.addEventListener('change', updateDirectPreview);
+        el.addEventListener('keyup', updateDirectPreview);
+      }
     });
   }
 
   function formatMoney(num) {
-    if (!Number.isFinite(num)) return '$0';
-    return '$' + Math.round(num).toLocaleString('es-AR');
+    if (!Number.isFinite(num) || num <= 0) return '$0,00';
+    return '$' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   function updateDirectPreview() {
-    const prevName = document.getElementById('prev_name');
-    const prevBasePrice = document.getElementById('prev_base_price');
-    const prevTransPrice = document.getElementById('prev_transfer_price');
-    const prevTransText = document.getElementById('prev_transfer_text');
-    const prevBadge = document.getElementById('prev_promo_badge');
-    const prevInstText = document.getElementById('prev_installments_text');
-
-    const nameVal = (document.getElementById('name')?.value || '').trim() || 'Nombre del Producto';
+    // Read input values
+    const nameVal = (document.getElementById('name')?.value || '').trim() || 'NOMBRE DEL PRODUCTO';
     const priceVal = Number(document.getElementById('price')?.value) || 0;
 
-    const discEnabled = document.getElementById('direct_discount_enabled')?.checked !== false;
-    const discPct = discEnabled ? (Number(document.getElementById('direct_discount_percent')?.value) || 0) : 0;
-    const discTxt = (document.getElementById('direct_discount_text')?.value || '').trim() || 'con transferencia';
+    const discEnabledEl = document.getElementById('direct_discount_enabled');
+    const discEnabled = discEnabledEl ? discEnabledEl.checked : true;
+    const discPctVal = document.getElementById('direct_discount_percent')?.value;
+    const discPct = discEnabled && discPctVal !== '' && discPctVal !== null && !isNaN(discPctVal) ? Number(discPctVal) : 0;
+    const discTxtInput = document.getElementById('direct_discount_text')?.value;
+    const discTxt = discTxtInput !== undefined && discTxtInput !== null ? discTxtInput.trim() : 'con transferencia';
 
-    const showPromo = document.getElementById('direct_show_promo_badge')?.checked !== false;
-    const promoTxt = (document.getElementById('direct_promo_badge_text')?.value || '').trim() || 'PROMO ACTIVA';
+    const showPromoEl = document.getElementById('direct_show_promo_badge');
+    const showPromo = showPromoEl ? showPromoEl.checked : true;
+    const promoTxtInput = document.getElementById('direct_promo_badge_text')?.value;
+    const promoTxt = promoTxtInput !== undefined && promoTxtInput !== null ? promoTxtInput.trim() : 'PROMO ACTIVA';
 
-    const instCount = Number(document.getElementById('direct_installments_count')?.value) || 6;
-    const instTxt = (document.getElementById('direct_installments_text')?.value || '').trim() || 'sin interés';
+    const instCountVal = document.getElementById('direct_installments_count')?.value;
+    const instCount = instCountVal !== '' && instCountVal !== null && !isNaN(instCountVal) ? Number(instCountVal) : 6;
+    const instTxtInput = document.getElementById('direct_installments_text')?.value;
+    const instTxt = instTxtInput !== undefined && instTxtInput !== null ? instTxtInput.trim() : 'sin interés';
 
-    const custTransPrice = Number(document.getElementById('direct_custom_transfer_price')?.value);
-    const customText = (document.getElementById('direct_transfer_text')?.value || '').trim();
+    const custTransVal = document.getElementById('direct_custom_transfer_price')?.value;
+    const custTransPrice = custTransVal !== '' && custTransVal !== null && !isNaN(custTransVal) && Number(custTransVal) > 0 ? Number(custTransVal) : null;
+    const transTxtInput = document.getElementById('direct_transfer_text')?.value;
+    const transTxt = transTxtInput !== undefined && transTxtInput !== null ? transTxtInput.trim() : 'con Transferencia';
 
-    if (prevName) prevName.textContent = nameVal;
+    // 1. Name
+    const prevName = document.getElementById('previewProdName') || document.getElementById('prev_name');
+    if (prevName) prevName.textContent = nameVal.toUpperCase();
 
-    let transferPrice = priceVal;
-    if (custTransPrice && custTransPrice > 0) {
-      transferPrice = custTransPrice;
-    } else if (discPct > 0) {
-      transferPrice = priceVal * (1 - discPct / 100);
-    }
+    // 2. Base price
+    const prevPrice = document.getElementById('previewProdPrice') || document.getElementById('prev_base_price');
+    if (prevPrice) prevPrice.textContent = formatMoney(priceVal);
 
-    if (prevTransPrice) prevTransPrice.textContent = formatMoney(transferPrice);
-    if (prevBasePrice) {
-      if (priceVal > transferPrice) {
-        prevBasePrice.textContent = formatMoney(priceVal);
-        prevBasePrice.style.display = 'inline';
+    // 3. Discount badge
+    const prevDiscBadge = document.getElementById('previewDiscountBadge');
+    if (prevDiscBadge) {
+      if (discEnabled && (discPct > 0 || discTxt)) {
+        prevDiscBadge.style.display = 'inline-block';
+        if (discPct > 0) {
+          if (discTxt) {
+            if (/OFF/i.test(discTxt) || /%/i.test(discTxt)) {
+              prevDiscBadge.textContent = discTxt;
+            } else {
+              prevDiscBadge.textContent = `${discPct}% OFF ${discTxt}`;
+            }
+          } else {
+            prevDiscBadge.textContent = `${discPct}% OFF`;
+          }
+        } else {
+          prevDiscBadge.textContent = discTxt || 'con transferencia';
+        }
       } else {
-        prevBasePrice.style.display = 'none';
+        prevDiscBadge.style.display = 'none';
       }
     }
 
-    if (prevTransText) {
-      const label = customText ? customText : (discPct > 0 ? `${discPct}% DE DESCUENTO ${discTxt}` : 'con Transferencia');
-      prevTransText.textContent = label;
-    }
-
-    if (prevBadge) {
+    // 4. Promo badge
+    const prevPromoBadge = document.getElementById('previewPromoBadge') || document.getElementById('prev_promo_badge');
+    if (prevPromoBadge) {
       if (showPromo && promoTxt) {
-        prevBadge.textContent = promoTxt.toUpperCase();
-        prevBadge.style.display = 'inline-block';
+        prevPromoBadge.style.display = 'inline-block';
+        prevPromoBadge.textContent = promoTxt.toUpperCase();
       } else {
-        prevBadge.style.display = 'none';
+        prevPromoBadge.style.display = 'none';
       }
     }
 
-    if (prevInstText) {
-      const perInst = instCount > 0 ? priceVal / instCount : priceVal;
-      prevInstText.textContent = `${instCount} cuotas de ${formatMoney(perInst)} ${instTxt}`;
+    // 5. Installments line
+    const prevInstLine = document.getElementById('previewInstallmentsLine') || document.getElementById('prev_installments_text');
+    if (prevInstLine) {
+      const perInst = instCount > 0 ? (priceVal > 0 ? priceVal / instCount : 0) : priceVal;
+      prevInstLine.textContent = `${instCount} x ${formatMoney(perInst)} ${instTxt}`;
+    }
+
+    // 6. Transfer line
+    const prevTransLine = document.getElementById('previewTransferLine') || document.getElementById('prev_transfer_price');
+    if (prevTransLine) {
+      let transferPrice = priceVal;
+      if (custTransPrice !== null && custTransPrice > 0) {
+        transferPrice = custTransPrice;
+      } else if (discEnabled && discPct > 0) {
+        transferPrice = priceVal * (1 - discPct / 100);
+      }
+      prevTransLine.textContent = `${formatMoney(transferPrice)} ${transTxt || 'con Transferencia'}`;
     }
   }
 
