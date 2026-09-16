@@ -296,7 +296,10 @@
             </label>
             <input type="file" id="imagesInput" name="images" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
             <div id="imagesGalleryContainer" style="display:none;margin-top:14px;">
-              <div style="font-size:11px;font-family:'DM Mono',monospace;color:#aaa;margin-bottom:8px;" id="galleryCountText">0 fotos seleccionadas</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div style="font-size:11px;font-family:'DM Mono',monospace;color:#aaa;" id="galleryCountText">0 fotos</div>
+                <button type="button" id="deleteAllImagesBtn" class="button secondary" style="width:auto;padding:4px 10px;font-size:10px;color:#ff6666;border-color:#550000;display:none;">ELIMINAR TODAS</button>
+              </div>
               <div id="imagesGrid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:12px;"></div>
             </div>
           </div>
@@ -316,6 +319,6 @@
 
   <script src="/assets/js/supabaseClientBrowser.js"></script>
   <script src="/assets/js/authGuard.js"></script>
-  <script src="/admin/assets/js/admin/productNew.js"></script>
+  <script src="/admin/assets/js/admin/productFormAdmin.js"></script>
 </body>
 </html>

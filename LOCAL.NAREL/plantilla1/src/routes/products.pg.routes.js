@@ -180,32 +180,32 @@ router.get('/:id', [param('id').isUUID()], async (req, res) => {
 
 const rules = [
   body('name').isString().trim().isLength({ min: 1, max: 200 }).withMessage('Nombre requerido'),
-  body('description').optional().isString(),
+  body('description').optional({ nullable: true, checkFalsy: true }).isString(),
   body('price').custom((v) => {
     if (!Number.isFinite(Number(v)) || Number(v) < 0) throw Error('Precio inválido');
     return true;
   }),
-  body('sizes').optional().isString(),
+  body('sizes').optional({ nullable: true, checkFalsy: true }).isString(),
   body('stock').custom((v) => {
     if (!Number.isInteger(Number(v)) || Number(v) < 0) throw Error('Stock inválido');
     return true;
   }),
   body('category').optional().isString().trim().notEmpty().withMessage('Categoría inválida'),
-  body('subcategory').optional().isString().trim(),
-  body('subcategory_id').optional(),
-  body('active').optional().isBoolean(),
-  body('featured').optional().isBoolean(),
-  body('direct_purchase').optional().isBoolean(),
-  body('allowed_payment_methods').optional().isArray(),
-  body('allowed_installments').optional().isArray(),
-  body('direct_discount_percent').optional(),
-  body('direct_discount_text').optional().isString(),
-  body('direct_show_promo_badge').optional().isBoolean(),
-  body('direct_promo_badge_text').optional().isString(),
-  body('direct_installments_count').optional(),
-  body('direct_installments_text').optional().isString(),
-  body('direct_custom_transfer_price').optional({ nullable: true }),
-  body('direct_transfer_text').optional().isString(),
+  body('subcategory').custom((v) => v === null || v === undefined || typeof v === 'string'),
+  body('subcategory_id').custom((v) => v === null || v === undefined || typeof v === 'string'),
+  body('active').optional({ nullable: true, checkFalsy: true }).isBoolean(),
+  body('featured').optional({ nullable: true, checkFalsy: true }).isBoolean(),
+  body('direct_purchase').optional({ nullable: true, checkFalsy: true }).isBoolean(),
+  body('allowed_payment_methods').optional({ nullable: true, checkFalsy: true }).isArray(),
+  body('allowed_installments').optional({ nullable: true, checkFalsy: true }).isArray(),
+  body('direct_discount_percent').optional({ nullable: true, checkFalsy: true }),
+  body('direct_discount_text').optional({ nullable: true, checkFalsy: true }).isString(),
+  body('direct_show_promo_badge').optional({ nullable: true, checkFalsy: true }).isBoolean(),
+  body('direct_promo_badge_text').optional({ nullable: true, checkFalsy: true }).isString(),
+  body('direct_installments_count').optional({ nullable: true, checkFalsy: true }),
+  body('direct_installments_text').optional({ nullable: true, checkFalsy: true }).isString(),
+  body('direct_custom_transfer_price').optional({ nullable: true, checkFalsy: true }),
+  body('direct_transfer_text').optional({ nullable: true, checkFalsy: true }).isString(),
 ];
 
 router.post('/', rules, async (req, res) => {
