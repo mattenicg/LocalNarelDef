@@ -1037,11 +1037,18 @@
     }
 
     .product-image img {
-      transition: transform .6s cubic-bezier(.2, .8, .2, 1)
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      transition: opacity .2s ease;
     }
 
     .product:hover .product-image img {
-      transform: scale(1.14) rotate(-.5deg)
+      transform: none;
     }
 
     .product-image::after {
@@ -3948,11 +3955,18 @@
     }
 
     .product-image img {
-      transition: transform .6s cubic-bezier(.2, .8, .2, 1)
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      transition: opacity .2s ease;
     }
 
     .product:hover .product-image img {
-      transform: scale(1.14) rotate(-.5deg)
+      transform: none;
     }
 
     .product-image::after {
@@ -5928,7 +5942,8 @@
     .cart-cs-img img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      object-position: center;
     }
 
     .cart-cs-info {
@@ -6054,7 +6069,8 @@
     .pm-gallery img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      object-position: center;
     }
 
     .pm-badge {
@@ -6273,7 +6289,8 @@
     .pm-rec-img img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      object-position: center;
     }
 
     .pm-rec-cat {
@@ -8180,7 +8197,7 @@
         const disabledBtn = stock <= 0 ? ' disabled' : '';
         const imgUrl = (p.image_url && typeof p.image_url === 'string' && p.image_url.trim()) ? p.image_url.trim() : '';
         const innerImg = imgUrl
-          ? `<img src="${htmlEscape(imgUrl)}" alt="${name}" loading="lazy" onerror="var p=this.parentElement; this.remove(); if(p){var pl=p.querySelector('.placeholder'); if(pl) pl.style.display='flex';}">
+          ? `<img src="${htmlEscape(imgUrl)}" alt="${name}" loading="lazy" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block;" onerror="var p=this.parentElement; this.remove(); if(p){var pl=p.querySelector('.placeholder'); if(pl) pl.style.display='flex';}">
              <div class="placeholder" style="display:none;">${PLACEHOLDER_IMG_SVG}<span>IMAGEN</span></div>`
           : `<div class="placeholder">${PLACEHOLDER_IMG_SVG}<span>IMAGEN</span></div>`;
 
@@ -8415,14 +8432,14 @@
           galleryHTML = `
             <div class="pm-main-img-wrap" style="position:relative;width:100%;aspect-ratio:4/5;background:#080808;border:1px solid rgba(255,255,255,0.12);border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
               <span class="pm-badge"${badgeStyle}>${badge}</span>
-              <img id="pmMainImg" src="${htmlEscape(productImages[0])}" alt="${name}" style="width:100%;height:100%;object-fit:cover;display:block;">
+              <img id="pmMainImg" src="${htmlEscape(productImages[0])}" alt="${name}" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block;">
             </div>`;
           if (productImages.length > 1) {
             galleryHTML += `
               <div class="pm-thumbnails" style="display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:4px;width:100%;">
                 ${productImages.map((img, idx) => `
                   <button type="button" class="pm-thumb-btn ${idx === 0 ? 'active' : ''}" data-img-src="${htmlEscape(img)}" style="border:2px solid ${idx === 0 ? '#ffffff' : 'rgba(255,255,255,0.18)'};background:#000;padding:0;border-radius:6px;cursor:pointer;overflow:hidden;width:58px;height:58px;flex-shrink:0;transition:all 0.15s ease;">
-                    <img src="${htmlEscape(img)}" alt="Foto ${idx+1}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                    <img src="${htmlEscape(img)}" alt="Foto ${idx+1}" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block;">
                   </button>
                 `).join('')}
               </div>`;

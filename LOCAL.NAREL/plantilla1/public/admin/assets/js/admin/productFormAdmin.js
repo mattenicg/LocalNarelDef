@@ -573,7 +573,7 @@
 
           card.innerHTML = `
             <div style="position:relative;width:100%;height:120px;background:#050505;">
-              <img src="${escapeHtml(item.url)}" alt="Foto ${index + 1}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.src='/assets/img/logo-ngl-diamond.jpeg';">
+              <img src="${escapeHtml(item.url)}" alt="Foto ${index + 1}" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block;" onerror="this.src='/assets/img/logo-ngl-diamond.jpeg';">
               ${isPrimary ? '<span style="position:absolute;top:6px;left:6px;background:#e50914;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;font-family:\'DM Mono\',monospace;letter-spacing:.05em;">PORTADA</span>' : ''}
               ${isNew ? '<span style="position:absolute;top:6px;right:6px;background:#0066cc;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;font-family:\'DM Mono\',monospace;">NUEVA</span>' : ''}
               <span style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:\'DM Mono\',monospace;">#${index + 1}</span>
