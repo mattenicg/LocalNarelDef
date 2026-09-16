@@ -9162,9 +9162,9 @@
           if (categoriesGrid) categoriesGrid.style.display = 'none';
           if (promoBannerSec) promoBannerSec.style.display = 'none';
           if (shippingPromo) shippingPromo.style.display = 'none';
-          if (otherServices) otherServices.style.display = 'none';
-          if (howToBuy) howToBuy.style.display = 'none';
-          if (returnPolicy) returnPolicy.style.display = 'none';
+          if (otherServices) otherServices.style.display = 'block';
+          if (howToBuy) howToBuy.style.display = 'block';
+          if (returnPolicy) returnPolicy.style.display = 'block';
 
           if (navInicio) navInicio.classList.remove('active');
           if (mobileNavInicio) mobileNavInicio.classList.remove('active');
@@ -9179,12 +9179,15 @@
             }
           });
 
-          // Show only target category section and hide all other catalog sections
+          // Show target category section and general sections (otros-servicios, etc.)
           document.querySelectorAll('.catalog-section').forEach((sec) => {
-            if (sec.id.toLowerCase() === catSlug) {
+            const secId = sec.id.toLowerCase();
+            if (secId === catSlug || secId === 'otros-servicios' || secId === 'como-comprar' || secId === 'politicas-cambio') {
               sec.style.display = 'block';
-              const label = sec.querySelector('.section-label');
-              if (label) label.style.display = 'none'; // Header already in banner
+              if (secId === catSlug) {
+                const label = sec.querySelector('.section-label');
+                if (label) label.style.display = 'none'; // Header already in banner
+              }
 
               const container = sec.querySelector('.products[data-category]');
               if (container) {
@@ -9312,6 +9315,23 @@
                 history.pushState(null, '', '/');
                 applyRouteView();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            });
+          });
+
+          // Bind smooth scroll for hash section links (otros-servicios, como-comprar, politicas-cambio)
+          document.querySelectorAll('a[href*="#otros-servicios"], a[href*="#como-comprar"], a[href*="#politicas-cambio"]').forEach((a) => {
+            a.addEventListener('click', (e) => {
+              const href = a.getAttribute('href') || '';
+              const hashMatch = href.match(/#(otros-servicios|como-comprar|politicas-cambio)/);
+              if (hashMatch && hashMatch[1]) {
+                const targetId = hashMatch[1];
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                  e.preventDefault();
+                  targetEl.style.display = 'block';
+                  targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
               }
             });
           });

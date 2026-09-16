@@ -621,19 +621,14 @@ async function servirCategoriaOTienda(req, res, next) {
       body.is-category-page #inicio,
       body.is-category-page #shippingPromoBanner,
       body.is-category-page .categories,
-      body.is-category-page #secciones-grid,
-      body.is-category-page .services-section,
-      body.is-category-page #otros-servicios,
-      body.is-category-page .how-to-buy,
-      body.is-category-page #como-comprar,
-      body.is-category-page .return-policy,
-      body.is-category-page #politicas-cambio {
+      body.is-category-page #secciones-grid {
         display: none !important;
       }
-      body.is-category-page .catalog-section:not(#${cat.slug}) {
+      body.is-category-page .catalog-section:not(#${cat.slug}):not(#otros-servicios) {
         display: none !important;
       }
-      body.is-category-page #${cat.slug} {
+      body.is-category-page #${cat.slug},
+      body.is-category-page #otros-servicios {
         display: block !important;
       }
       body.is-category-page #${cat.slug} .section-label {

@@ -2936,19 +2936,14 @@
     body.is-category-page #inicio,
     body.is-category-page #shippingPromoBanner,
     body.is-category-page .categories,
-    body.is-category-page #secciones-grid,
-    body.is-category-page .services-section,
-    body.is-category-page #otros-servicios,
-    body.is-category-page .how-to-buy,
-    body.is-category-page #como-comprar,
-    body.is-category-page .return-policy,
-    body.is-category-page #politicas-cambio {
+    body.is-category-page #secciones-grid {
       display: none !important;
     }
-    body.is-category-page .catalog-section:not(#accesorios) {
+    body.is-category-page .catalog-section:not(#accesorios):not(#otros-servicios) {
       display: none !important;
     }
-    body.is-category-page #accesorios {
+    body.is-category-page #accesorios,
+    body.is-category-page #otros-servicios {
       display: block !important;
     }
     body.is-category-page #accesorios .section-label {
@@ -8293,20 +8288,6 @@
               <span>${stock <= 0 ? 'SIN STOCK' : 'AGREGAR'}</span>
             </button>`;
 
-        const rawSizesStr = (p.sizes && String(p.sizes).trim()) ? String(p.sizes).trim() : 'ÚNICO';
-        const cardSizeList = rawSizesStr.split(/\s*[-|/,]\s*/).map(s => s.trim()).filter(Boolean);
-        const cardSizesHTML = `
-          <div class="card-size-row" style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08);gap:6px;flex-wrap:wrap;">
-            <div class="card-size-list" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:11px;color:#cbd5e1;font-weight:600;">
-              <span style="color:#64748b;font-size:10px;letter-spacing:.05em;text-transform:uppercase;">TALLES:</span>
-              ${cardSizeList.map(s => `<span style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.15);">${htmlEscape(s)}</span>`).join('')}
-            </div>
-            <button type="button" class="btn-card-size-chart" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);color:#fff;font-family:'DM Mono',monospace;font-size:10.5px;padding:3px 8px;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-weight:600;white-space:nowrap;transition:all .15s ease;" onclick="event.stopPropagation(); window.openProductSizeGuideById('${htmlEscape(p.id || '')}');">
-              <span>📏 TABLA DE TALLES</span>
-            </button>
-          </div>
-        `;
-
         return (
           `<article class="product product-direct" data-id="${htmlEscape(p.id || '')}" data-price="${pricing.basePrice}" data-stock="${stock}" data-name="${name}" data-image="${htmlEscape(imgUrl)}" data-sizes="${sizes}"${directAttrs} style="cursor:pointer;" title="Click para ver detalle">` +
           `<span class="product-shine" aria-hidden="true"></span>` +
@@ -8321,7 +8302,6 @@
           `</div>` +
           `<div class="direct-installments-line" style="font-size:12.5px;color:#9ca3af;letter-spacing:.01em;margin-top:2px;">${pricing.installmentsCount} x ${pricing.installmentPriceStr} ${pricing.installmentsText}</div>` +
           `<div class="direct-transfer-line" style="font-size:14px;font-weight:700;color:#f43f5e;letter-spacing:.01em;margin-top:1px;">${pricing.transferPriceStr} ${pricing.transferText}</div>` +
-          cardSizesHTML +
           `<div class="product-bottom" style="margin-top:8px;padding-top:4px;border:none;">` +
           buttonHTML +
           `</div>` +
@@ -8403,99 +8383,6 @@
         scored.sort((a, b) => b.score - a.score);
         return scored.slice(0, Math.max(2, Math.min(4, maxCount))).map(s => s.product);
       }
-
-      function getEffectiveSizeGuide(p) {
-        if (!p) return '';
-        if (p.size_guide && String(p.size_guide).trim()) {
-          return String(p.size_guide).trim();
-        }
-        const cat = (p.category || '').toLowerCase();
-        if (cat.includes('pantal')) {
-          return 'Talle | Cintura | Cadera | Largo\n38 | 38 cm | 48 cm | 100 cm\n40 | 40 cm | 50 cm | 102 cm\n42 | 42 cm | 52 cm | 104 cm\n44 | 44 cm | 54 cm | 106 cm';
-        } else if (cat.includes('remera') || cat.includes('t-shirt')) {
-          return 'Talle | Pecho | Sisa | Largo\nS | 48 cm | 22 cm | 68 cm\nM | 51 cm | 23 cm | 71 cm\nL | 54 cm | 24 cm | 74 cm\nXL | 57 cm | 25 cm | 77 cm';
-        } else if (cat.includes('buzo') || cat.includes('hoodie')) {
-          return 'Talle | Pecho | Hombros | Largo | Manga\nS | 54 cm | 46 cm | 66 cm | 62 cm\nM | 57 cm | 48 cm | 69 cm | 64 cm\nL | 60 cm | 50 cm | 72 cm | 66 cm\nXL | 63 cm | 52 cm | 75 cm | 68 cm';
-        }
-        return 'Talle | Ancho | Largo\nS | 50 cm | 70 cm\nM | 53 cm | 72 cm\nL | 56 cm | 74 cm\nXL | 59 cm | 76 cm';
-      }
-
-      // ===== TABLA DE TALLES (SIZE GUIDE MODAL) =====
-      function renderSizeChartTableHTML(guideText) {
-        if (!guideText) return '';
-        const lines = String(guideText).trim().split('\n').map(l => l.trim()).filter(Boolean);
-        if (!lines.length) return '';
-
-        const isTable = lines.some(l => l.includes('|'));
-        if (isTable) {
-          const rows = lines.map(l => l.split('|').map(c => c.trim()));
-          const header = rows[0];
-          const bodyRows = rows.slice(1);
-
-          return `
-            <div style="overflow-x:auto;margin-top:10px;">
-              <table style="width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:12px;color:#eee;text-align:center;background:#111;border:1px solid #333;border-radius:6px;overflow:hidden;">
-                <thead>
-                  <tr style="background:#222;color:#fff;border-bottom:2px solid #444;text-transform:uppercase;">
-                    ${header.map(h => `<th style="padding:10px 14px;border-right:1px solid #333;font-weight:700;">${htmlEscape(h)}</th>`).join('')}
-                  </tr>
-                </thead>
-                <tbody>
-                  ${bodyRows.map((r, i) => `
-                    <tr style="border-bottom:1px solid #222;background:${i % 2 === 0 ? '#141414' : '#1a1a1a'};">
-                      ${r.map(c => `<td style="padding:10px 14px;border-right:1px solid #282828;">${htmlEscape(c)}</td>`).join('')}
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>`;
-        } else {
-          return `
-            <div style="background:#141414;border:1px solid #333;padding:14px;border-radius:6px;font-family:'DM Mono',monospace;font-size:12px;color:#ccc;white-space:pre-wrap;line-height:1.6;">
-              ${htmlEscape(guideText)}
-            </div>`;
-        }
-      }
-
-      function openSizeChartModal(sizeGuideText, prodName) {
-        let sizeModal = document.getElementById('sizeGuideModal');
-        if (!sizeModal) {
-          sizeModal = document.createElement('div');
-          sizeModal.id = 'sizeGuideModal';
-          sizeModal.className = 'modal-backdrop';
-          sizeModal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);z-index:999999;display:none;align-items:center;justify-content:center;padding:16px;';
-          sizeModal.innerHTML = `
-            <div style="background:#111;border:1px solid #333;border-radius:10px;width:100%;max-width:560px;padding:24px;position:relative;box-shadow:0 20px 40px rgba(0,0,0,0.8);">
-              <button type="button" id="closeSizeGuideBtn" style="position:absolute;top:14px;right:14px;background:none;border:none;color:#aaa;font-size:22px;cursor:pointer;line-height:1;">&times;</button>
-              <h4 id="sizeGuideModalTitle" style="margin:0 0 4px 0;font-family:'DM Mono',monospace;font-size:15px;color:#fff;text-transform:uppercase;letter-spacing:.05em;">📏 TABLA DE TALLES Y MEDIDAS</h4>
-              <div id="sizeGuideModalSub" style="font-size:12px;color:#888;margin-bottom:14px;font-family:'DM Mono',monospace;"></div>
-              <div id="sizeGuideModalContent"></div>
-            </div>`;
-          document.body.appendChild(sizeModal);
-
-          sizeModal.addEventListener('click', (e) => {
-            if (e.target === sizeModal || e.target.id === 'closeSizeGuideBtn' || e.target.closest('#closeSizeGuideBtn')) {
-              sizeModal.style.display = 'none';
-            }
-          });
-        }
-
-        const titleSub = document.getElementById('sizeGuideModalSub');
-        const contentEl = document.getElementById('sizeGuideModalContent');
-        if (titleSub) titleSub.textContent = `Medidas expresadas en centímetros para: ${prodName || 'Este producto'}`;
-        if (contentEl) contentEl.innerHTML = renderSizeChartTableHTML(sizeGuideText);
-
-        sizeModal.style.display = 'flex';
-      }
-
-      window.openProductSizeGuideById = function(productId) {
-        const prod = (allCatalogProducts || []).find(p => String(p.id) === String(productId));
-        if (prod) {
-          openSizeChartModal(getEffectiveSizeGuide(prod), prod.name);
-        } else {
-          openSizeChartModal(getEffectiveSizeGuide(null), 'Producto');
-        }
-      };
 
       // ===== PRODUCT DETAIL MODAL & CROSS-SELLING =====
       let currentModalProduct = null;
@@ -8585,26 +8472,24 @@
           productImages = [imgUrl];
         }
 
-        // Sizes chips + Tabla de Talles button
-        const rawSizes = (p.sizes && String(p.sizes).trim()) ? String(p.sizes).trim() : 'ÚNICO';
+        // Sizes chips
+        const rawSizes = String(p.sizes || '').trim();
         const sizeList = rawSizes.split(/\s*[-|/,]\s*/).map(s => s.trim()).filter(Boolean);
-        if (sizeList.length && !selectedModalSize) selectedModalSize = sizeList[0];
-        const sizesHTML = `
-          <div class="pm-sizes-section">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-              <span class="pm-sizes-label" style="margin:0;">ELEGÍ TU TALLE:</span>
-              <button type="button" class="pm-size-chart-btn" id="pmBtnSizeChart" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.3);color:#fff;font-family:'DM Mono',monospace;font-size:11px;padding:5px 12px;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s ease;font-weight:600;letter-spacing:0.03em;">
-                <span>📏 TABLA DE TALLES</span>
-              </button>
-            </div>
-            <div class="pm-size-chips" id="pmSizeChips">
-              ${sizeList.map(s => `
-                <button type="button" class="pm-size-btn ${s === selectedModalSize ? 'selected' : ''}" data-pm-size="${htmlEscape(s)}">
-                  ${htmlEscape(s)}
-                </button>
-              `).join('')}
-            </div>
-          </div>`;
+        let sizesHTML = '';
+        if (sizeList.length) {
+          if (!selectedModalSize) selectedModalSize = sizeList[0];
+          sizesHTML = `
+            <div class="pm-sizes-section">
+              <span class="pm-sizes-label">ELEGÍ TU TALLE:</span>
+              <div class="pm-size-chips" id="pmSizeChips">
+                ${sizeList.map(s => `
+                  <button type="button" class="pm-size-btn ${s === selectedModalSize ? 'selected' : ''}" data-pm-size="${htmlEscape(s)}">
+                    ${htmlEscape(s)}
+                  </button>
+                `).join('')}
+              </div>
+            </div>`;
+        }
 
         let galleryHTML = '';
         if (productImages.length > 0) {
@@ -8737,14 +8622,6 @@
             btn.classList.add('selected');
           });
         });
-
-        // Size chart button event
-        const chartBtn = container.querySelector('#pmBtnSizeChart');
-        if (chartBtn && currentModalProduct) {
-          chartBtn.addEventListener('click', () => {
-            openSizeChartModal(getEffectiveSizeGuide(currentModalProduct), currentModalProduct.name);
-          });
-        }
 
         // Main Add to Cart / Direct Buy button
         const mainAdd = container.querySelector('#pmMainAddBtn');
@@ -9306,9 +9183,9 @@
           if (categoriesGrid) categoriesGrid.style.display = 'none';
           if (promoBannerSec) promoBannerSec.style.display = 'none';
           if (shippingPromo) shippingPromo.style.display = 'none';
-          if (otherServices) otherServices.style.display = 'none';
-          if (howToBuy) howToBuy.style.display = 'none';
-          if (returnPolicy) returnPolicy.style.display = 'none';
+          if (otherServices) otherServices.style.display = 'block';
+          if (howToBuy) howToBuy.style.display = 'block';
+          if (returnPolicy) returnPolicy.style.display = 'block';
 
           if (navInicio) navInicio.classList.remove('active');
           if (mobileNavInicio) mobileNavInicio.classList.remove('active');
@@ -9323,12 +9200,15 @@
             }
           });
 
-          // Show only target category section and hide all other catalog sections
+          // Show target category section and general sections (otros-servicios, etc.)
           document.querySelectorAll('.catalog-section').forEach((sec) => {
-            if (sec.id.toLowerCase() === catSlug) {
+            const secId = sec.id.toLowerCase();
+            if (secId === catSlug || secId === 'otros-servicios' || secId === 'como-comprar' || secId === 'politicas-cambio') {
               sec.style.display = 'block';
-              const label = sec.querySelector('.section-label');
-              if (label) label.style.display = 'none'; // Header already in banner
+              if (secId === catSlug) {
+                const label = sec.querySelector('.section-label');
+                if (label) label.style.display = 'none'; // Header already in banner
+              }
 
               const container = sec.querySelector('.products[data-category]');
               if (container) {
@@ -9456,6 +9336,23 @@
                 history.pushState(null, '', '/');
                 applyRouteView();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            });
+          });
+
+          // Bind smooth scroll for hash section links (otros-servicios, como-comprar, politicas-cambio)
+          document.querySelectorAll('a[href*="#otros-servicios"], a[href*="#como-comprar"], a[href*="#politicas-cambio"]').forEach((a) => {
+            a.addEventListener('click', (e) => {
+              const href = a.getAttribute('href') || '';
+              const hashMatch = href.match(/#(otros-servicios|como-comprar|politicas-cambio)/);
+              if (hashMatch && hashMatch[1]) {
+                const targetId = hashMatch[1];
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                  e.preventDefault();
+                  targetEl.style.display = 'block';
+                  targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
               }
             });
           });
