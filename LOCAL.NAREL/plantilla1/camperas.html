@@ -2946,6 +2946,17 @@
     body.is-category-page #otros-servicios {
       display: block !important;
     }
+    body.is-category-page #como-comprar,
+    body.is-category-page #politicas-cambio {
+      display: block !important;
+    }
+    body.is-category-page #otros-servicios .scroll-reveal,
+    body.is-category-page #como-comprar .scroll-reveal,
+    body.is-category-page #politicas-cambio .scroll-reveal {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
     body.is-category-page #camperas .section-label {
       display: none !important;
     }
@@ -6747,6 +6758,17 @@
         margin: 0 auto;
       }
     }
+    /* FORZAR APARICION DE SECCIONES AL FINAL */
+    #otros-servicios, #como-comprar, #politicas-cambio {
+      display: block !important;
+    }
+    #otros-servicios .scroll-reveal,
+    #como-comprar .scroll-reveal,
+    #politicas-cambio .scroll-reveal {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
   </style>
 </head>
 
@@ -8262,7 +8284,7 @@
         const disabledBtn = stock <= 0 ? ' disabled' : '';
         const imgUrl = (p.image_url && typeof p.image_url === 'string' && p.image_url.trim()) ? p.image_url.trim() : '';
         const innerImg = imgUrl
-          ? `<img src="${htmlEscape(imgUrl)}" alt="${name}" loading="lazy" onerror="this.remove(); this.parentElement.querySelector('.placeholder') && (this.parentElement.querySelector('.placeholder').style.display='flex');">
+          ? `<img src="${htmlEscape(imgUrl)}" alt="${name}" loading="lazy" onerror="var p=this.parentElement; this.remove(); if(p){var pl=p.querySelector('.placeholder'); if(pl) pl.style.display='flex';}">
              <div class="placeholder" style="display:none;">${PLACEHOLDER_IMG_SVG}<span>IMAGEN</span></div>`
           : `<div class="placeholder">${PLACEHOLDER_IMG_SVG}<span>IMAGEN</span></div>`;
 
@@ -8295,6 +8317,7 @@
           `<div class="product-image">${innerImg}</div>` +
           `<div class="product-body" style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;">` +
           `<h4 class="product-name" style="font-size:14px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#fff;margin:0;line-height:1.3;">${name}</h4>` +
+          `<div class="product-sizes" style="font-size:11px;font-weight:600;color:#f43f5e;letter-spacing:.05em;text-transform:uppercase;margin-top:2px;">Talles: ${sizes || 'Único'}</div>` +
           `<div class="direct-price-main" style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#fff;margin-top:2px;">${pricing.priceFormatted}</div>` +
           `<div class="direct-promo-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;">` +
           discountBadgeHTML +

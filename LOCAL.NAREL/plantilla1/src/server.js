@@ -631,6 +631,17 @@ async function servirCategoriaOTienda(req, res, next) {
       body.is-category-page #otros-servicios {
         display: block !important;
       }
+      body.is-category-page #como-comprar,
+      body.is-category-page #politicas-cambio {
+        display: block !important;
+      }
+      body.is-category-page #otros-servicios .scroll-reveal,
+      body.is-category-page #como-comprar .scroll-reveal,
+      body.is-category-page #politicas-cambio .scroll-reveal {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+      }
       body.is-category-page #${cat.slug} .section-label {
         display: none !important;
       }
