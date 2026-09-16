@@ -237,6 +237,29 @@
   }
 
   function updateDirectPreview() {
+    // 0. Image Preview
+    const prevImg = document.getElementById('previewProdImage');
+    const prevPlaceholder = document.getElementById('previewImagePlaceholder');
+
+    let imageUrl = null;
+    if (allImages && allImages.length > 0 && allImages[0] && allImages[0].url) {
+      imageUrl = allImages[0].url;
+    } else if (currentProduct && currentProduct.image_url) {
+      imageUrl = currentProduct.image_url;
+    }
+
+    if (prevImg && prevPlaceholder) {
+      if (imageUrl) {
+        prevImg.src = imageUrl;
+        prevImg.style.display = 'block';
+        prevPlaceholder.style.display = 'none';
+      } else {
+        prevImg.src = '';
+        prevImg.style.display = 'none';
+        prevPlaceholder.style.display = 'flex';
+      }
+    }
+
     // Read input values
     const nameVal = (document.getElementById('name')?.value || '').trim() || 'NOMBRE DEL PRODUCTO';
     const priceVal = Number(document.getElementById('price')?.value) || 0;
@@ -480,79 +503,80 @@
     const countText = document.getElementById('galleryCountText');
     const delAllBtn = document.getElementById('deleteAllImagesBtn');
 
-    if (!container || !grid) return;
+    if (container && grid) {
+      if (allImages.length === 0) {
+        container.style.display = 'none';
+        grid.innerHTML = '';
+        if (delAllBtn) delAllBtn.style.display = 'none';
+      } else {
+        container.style.display = 'block';
+        if (delAllBtn) delAllBtn.style.display = 'inline-flex';
+        if (countText) {
+          countText.textContent = `${allImages.length} foto${allImages.length > 1 ? 's' : ''} (La 1ra es la portada principal)`;
+        }
 
-    if (allImages.length === 0) {
-      container.style.display = 'none';
-      grid.innerHTML = '';
-      if (delAllBtn) delAllBtn.style.display = 'none';
-      return;
-    }
+        grid.innerHTML = '';
+        allImages.forEach((item, index) => {
+          const card = document.createElement('div');
+          card.style.cssText = 'position:relative;background:#111;border:1px solid #333;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;';
 
-    container.style.display = 'block';
-    if (delAllBtn) delAllBtn.style.display = 'inline-flex';
-    if (countText) {
-      countText.textContent = `${allImages.length} foto${allImages.length > 1 ? 's' : ''} (La 1ra es la portada principal)`;
-    }
+          const isPrimary = index === 0;
+          const isNew = item.type === 'new';
 
-    grid.innerHTML = '';
-    allImages.forEach((item, index) => {
-      const card = document.createElement('div');
-      card.style.cssText = 'position:relative;background:#111;border:1px solid #333;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;';
+          card.innerHTML = `
+            <div style="position:relative;width:100%;height:120px;background:#050505;">
+              <img src="${escapeHtml(item.url)}" alt="Foto ${index + 1}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.src='/assets/img/logo-ngl-diamond.jpeg';">
+              ${isPrimary ? '<span style="position:absolute;top:6px;left:6px;background:#e50914;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;font-family:\'DM Mono\',monospace;letter-spacing:.05em;">PORTADA</span>' : ''}
+              ${isNew ? '<span style="position:absolute;top:6px;right:6px;background:#0066cc;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;font-family:\'DM Mono\',monospace;">NUEVA</span>' : ''}
+              <span style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:\'DM Mono\',monospace;">#${index + 1}</span>
+            </div>
+            <div style="padding:6px;display:flex;gap:4px;align-items:center;justify-content:space-between;background:#181818;border-top:1px solid #282828;">
+              <div style="display:flex;gap:2px;">
+                <button type="button" class="btn-move-left" style="background:#222;color:#fff;border:1px solid #444;border-radius:3px;padding:2px 6px;font-size:11px;cursor:pointer;" ${index === 0 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''} title="Mover a la izquierda">◀</button>
+                <button type="button" class="btn-move-right" style="background:#222;color:#fff;border:1px solid #444;border-radius:3px;padding:2px 6px;font-size:11px;cursor:pointer;" ${index === allImages.length - 1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''} title="Mover a la derecha">▶</button>
+              </div>
+              <button type="button" class="btn-remove-img" style="background:#3a0000;color:#ff6666;border:1px solid #770000;border-radius:3px;padding:2px 6px;font-size:10px;font-weight:700;cursor:pointer;" title="Eliminar foto">✕</button>
+            </div>
+          `;
 
-      const isPrimary = index === 0;
-      const isNew = item.type === 'new';
+          const btnLeft = card.querySelector('.btn-move-left');
+          const btnRight = card.querySelector('.btn-move-right');
+          const btnDel = card.querySelector('.btn-remove-img');
 
-      card.innerHTML = `
-        <div style="position:relative;width:100%;height:120px;background:#050505;">
-          <img src="${escapeHtml(item.url)}" alt="Foto ${index + 1}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.src='/assets/img/logo-ngl-diamond.jpeg';">
-          ${isPrimary ? '<span style="position:absolute;top:6px;left:6px;background:#e50914;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;font-family:\'DM Mono\',monospace;letter-spacing:.05em;">PORTADA</span>' : ''}
-          ${isNew ? '<span style="position:absolute;top:6px;right:6px;background:#0066cc;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;font-family:\'DM Mono\',monospace;">NUEVA</span>' : ''}
-          <span style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:\'DM Mono\',monospace;">#${index + 1}</span>
-        </div>
-        <div style="padding:6px;display:flex;gap:4px;align-items:center;justify-content:space-between;background:#181818;border-top:1px solid #282828;">
-          <div style="display:flex;gap:2px;">
-            <button type="button" class="btn-move-left" style="background:#222;color:#fff;border:1px solid #444;border-radius:3px;padding:2px 6px;font-size:11px;cursor:pointer;" ${index === 0 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''} title="Mover a la izquierda">◀</button>
-            <button type="button" class="btn-move-right" style="background:#222;color:#fff;border:1px solid #444;border-radius:3px;padding:2px 6px;font-size:11px;cursor:pointer;" ${index === allImages.length - 1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''} title="Mover a la derecha">▶</button>
-          </div>
-          <button type="button" class="btn-remove-img" style="background:#3a0000;color:#ff6666;border:1px solid #770000;border-radius:3px;padding:2px 6px;font-size:10px;font-weight:700;cursor:pointer;" title="Eliminar foto">✕</button>
-        </div>
-      `;
-
-      const btnLeft = card.querySelector('.btn-move-left');
-      const btnRight = card.querySelector('.btn-move-right');
-      const btnDel = card.querySelector('.btn-remove-img');
-
-      if (btnLeft && index > 0) {
-        btnLeft.addEventListener('click', () => {
-          const temp = allImages[index - 1];
-          allImages[index - 1] = allImages[index];
-          allImages[index] = temp;
-          renderGallery();
-        });
-      }
-
-      if (btnRight && index < allImages.length - 1) {
-        btnRight.addEventListener('click', () => {
-          const temp = allImages[index + 1];
-          allImages[index + 1] = allImages[index];
-          allImages[index] = temp;
-          renderGallery();
-        });
-      }
-
-      if (btnDel) {
-        btnDel.addEventListener('click', () => {
-          if (item.type === 'new' && item.file) {
-            try { URL.revokeObjectURL(item.url); } catch (_) {}
+          if (btnLeft && index > 0) {
+            btnLeft.addEventListener('click', () => {
+              const temp = allImages[index - 1];
+              allImages[index - 1] = allImages[index];
+              allImages[index] = temp;
+              renderGallery();
+            });
           }
-          allImages.splice(index, 1);
-          renderGallery();
+
+          if (btnRight && index < allImages.length - 1) {
+            btnRight.addEventListener('click', () => {
+              const temp = allImages[index + 1];
+              allImages[index + 1] = allImages[index];
+              allImages[index] = temp;
+              renderGallery();
+            });
+          }
+
+          if (btnDel) {
+            btnDel.addEventListener('click', () => {
+              if (item.type === 'new' && item.file) {
+                try { URL.revokeObjectURL(item.url); } catch (_) {}
+              }
+              allImages.splice(index, 1);
+              renderGallery();
+            });
+          }
+
+          grid.appendChild(card);
         });
       }
+    }
 
-      grid.appendChild(card);
-    });
+    updateDirectPreview();
   }
 
   function bindImages() {

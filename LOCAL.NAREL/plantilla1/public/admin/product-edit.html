@@ -250,34 +250,44 @@
                     👁️ Vista Previa en Tienda (Bajo el Producto):
                   </div>
                   
-                  <div id="directCardPreviewBox" style="background:#000;border:1px solid #222;border-radius:8px;padding:16px;max-width:340px;color:#fff;font-family:system-ui,-apple-system,sans-serif;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                      <span id="previewTopBadge" style="font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.06em;font-weight:700;padding:2px 8px;border-radius:3px;background:#222;color:#fff;">NUEVO</span>
-                    </div>
-                    <div id="previewProdName" style="font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#ddd;margin-bottom:8px;">
-                      PANTALON BAGGY IGOR PINK
-                    </div>
-                    <div id="previewProdPrice" style="font-size:22px;font-weight:800;letter-spacing:-.02em;color:#fff;margin-bottom:10px;">
-                      $112.500,00
-                    </div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
-                      <div id="previewDiscountBadge" style="background:#141414;border:1px solid #333;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;color:#eee;">
-                        25% OFF con transferencia
+                  <div id="directCardPreviewBox" style="background:#0a0a0a;border:1px solid #222;border-radius:10px;overflow:hidden;max-width:340px;color:#fff;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+                    <!-- CONTENEDOR DE IMAGEN CON BADGE OVERLAY -->
+                    <div id="previewProdImageContainer" style="position:relative;width:100%;height:260px;background:#111;overflow:hidden;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #222;">
+                      <img id="previewProdImage" src="" alt="Vista previa de producto" style="width:100%;height:100%;object-fit:cover;object-position:center;display:none;">
+                      <div id="previewImagePlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#555;font-size:11px;font-family:'DM Mono',monospace;text-transform:uppercase;text-align:center;padding:16px;width:100%;height:100%;background:repeating-linear-gradient(135deg,#0c0c0c,#0c0c0c 12px,#161616 12px,#161616 24px);">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <span>SIN IMAGEN CARGADA</span>
                       </div>
-                      <div id="previewPromoBadge" style="background:#e50914;color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:12px;letter-spacing:.05em;text-align:center;line-height:1.1;">
-                        PROMO ACTIVA
+                      <span id="previewTopBadge" style="position:absolute;top:10px;left:10px;font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.06em;font-weight:800;padding:3px 8px;border-radius:3px;background:#ffffff;color:#000000;box-shadow:0 2px 8px rgba(0,0,0,0.6);z-index:2;text-transform:uppercase;">NUEVO</span>
+                    </div>
+
+                    <!-- DATOS DEL PRODUCTO -->
+                    <div style="padding:14px 16px;">
+                      <div id="previewProdName" style="font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#ddd;margin-bottom:6px;line-height:1.3;word-break:break-word;">
+                        NOMBRE DEL PRODUCTO
                       </div>
+                      <div id="previewProdPrice" style="font-size:22px;font-weight:800;letter-spacing:-.02em;color:#fff;margin-bottom:8px;">
+                        $112.500,00
+                      </div>
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                        <div id="previewDiscountBadge" style="background:#141414;border:1px solid #333;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:600;color:#eee;">
+                          25% OFF con transferencia
+                        </div>
+                        <div id="previewPromoBadge" style="background:#e50914;color:#fff;font-size:10px;font-weight:800;padding:4px 9px;border-radius:12px;letter-spacing:.05em;text-align:center;line-height:1.1;">
+                          PROMO ACTIVA
+                        </div>
+                      </div>
+                      <div id="previewInstallmentsLine" style="font-size:12px;color:#999;margin-bottom:6px;">
+                        6 x $18.750,00 sin interés
+                      </div>
+                      <div id="previewTransferLine" style="font-size:14px;font-weight:700;color:#ff3366;margin-bottom:12px;">
+                        $84.375,00 con Transferencia
+                      </div>
+                      <button type="button" id="previewActionBtn" style="width:100%;padding:10px;background:#232733;color:#fff;border:1px solid #3d4354;border-radius:20px;font-size:13px;font-weight:700;cursor:default;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+                        <span>AGREGAR</span>
+                      </button>
                     </div>
-                    <div id="previewInstallmentsLine" style="font-size:12px;color:#999;margin-bottom:6px;">
-                      6 x $18.750,00 sin interés
-                    </div>
-                    <div id="previewTransferLine" style="font-size:14px;font-weight:700;color:#ff3366;margin-bottom:12px;">
-                      $84.375,00 con Transferencia
-                    </div>
-                    <button type="button" id="previewActionBtn" style="width:100%;padding:10px;background:#232733;color:#fff;border:1px solid #3d4354;border-radius:20px;font-size:13px;font-weight:700;cursor:default;display:flex;align-items:center;justify-content:center;gap:8px;">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
-                      <span>AGREGAR</span>
-                    </button>
                   </div>
                 </div>
               </div>

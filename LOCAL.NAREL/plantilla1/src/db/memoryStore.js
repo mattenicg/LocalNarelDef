@@ -666,6 +666,7 @@ function executeMemoryQuery(rawText, params = []) {
     }
     const newCat = { id, name, slug, subtitle, sort_order, created_at: now, updated_at: now };
     data.categories.push(newCat);
+    saveMemoryDbToFile();
     return { rows: [{ ...newCat }], rowCount: 1 };
   }
 
@@ -681,6 +682,7 @@ function executeMemoryQuery(rawText, params = []) {
       cat.sort_order = Number(params[3]) !== undefined && !isNaN(Number(params[3])) ? Number(params[3]) : cat.sort_order;
     }
     cat.updated_at = now;
+    saveMemoryDbToFile();
     return { rows: [{ ...cat }], rowCount: 1 };
   }
 
@@ -699,6 +701,7 @@ function executeMemoryQuery(rawText, params = []) {
           p.subcategory_id = null;
         }
       });
+      saveMemoryDbToFile();
       return { rows: [{ id: removed.id }], rowCount: 1 };
     }
     return { rows: [], rowCount: 0 };
@@ -717,6 +720,7 @@ function executeMemoryQuery(rawText, params = []) {
           count++;
         }
       });
+      saveMemoryDbToFile();
       return { rows: [], rowCount: count };
     }
     if (lowerSql.includes('set name = $1') || lowerSql.includes('set name=$1')) {
@@ -728,6 +732,7 @@ function executeMemoryQuery(rawText, params = []) {
         sub.name = newName;
         sub.slug = newSlug;
         sub.updated_at = nowIso();
+        saveMemoryDbToFile();
         return { rows: [{ ...sub }], rowCount: 1 };
       }
       return { rows: [], rowCount: 0 };
@@ -741,6 +746,7 @@ function executeMemoryQuery(rawText, params = []) {
       const matches = s.category_id === params[0] || s.category_slug.toLowerCase() === idOrSlug || s.id === params[0];
       return !matches;
     });
+    saveMemoryDbToFile();
     return { rows: [], rowCount: beforeLen - data.subcategories.length };
   }
 
@@ -1045,6 +1051,7 @@ function executeMemoryQuery(rawText, params = []) {
       if (params[21] !== undefined) p.direct_custom_transfer_price = params[21] ? Number(params[21]) : null;
       if (params[22] !== undefined) p.direct_transfer_text = String(params[22] || 'con Transferencia');
       p.updated_at = nowIso();
+      saveMemoryDbToFile();
       return { rows: [{ ...p }], rowCount: 1 };
     }
     if (lowerSql.includes('where id=$23')) {
@@ -1073,6 +1080,7 @@ function executeMemoryQuery(rawText, params = []) {
       if (params[20] !== undefined) p.direct_custom_transfer_price = params[20] ? Number(params[20]) : null;
       if (params[21] !== undefined) p.direct_transfer_text = String(params[21] || 'con Transferencia');
       p.updated_at = nowIso();
+      saveMemoryDbToFile();
       return { rows: [{ ...p }], rowCount: 1 };
     }
     if (lowerSql.includes('set category = $1') || lowerSql.includes('set category=$1')) {
@@ -1088,6 +1096,7 @@ function executeMemoryQuery(rawText, params = []) {
           updatedCount++;
         }
       });
+      saveMemoryDbToFile();
       return { rows: [], rowCount: updatedCount };
     }
     if (lowerSql.includes('stock=stock-$1')) {
@@ -1096,6 +1105,7 @@ function executeMemoryQuery(rawText, params = []) {
       if (p) {
         p.stock = Math.max(0, p.stock - delta);
         p.updated_at = nowIso();
+        saveMemoryDbToFile();
         return { rows: [{ ...p }], rowCount: 1 };
       }
       return { rows: [], rowCount: 0 };
@@ -1118,6 +1128,7 @@ function executeMemoryQuery(rawText, params = []) {
       if (params[12]) p.allowed_payment_methods = typeof params[12] === 'string' ? JSON.parse(params[12]) : params[12];
       if (params[13]) p.allowed_installments = typeof params[13] === 'string' ? JSON.parse(params[13]) : params[13];
       p.updated_at = nowIso();
+      saveMemoryDbToFile();
       return { rows: [{ ...p }], rowCount: 1 };
     }
     if (lowerSql.includes('where id=$12')) {
@@ -1135,6 +1146,7 @@ function executeMemoryQuery(rawText, params = []) {
       if (params[9] !== null && params[9] !== undefined) p.active = params[9];
       if (params[10] !== null && params[10] !== undefined) p.featured = params[10];
       p.updated_at = nowIso();
+      saveMemoryDbToFile();
       return { rows: [{ ...p }], rowCount: 1 };
     }
     if (lowerSql.includes('where id=$10')) {
@@ -1150,6 +1162,7 @@ function executeMemoryQuery(rawText, params = []) {
       if (params[7] !== null && params[7] !== undefined) p.active = params[7];
       if (params[8] !== null && params[8] !== undefined) p.featured = params[8];
       p.updated_at = nowIso();
+      saveMemoryDbToFile();
       return { rows: [{ ...p }], rowCount: 1 };
     }
     if (lowerSql.includes('image_url=null where id=$1')) {
@@ -1224,6 +1237,7 @@ function executeMemoryQuery(rawText, params = []) {
   if (lowerSql.startsWith('delete from promo_banner_items where banner_id=$1')) {
     const before = data.promo_banner_items.length;
     data.promo_banner_items = data.promo_banner_items.filter((bi) => bi.banner_id !== params[0]);
+    saveMemoryDbToFile();
     return { rows: [], rowCount: before - data.promo_banner_items.length };
   }
 
@@ -1239,6 +1253,7 @@ function executeMemoryQuery(rawText, params = []) {
       updated_at: nowIso(),
     };
     data.promo_banner_items.push(item);
+    saveMemoryDbToFile();
     return { rows: [{ ...item }], rowCount: 1 };
   }
 
@@ -1269,6 +1284,7 @@ function executeMemoryQuery(rawText, params = []) {
       updated_at: now,
     };
     data.promo_banners.unshift(banner);
+    saveMemoryDbToFile();
     return { rows: [{ ...banner }], rowCount: 1 };
   }
 
@@ -1278,6 +1294,7 @@ function executeMemoryQuery(rawText, params = []) {
       if (b) {
         b.active = !b.active;
         b.updated_at = nowIso();
+        saveMemoryDbToFile();
         return { rows: [{ id: b.id, active: b.active, updated_at: b.updated_at }], rowCount: 1 };
       }
       return { rows: [], rowCount: 0 };
@@ -1304,6 +1321,7 @@ function executeMemoryQuery(rawText, params = []) {
     b.badge_color = params[16] || null;
     b.featured = params[17] === true;
     b.updated_at = nowIso();
+    saveMemoryDbToFile();
     return { rows: [{ ...b }], rowCount: 1 };
   }
 
@@ -1312,6 +1330,7 @@ function executeMemoryQuery(rawText, params = []) {
     if (idx >= 0) {
       data.promo_banners.splice(idx, 1);
       data.promo_banner_items = data.promo_banner_items.filter((bi) => bi.banner_id !== params[0]);
+      saveMemoryDbToFile();
       return { rows: [{ id: params[0] }], rowCount: 1 };
     }
     return { rows: [], rowCount: 0 };
@@ -1430,6 +1449,7 @@ function executeMemoryQuery(rawText, params = []) {
       updated_at: now,
     };
     data.orders.unshift(newOrder);
+    saveMemoryDbToFile();
     return { rows: [{ ...newOrder }], rowCount: 1 };
   }
 
@@ -1448,6 +1468,7 @@ function executeMemoryQuery(rawText, params = []) {
       created_at: nowIso(),
     };
     data.order_items.push(item);
+    saveMemoryDbToFile();
     return { rows: [{ ...item }], rowCount: 1 };
   }
 
@@ -1464,6 +1485,7 @@ function executeMemoryQuery(rawText, params = []) {
       created_at: nowIso(),
     };
     data.stock_movements.push(movement);
+    saveMemoryDbToFile();
     return { rows: [{ ...movement }], rowCount: 1 };
   }
 
@@ -1474,6 +1496,7 @@ function executeMemoryQuery(rawText, params = []) {
       if (params[0]) order.status = params[0];
       if (params[1]) order.payment_status = params[1];
       order.updated_at = nowIso();
+      saveMemoryDbToFile();
       return { rows: [{ ...order }], rowCount: 1 };
     }
     return { rows: [], rowCount: 0 };
