@@ -18,9 +18,18 @@ console.log('[TEST] express OK');
 const cookieParser = require('cookie-parser');
 console.log('[TEST] express OK');
 
+console.log('[TEST] antes de config');
 const { PORT, ORIGIN_PERMITIDO, NODE_ENV } = require('./config');
+console.log('[TEST] config OK');
+
 const logger = require('./utils/logger');
+console.log('[TEST] logger OK');
+
 const { limiterGeneral } = require('./middleware/rateLimit');
+console.log('[TEST] rateLimit OK');
+
+const { initPostgres, query } = require('./db/postgres');
+console.log('[TEST] postgres OK');
 
 const { initPostgres, query } = require('./db/postgres');
 // SQLite y sus rutas legacy quedan deshabilitadas.
