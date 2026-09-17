@@ -18,7 +18,11 @@
     { name: 'Accesorios', slug: 'accesorios', subcategories: [] },
   ];
 
-  window.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', init);
+  } else {
+    setTimeout(init, 0);
+  }
 
   async function init() {
     const user = await window.auth.requireAuth({ requireAdmin: true });
@@ -71,15 +75,23 @@
     if (!categoryEl) return;
 
     try {
-      const res = await window.auth.apiFetch('/api/admin/products/categories');
+      // 1. Probar primero /api/admin/categories (mismo endpoint que usa la pantalla de Secciones)
+      let res = await window.auth.apiFetch('/api/admin/categories');
       if (res && res.ok && Array.isArray(res.data) && res.data.length > 0) {
         categoriesList = res.data;
       } else {
-        const publicRes = await window.auth.apiFetch('/api/products/categories');
-        if (publicRes && publicRes.ok && Array.isArray(publicRes.data) && publicRes.data.length > 0) {
-          categoriesList = publicRes.data;
+        // 2. Fallback a /api/admin/products/categories
+        res = await window.auth.apiFetch('/api/admin/products/categories');
+        if (res && res.ok && Array.isArray(res.data) && res.data.length > 0) {
+          categoriesList = res.data;
         } else {
-          categoriesList = DEFAULT_CATEGORIES;
+          // 3. Fallback a /api/products/categories (público)
+          const publicRes = await window.auth.apiFetch('/api/products/categories');
+          if (publicRes && publicRes.ok && Array.isArray(publicRes.data) && publicRes.data.length > 0) {
+            categoriesList = publicRes.data;
+          } else {
+            categoriesList = DEFAULT_CATEGORIES;
+          }
         }
       }
     } catch (_) {
@@ -90,8 +102,8 @@
     categoriesList.forEach((cat) => {
       const opt = document.createElement('option');
       opt.value = cat.slug;
-      opt.textContent = cat.name.toUpperCase();
-      if (selectedCatSlug && cat.slug.toLowerCase() === selectedCatSlug.toLowerCase()) {
+      opt.textContent = (cat.name || cat.slug).toUpperCase();
+      if (selectedCatSlug && String(cat.slug).toLowerCase() === String(selectedCatSlug).toLowerCase()) {
         opt.selected = true;
       }
       categoryEl.appendChild(opt);
@@ -116,7 +128,7 @@
         opt.textContent = sub.name;
 
         const isMatch =
-          (selectedSubSlug && (sub.slug.toLowerCase() === selectedSubSlug.toLowerCase() || sub.name.toLowerCase() === selectedSubSlug.toLowerCase())) ||
+          (selectedSubSlug && (String(sub.slug).toLowerCase() === String(selectedSubSlug).toLowerCase() || String(sub.name).toLowerCase() === String(selectedSubSlug).toLowerCase())) ||
           (selectedSubId && sub.id && String(sub.id) === String(selectedSubId));
 
         if (isMatch) {
@@ -172,6 +184,10 @@
         if (!categoryEl || !categoryEl.value) {
           alert('Seleccioná primero una categoría para agregar una subcategoría.');
           return;
+        }
+        const parentLabelEl = document.getElementById('newSubcatParentLabel');
+        if (parentLabelEl && categoryEl.selectedOptions && categoryEl.selectedOptions[0]) {
+          parentLabelEl.textContent = categoryEl.selectedOptions[0].textContent;
         }
         box.style.display = 'block';
         input.value = '';
@@ -925,7 +941,12 @@
         image_url: primaryImageUrl,
         images: finalImageUrls,
         product_images: finalImageUrls,
-        size_stock: activeSizeStocks,
+        size_stock: activeSizeStocks
+          .filter((item) => item && typeof item.size_name === 'string' && item.size_name.trim() !== '')
+          .map((item) => ({
+            size_name: item.size_name.trim(),
+            stock: Math.max(0, parseInt(item.stock, 10) || 0),
+          })),
       };
 
       console.log('handleSubmit: Payload prepared', payload);
@@ -969,8 +990,6 @@
       .replace(/'/g, '&#039;');
   }
 
-  let activeSizeStocks = [];
-
   function initSizeStockWidget() {
     const sizesEl = document.getElementById('sizes');
     const stockEl = document.getElementById('stock');
@@ -978,35 +997,47 @@
     if (sizesEl) {
       sizesEl.readOnly = true;
       sizesEl.style.background = '#0a0a0a';
-      sizesEl.style.color = '#888';
+      sizesEl.style.color = '#aaa';
       sizesEl.style.cursor = 'not-allowed';
       sizesEl.placeholder = 'Se calcula automáticamente...';
     }
     if (stockEl) {
       stockEl.readOnly = true;
       stockEl.style.background = '#0a0a0a';
-      stockEl.style.color = '#888';
+      stockEl.style.color = '#aaa';
       stockEl.style.cursor = 'not-allowed';
       stockEl.placeholder = 'Se calcula automáticamente...';
+    }
+
+    if (document.getElementById('sizeStockWidgetBox')) {
+      return;
     }
 
     const sizesFormGroup = sizesEl ? sizesEl.closest('.form-group') : null;
     if (sizesFormGroup) {
       const widgetHtml = `
-        <div class="form-group full" style="background:#111;border:1px solid #333;padding:16px;border-radius:6px;margin-top:16px;margin-bottom:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;">
+        <div id="sizeStockWidgetBox" class="form-group full" style="background:#111;border:1px solid #333;padding:18px;border-radius:6px;margin-top:16px;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap;">
             <label style="font-size:12px;letter-spacing:.05em;font-family:'DM Mono',monospace;text-transform:uppercase;color:#fff;font-weight:700;margin:0;">
               📦 Variante de Talles y Stock
             </label>
-            <button type="button" id="btnAdminAddSize" class="button primary" style="width:auto;padding:6px 12px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;background:#ff3366;border:none;color:#fff;font-weight:700;border-radius:4px;">
-              + AGREGAR TALLE
-            </button>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button type="button" id="btnAdminAddPresetUnico" class="button secondary" style="width:auto;padding:5px 10px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;">
+                + Talle Único
+              </button>
+              <button type="button" id="btnAdminAddPresetSML" class="button secondary" style="width:auto;padding:5px 10px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;">
+                + S / M / L / XL
+              </button>
+              <button type="button" id="btnAdminAddSize" class="button primary" style="width:auto;padding:6px 14px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;background:#e50914;border:none;color:#fff;font-weight:700;border-radius:4px;">
+                + AGREGAR TALLE
+              </button>
+            </div>
           </div>
-          <div style="font-size:11px;color:#999;font-family:'DM Mono',monospace;margin-bottom:14px;line-height:1.4;">
-            Creá tus talles personalizados (ej: XS, 38, 100 cm, "Único") y asigná el stock para cada uno. El stock general y la lista de talles de arriba se actualizarán automáticamente.
+          <div style="font-size:11px;color:#888;font-family:'DM Mono',monospace;margin-bottom:14px;line-height:1.4;">
+            Ingresá tus talles (ej: S, M, L, XL, 38, o Único) y el stock de cada uno. El stock general y los talles se actualizarán de inmediato.
           </div>
-          <div id="sizeStockContainer" style="display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;padding-right:4px;">
-            <!-- Rows will be rendered here -->
+          <div id="sizeStockContainer" style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;padding-right:4px;">
+            <!-- Filas de talles -->
           </div>
         </div>
       `;
@@ -1016,6 +1047,27 @@
       if (addBtn) {
         addBtn.addEventListener('click', () => {
           activeSizeStocks.push({ size_name: '', stock: 0 });
+          renderSizeStockRows();
+        });
+      }
+
+      const presetUnicoBtn = document.getElementById('btnAdminAddPresetUnico');
+      if (presetUnicoBtn) {
+        presetUnicoBtn.addEventListener('click', () => {
+          activeSizeStocks = [{ size_name: 'Único', stock: 10 }];
+          renderSizeStockRows();
+        });
+      }
+
+      const presetSMLBtn = document.getElementById('btnAdminAddPresetSML');
+      if (presetSMLBtn) {
+        presetSMLBtn.addEventListener('click', () => {
+          activeSizeStocks = [
+            { size_name: 'S', stock: 5 },
+            { size_name: 'M', stock: 5 },
+            { size_name: 'L', stock: 5 },
+            { size_name: 'XL', stock: 5 }
+          ];
           renderSizeStockRows();
         });
       }

@@ -6,7 +6,11 @@
   let pendingDeleteSubcatId = null;
   let subcatSlugTouchedManually = false;
 
-  window.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', init);
+  } else {
+    setTimeout(init, 0);
+  }
 
   async function init() {
     const user = await window.auth.requireAuth({ requireAdmin: true });
