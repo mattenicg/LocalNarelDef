@@ -5,7 +5,7 @@ dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PUERTO: parseInt(process.env.PUERTO, 10) || 3000,
+  PUERTO: parseInt(process.env.PORT || process.env.PUERTO, 10) || 3000,
   DB_PATH: process.env.DB_PATH || path.join(__dirname, '..', '..', 'data', 'app.db'),
   JWT_SECRET: process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-only-change-jwt-secret'),
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',

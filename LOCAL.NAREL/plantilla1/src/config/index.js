@@ -2,7 +2,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 
 module.exports = {
-  PORT: process.env.PUERTO || 3000,
+  PORT: process.env.PORT || process.env.PUERTO || 3000,
   DB_PATH: process.env.DB_PATH || path.join(__dirname, '..', '..', 'data', 'app.db'),
   JWT_SECRET: process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-only-change-jwt-secret'),
   JWT_EXPIRES: process.env.JWT_EXPIRES || '7d',
