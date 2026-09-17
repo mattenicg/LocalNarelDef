@@ -2,7 +2,7 @@
 
 /**
  * Servicio de integración y cotizador real de envíos multilogística para Argentina.
- * Soporta Correo Argentino (PAQ.AR Clásico, Expreso, Sucursal), Andreani y Retiro en Local.
+ * Soporta Correo Argentino (PAQ.AR Clásico, Expreso, Sucursal) y Retiro en Local.
  */
 
 const logger = require('../utils/logger');
@@ -82,11 +82,11 @@ function calculateRealTariffsByZone(cp, totalWeightGrams) {
 
   // Matriz de precios base vigentes en ARS por zona postal
   const basePrices = {
-    1: { clasico: 4850, expreso: 6900, andreani: 5400, sucursal: 3600 },
-    2: { clasico: 7150, expreso: 9800, andreani: 8450, sucursal: 5200 },
-    3: { clasico: 9734, expreso: 12850, andreani: 10618, sucursal: 7150 },
-    4: { clasico: 11850, expreso: 15400, andreani: 13200, sucursal: 8900 },
-    5: { clasico: 14900, expreso: 19500, andreani: 16800, sucursal: 11400 },
+    1: { clasico: 4850, expreso: 6900, sucursal: 3600 },
+    2: { clasico: 7150, expreso: 9800, sucursal: 5200 },
+    3: { clasico: 9734, expreso: 12850, sucursal: 7150 },
+    4: { clasico: 11850, expreso: 15400, sucursal: 8900 },
+    5: { clasico: 14900, expreso: 19500, sucursal: 11400 },
   };
 
   const zonePrices = basePrices[zoneInfo.zone] || basePrices[3];
@@ -95,7 +95,6 @@ function calculateRealTariffsByZone(cp, totalWeightGrams) {
     zoneInfo,
     clasico: Math.round(zonePrices.clasico * weightMultiplier),
     expreso: Math.round(zonePrices.expreso * weightMultiplier),
-    andreani: Math.round(zonePrices.andreani * weightMultiplier),
     sucursal: Math.round(zonePrices.sucursal * weightMultiplier),
   };
 }
@@ -168,19 +167,6 @@ async function getDeliveryOptions({ postalCode, items = [] }) {
       maxDays: z.maxDays,
       estimatedDays: `${z.minDays} a ${z.maxDays} días hábiles`,
       description: 'Envío prioritario a domicilio con entrega rápida',
-      available: true,
-    },
-    // ENVIAR A DOMICILIO - ANDREANI
-    {
-      id: 'andreani_domicilio',
-      name: 'Andreani a domicilio',
-      provider: 'Andreani',
-      type: 'domicilio',
-      price: calculatedRates.andreani,
-      minDays: z.minDays,
-      maxDays: z.maxDays + 1,
-      estimatedDays: `${z.minDays} a ${z.maxDays + 1} días hábiles`,
-      description: 'Envío a domicilio por red logística Andreani con seguimiento satelital',
       available: true,
     },
     // RETIRAR EN SUCURSAL / PUNTO DE RETIRO

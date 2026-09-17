@@ -603,6 +603,51 @@
       display: none;
     }
 
+    /* BARRA PROGRESIVA DE BENEFICIO ENVÍO GRATIS */
+    .free-shipping-bar {
+      background: #141414;
+      border: 1px solid #292929;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+    }
+    .free-shipping-bar.qualified {
+      background: rgba(34, 197, 94, 0.08);
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+    .free-shipping-bar-text {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: #eee;
+    }
+    .free-shipping-bar-text strong {
+      color: #fff;
+    }
+    .free-shipping-bar.qualified .free-shipping-bar-text strong {
+      color: #22c55e;
+    }
+    .free-shipping-progress-bg {
+      width: 100%;
+      height: 7px;
+      background: #252525;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .free-shipping-progress-fill {
+      height: 100%;
+      background: #facc15;
+      border-radius: 6px;
+      transition: width 0.35s ease;
+    }
+    .free-shipping-bar.qualified .free-shipping-progress-fill {
+      background: #22c55e;
+    }
+
     /* CATEGORÍAS DE ENTREGA Y TARJETAS */
     .delivery-options-container {
       display: flex;
@@ -1290,6 +1335,9 @@
       <!-- COLUMNA IZQUIERDA: PRODUCTOS Y OPCIONES DE ENTREGA -->
       <div class="cart-left-column">
         
+        <!-- BANNER DE BENEFICIO ENVÍO GRATIS -->
+        <div id="freeShippingBanner" class="free-shipping-bar" style="display:none;"></div>
+
         <!-- SECCIÓN DE PRODUCTOS -->
         <section class="cart-items-card">
           <div class="cart-items-header">
@@ -1504,8 +1552,64 @@
         return `Llega entre el ${minStr} y el ${maxStr}`;
       }
 
+      let freeShippingRule = null;
+
+      async function loadFreeShippingRule() {
+        try {
+          const res = await fetch('/api/shipping/free-config', { cache: 'no-store' });
+          const json = await res.json();
+          if (json && json.ok && json.data) {
+            freeShippingRule = json.data;
+            updateFreeShippingBanner();
+            renderCartPage();
+          }
+        } catch (_e) {}
+      }
+
+      function updateFreeShippingBanner() {
+        const banner = document.getElementById('freeShippingBanner');
+        if (!banner) return;
+        if (!freeShippingRule || !freeShippingRule.enabled) {
+          banner.style.display = 'none';
+          return;
+        }
+
+        const items = getCart();
+        const subtotal = items.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 1)), 0);
+        const minAmount = Number(freeShippingRule.minAmount) || 0;
+
+        banner.style.display = 'block';
+
+        if (subtotal >= minAmount) {
+          banner.className = 'free-shipping-bar qualified';
+          banner.innerHTML = `
+            <div class="free-shipping-bar-text">
+              <span>🎉 <strong>¡TENÉS ENVÍO GRATIS!</strong> Superaste el monto de ${formatMoney(minAmount)}.</span>
+              <strong style="color:#22c55e;">100%</strong>
+            </div>
+            <div class="free-shipping-progress-bg">
+              <div class="free-shipping-progress-fill" style="width: 100%;"></div>
+            </div>
+          `;
+        } else {
+          const diff = minAmount - subtotal;
+          const percent = Math.min(100, Math.max(0, Math.round((subtotal / minAmount) * 100)));
+          banner.className = 'free-shipping-bar';
+          banner.innerHTML = `
+            <div class="free-shipping-bar-text">
+              <span>🚚 Te faltan <strong>${formatMoney(diff)}</strong> para tener <strong>ENVÍO GRATIS</strong></span>
+              <span style="font-size:12px;color:#888;">${percent}%</span>
+            </div>
+            <div class="free-shipping-progress-bg">
+              <div class="free-shipping-progress-fill" style="width: ${percent}%;"></div>
+            </div>
+          `;
+        }
+      }
+
       // Renderizado del Carrito
       function renderCartPage() {
+        updateFreeShippingBanner();
         const items = getCart();
         const container = document.getElementById('cartPageItems');
         const headerQty = document.getElementById('cartHeaderQty');
@@ -1588,7 +1692,13 @@
 
         if (selectedOpt) {
           const shippingCost = Number(selectedOpt.price) || 0;
-          if (shippingEl) shippingEl.textContent = formatMoney(shippingCost);
+          if (shippingEl) {
+            if (shippingCost === 0) {
+              shippingEl.innerHTML = '<span style="color:#22c55e;font-weight:700;">$ 0 (GRATIS)</span>';
+            } else {
+              shippingEl.textContent = formatMoney(shippingCost);
+            }
+          }
           if (totalEl) totalEl.textContent = '$' + Math.round(subtotal + shippingCost).toLocaleString('es-AR').replace(/,/g, '.');
           if (checkoutBtn) checkoutBtn.disabled = false;
         } else {
@@ -1636,6 +1746,7 @@
         const cpBadgeText = document.getElementById('cpBadgeText');
         const cpErrorMsg = document.getElementById('cpErrorMsg');
         const items = getCart();
+        const subtotal = items.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 1)), 0);
 
         if (!container) return;
 
@@ -1653,7 +1764,7 @@
           const res = await fetch('/api/shipping/options', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ postalCode: cp, items }),
+            body: JSON.stringify({ postalCode: cp, items, subtotal }),
           });
 
           const json = await res.json();
@@ -1662,11 +1773,16 @@
             currentPostalCode = cp;
             availableDeliveryOptions = json.data.options;
 
+            if (json.data.freeShipping) {
+              freeShippingRule = json.data.freeShipping;
+              updateFreeShippingBanner();
+            }
+
             if (cpInputBox) cpInputBox.style.display = 'none';
             if (cpBadgeBar) cpBadgeBar.style.display = 'flex';
             if (cpBadgeText) cpBadgeText.textContent = `CP ${cp}`;
 
-            // Seleccionar por defecto Retiro en Local o primera opción si la anterior no aplica
+            // Seleccionar por defecto primera opción si la anterior no aplica
             if (!availableDeliveryOptions.some(o => o.id === selectedOptionId)) {
               selectedOptionId = availableDeliveryOptions[0]?.id || null;
             }
@@ -1741,9 +1857,25 @@
         card.className = `delivery-option-card ${isSelected ? 'selected' : ''}`;
         card.dataset.id = opt.id;
 
-        const priceText = Number(opt.price) === 0 ? 'GRATIS' : formatMoney(opt.price);
-        const priceClass = Number(opt.price) === 0 ? 'free' : '';
+        const isFree = Number(opt.price) === 0 || opt.isFree;
+        let priceHtml = '';
+        if (isFree) {
+          if (opt.originalPrice && Number(opt.originalPrice) > 0) {
+            priceHtml = `
+              <div style="display:flex;flex-direction:column;align-items:flex-end;">
+                <span style="text-decoration:line-through;color:#777;font-size:12px;margin-bottom:2px;">${formatMoney(opt.originalPrice)}</span>
+                <span style="color:#22c55e;font-weight:700;font-size:15px;">GRATIS</span>
+              </div>
+            `;
+          } else {
+            priceHtml = `<span style="color:#22c55e;font-weight:700;font-size:15px;">GRATIS</span>`;
+          }
+        } else {
+          priceHtml = formatMoney(opt.price);
+        }
+
         const etaText = getDeliveryDateRangeText(opt.minDays, opt.maxDays);
+        const freeBadge = isFree ? `<span style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.4);font-size:10px;padding:2px 6px;border-radius:3px;margin-left:6px;font-family:'DM Mono',monospace;font-weight:700;">ENVÍO GRATIS</span>` : '';
 
         card.innerHTML = `
           <div class="custom-radio">
@@ -1753,13 +1885,14 @@
             <div class="delivery-option-name">
               ${opt.name}
               <span class="provider-tag">${opt.provider}</span>
+              ${freeBadge}
             </div>
             <div class="delivery-option-desc">${opt.description}</div>
             ${opt.hours ? `<div class="delivery-option-hours">Horarios: ${opt.hours}</div>` : ''}
             <div class="delivery-option-eta">${etaText}</div>
           </div>
-          <div class="delivery-option-price ${priceClass}">
-            ${priceText}
+          <div class="delivery-option-price ${isFree ? 'free' : ''}">
+            ${priceHtml}
           </div>
         `;
 
@@ -1818,6 +1951,11 @@
           const selectedOpt = availableDeliveryOptions.find(o => o.id === selectedOptionId);
           if (!items.length || !selectedOpt) return;
 
+          // Guardar la opción elegida para que el modal de checkout y creación de orden la utilicen
+          try {
+            sessionStorage.setItem('narel_selected_delivery', JSON.stringify(selectedOpt));
+          } catch (_e) {}
+
           const modal = document.getElementById('paymentModal');
           if (modal) {
             modal.classList.add('open');
@@ -1825,7 +1963,8 @@
 
             const modalShippingEl = document.getElementById('sumShippingModal');
             if (modalShippingEl) {
-              modalShippingEl.textContent = `${selectedOpt.name} (${formatMoney(selectedOpt.price)})`;
+              const priceDisplay = Number(selectedOpt.price) === 0 ? 'GRATIS ($0)' : formatMoney(selectedOpt.price);
+              modalShippingEl.textContent = `${selectedOpt.name} (${priceDisplay})`;
             }
 
             if (window.shop && typeof window.shop.openCheckout === 'function') {
@@ -1835,8 +1974,9 @@
         });
       }
 
-      // Cargar CP predeterminado '3000' para mostrar de inmediato la interfaz de la captura si hay productos
+      // Inicialización
       document.addEventListener('DOMContentLoaded', () => {
+        loadFreeShippingRule();
         renderCartPage();
         const items = getCart();
         if (items.length > 0) {
