@@ -2,7 +2,7 @@
   "products": [
     {
       "id": "013cfd82-f4d6-49ee-821f-429861ec846b",
-      "name": "Producto Test Persistencia 1789575069611 (UPDATED)",
+      "name": "Producto Test Persistencia 1789575069611 (UPDATED) 1 1",
       "description": "Desc test updated",
       "price": 18000,
       "sizes": "S, M, L, XL",
@@ -34,7 +34,11 @@
       "direct_custom_transfer_price": null,
       "direct_transfer_text": "con Transferencia",
       "created_at": "2026-09-16T16:11:09.615Z",
-      "updated_at": "2026-09-16T16:11:09.617Z"
+      "updated_at": "2026-09-17T01:50:36.899Z",
+      "cash_discount_percent": 15,
+      "cash_discount_text": "en efectivo",
+      "cash_custom_price": null,
+      "cash_text": "en Efectivo"
     },
     {
       "id": "b475e94a-b24b-486c-b66b-8c11dea423c7",
@@ -1747,6 +1751,16 @@
       "position": 2,
       "created_at": "2026-09-16T01:29:01.127Z",
       "updated_at": "2026-09-16T01:29:01.127Z"
+    },
+    {
+      "id": "e158fac9-2c34-4685-b3a6-48da0993c51a",
+      "product_id": "013cfd82-f4d6-49ee-821f-429861ec846b",
+      "image_url": "/uploads/img1_updated.jpg",
+      "storage_path": "/uploads/img1_updated.jpg",
+      "alt_text": "",
+      "position": 0,
+      "created_at": "2026-09-17T01:50:36.898Z",
+      "updated_at": "2026-09-17T01:50:36.898Z"
     }
   ],
   "categories": [

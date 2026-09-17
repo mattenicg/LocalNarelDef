@@ -36,6 +36,7 @@ async function saveProductSizeStock(productId, sizeStocks) {
 
   let totalStock = 0;
   const sizeNamesList = [];
+  const insertPromises = [];
 
   for (const item of valid) {
     const sizeName = item.size_name.trim();
@@ -43,15 +44,16 @@ async function saveProductSizeStock(productId, sizeStocks) {
     totalStock += stock;
     sizeNamesList.push(sizeName);
 
-    await query(
-      'INSERT INTO product_size_stock (product_id, size_name, stock) VALUES ($1, $2, $3)',
-      [productId, sizeName, stock]
+    insertPromises.push(
+      query('INSERT INTO product_size_stock (product_id, size_name, stock) VALUES ($1, $2, $3)', [productId, sizeName, stock])
     );
+    insertPromises.push(
+      query('INSERT INTO sizes_master (name, active) VALUES ($1, true) ON CONFLICT (LOWER(name)) DO NOTHING', [sizeName])
+    );
+  }
 
-    await query(
-      'INSERT INTO sizes_master (name, active) VALUES ($1, true) ON CONFLICT (LOWER(name)) DO NOTHING',
-      [sizeName]
-    );
+  if (insertPromises.length > 0) {
+    await Promise.all(insertPromises);
   }
 
   const sizesString = sizeNamesList.join(', ');

@@ -110,6 +110,7 @@ async function syncProductImages(productId, imagesInput) {
   const newUrlsSet = new Set(normalizedList.map((item) => item.image_url));
 
   // 1. Detectar y eliminar del disco y de la BD las imágenes removidas
+  const deletePromises = [];
   for (const curr of currentImages) {
     if (!newUrlsSet.has(curr.image_url)) {
       try {
@@ -117,24 +118,25 @@ async function syncProductImages(productId, imagesInput) {
       } catch (delErr) {
         console.warn('[productImagesService] error eliminando archivo físico:', delErr.message);
       }
-      await query('DELETE FROM product_images WHERE id = $1', [curr.id]);
+      deletePromises.push(query('DELETE FROM product_images WHERE id = $1', [curr.id]));
     }
+  }
+  if (deletePromises.length > 0) {
+    await Promise.all(deletePromises);
   }
 
   // 2. Eliminar todas las asociaciones previas para insertar la secuencia en orden exacto
   await query('DELETE FROM product_images WHERE product_id = $1', [productId]);
 
-  const finalSaved = [];
-  for (let idx = 0; idx < normalizedList.length; idx++) {
-    const item = normalizedList[idx];
-    const insRes = await query(
+  const insertPromises = normalizedList.map((item, idx) => {
+    return query(
       'INSERT INTO product_images (product_id, image_url, storage_path, alt_text, position) VALUES ($1, $2, $3, $4, $5) RETURNING id, product_id, image_url, storage_path, alt_text, position, created_at, updated_at',
       [productId, item.image_url, item.storage_path || item.image_url, item.alt_text || '', idx]
     );
-    if (insRes.rows[0]) {
-      finalSaved.push(insRes.rows[0]);
-    }
-  }
+  });
+  
+  const insResults = await Promise.all(insertPromises);
+  const finalSaved = insResults.map(res => res.rows[0]).filter(Boolean);
 
   // 3. Sincronizar columnas de caché en la tabla products
   const primaryUrl = finalSaved[0]?.image_url || null;
