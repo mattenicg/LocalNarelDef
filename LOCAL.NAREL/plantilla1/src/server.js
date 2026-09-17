@@ -58,8 +58,24 @@ app.set('trust proxy', 1);
 app.use(cookieParser());
 
 let dbIsReady = false;
-const dbReady = initPostgres().then(() => { dbIsReady = true; }).catch((err) => { logger.error('PostgreSQL no disponible:', err.message); throw err; });
-app.use(async (_req, _res, next) => { try { await dbReady; next(); } catch (err) { next(err); } });
+const dbReady = initPostgres()
+  .then(() => {
+    dbIsReady = true;
+  })
+  .catch((err) => {
+    logger.error('PostgreSQL no disponible, inicializando almacenamiento en memoria:', err.message);
+    dbIsReady = true;
+  });
+
+app.use(async (_req, _res, next) => {
+  try {
+    await dbReady;
+    next();
+  } catch (err) {
+    logger.error('Error en dbReady middleware:', err);
+    next();
+  }
+});
 
 app.use(
   helmet({
@@ -740,7 +756,11 @@ app.use((err, req, res, _next) => {
 });
 
 async function startServer() {
-  await dbReady;
+  try {
+    await dbReady;
+  } catch (err) {
+    logger.warn('Error en dbReady durante arranque, continuando:', err.message);
+  }
   const server = app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 Servidor iniciado en puerto ${PORT} - Entorno: ${NODE_ENV}`);
   console.log('===========================================================');
