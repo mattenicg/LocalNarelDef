@@ -99,12 +99,12 @@
       stock: Number.isFinite(stock) ? Math.max(0, stock) : null,
       qty: Math.max(1, Math.min(99, Number(item && (item.qty || item.quantity)) || 1)),
       size: String(item && item.size || '').trim().slice(0, 40),
-      direct_purchase: !!(item && (item.direct_purchase === true || item.direct_purchase === 1 || item.direct_purchase === 'true' || item.directPurchase)),
-      direct_discount_percent: item && item.direct_discount_percent !== undefined && item.direct_discount_percent !== null ? Number(item.direct_discount_percent) : 25,
+      direct_purchase: false,
+      direct_discount_percent: item && item.direct_discount_percent !== undefined && item.direct_discount_percent !== null ? Number(item.direct_discount_percent) : (item && item.directDiscountPercent !== undefined && item.directDiscountPercent !== null ? Number(item.directDiscountPercent) : 0),
       direct_discount_text: (item && (item.direct_discount_text || item.directDiscountText)) || 'con transferencia',
-      direct_custom_transfer_price: item && item.direct_custom_transfer_price !== undefined && item.direct_custom_transfer_price !== null && Number(item.direct_custom_transfer_price) > 0 ? Number(item.direct_custom_transfer_price) : null,
+      direct_custom_transfer_price: item && item.direct_custom_transfer_price !== undefined && item.direct_custom_transfer_price !== null && Number(item.direct_custom_transfer_price) > 0 ? Number(item.direct_custom_transfer_price) : (item && item.directCustomTransferPrice !== undefined && item.directCustomTransferPrice !== null && Number(item.directCustomTransferPrice) > 0 ? Number(item.directCustomTransferPrice) : null),
       direct_transfer_price: item && item.direct_transfer_price !== undefined && item.direct_transfer_price !== null && Number(item.direct_transfer_price) > 0 ? Number(item.direct_transfer_price) : null,
-      direct_installments_count: item && item.direct_installments_count ? Number(item.direct_installments_count) : 6,
+      direct_installments_count: item && (item.direct_installments_count || item.directInstallmentsCount) ? Number(item.direct_installments_count || item.directInstallmentsCount) : 6,
       direct_installments_text: (item && (item.direct_installments_text || item.directInstallmentsText)) || 'sin interés',
       direct_show_promo_badge: item && item.direct_show_promo_badge !== undefined ? Boolean(item.direct_show_promo_badge) : true,
       direct_promo_badge_text: (item && item.direct_promo_badge_text) || 'PROMO ACTIVA',
@@ -297,7 +297,6 @@
 
     const candidates = catalog.filter((p) => {
       if (!p || !p.id) return false;
-      if (p.direct_purchase) return false;
       if (inCartIds.has(String(p.id))) return false;
       const stock = p.stock == null ? 99 : Number(p.stock);
       return stock > 0;
@@ -322,7 +321,7 @@
     const csItems = get('cartCrossSellItems');
     if (!csRoot || !csItems) return;
 
-    if (!cartItems || !cartItems.length || cartItems.some((it) => it.direct_purchase)) {
+    if (!cartItems || !cartItems.length) {
       csRoot.style.display = 'none';
       csItems.innerHTML = '';
       return;
@@ -376,17 +375,6 @@
     const normalized = normalizeItem(item);
     if (!normalized.id || normalized.stock === 0) return false;
 
-    // Si es compra directa, no puede agregarse al carrito junto a otros productos
-    if (normalized.direct_purchase) {
-      startDirectCheckout(normalized);
-      return false;
-    }
-
-    // Si el carrito tenía un producto de compra directa, se limpia para no mezclar
-    if (state.items.some((it) => it.direct_purchase)) {
-      state.items = [];
-    }
-
     const current = state.items.find((entry) => entry.key === normalized.key);
     if (current) {
       const requested = current.qty + normalized.qty;
@@ -396,6 +384,14 @@
       current.list_price = normalized.list_price;
       current.promo_label = normalized.promo_label;
       current.promo_type = normalized.promo_type;
+      current.direct_discount_percent = normalized.direct_discount_percent;
+      current.direct_discount_text = normalized.direct_discount_text;
+      current.direct_custom_transfer_price = normalized.direct_custom_transfer_price;
+      current.direct_transfer_price = normalized.direct_transfer_price;
+      current.cash_discount_percent = normalized.cash_discount_percent;
+      current.cash_discount_text = normalized.cash_discount_text;
+      current.cash_custom_price = normalized.cash_custom_price;
+      current.cash_text = normalized.cash_text;
     } else {
       state.items.push(normalized);
     }
@@ -403,17 +399,11 @@
   }
 
   function startDirectCheckout(item) {
-    const normalized = normalizeItem(item);
-    if (!normalized.id || normalized.stock === 0) return false;
-    normalized.direct_purchase = true;
-    // La compra directa es de ese único producto y cantidad (aislado)
-    state.items = [normalized];
-    state.isDirectPurchase = true;
+    const ok = pushItem(item);
+    if (!ok && !state.items.length) return false;
     saveCart();
     renderCart();
-    setCartOpen(false);
-    setPaymentOpen(true);
-    renderCheckout();
+    setCartOpen(true);
     return true;
   }
 
@@ -549,7 +539,6 @@
   function renderCheckoutSummary() {
     const summary = get('checkoutSummary');
     if (!summary) return;
-    const directItem = state.items.find((i) => i.direct_purchase) || (state.isDirectPurchase ? state.items[0] : null);
     const method = state.selectedPaymentMethod || 'tarjeta';
     const baseSubtotal = state.items.reduce((sum, item) => sum + item.qty * item.price, 0);
     const effectiveTotal = totalPrice(method);
@@ -907,27 +896,33 @@
     state.cardPaymentIdempotencyKey = null;
     state.cardPaymentEl = null;
 
-    const directItem = state.items.find((i) => i.direct_purchase) || (state.isDirectPurchase ? state.items[0] : null);
-    const configuredItem = state.items.find((i) => (i.allowed_payment_methods && i.allowed_payment_methods.length) || (i.direct_discount_percent !== undefined && i.direct_discount_percent !== null)) || directItem || state.items[0];
     let allowedMethods = ['tarjeta_debito', 'tarjeta_credito', 'transferencia', 'efectivo'];
     let allowedInstallments = [1, 3, 6];
+    let hasMethodsConfigured = false;
+    let hasInstallmentsConfigured = false;
 
-    if (configuredItem) {
-      if (configuredItem.allowed_payment_methods) {
-        allowedMethods = Array.isArray(configuredItem.allowed_payment_methods)
-          ? configuredItem.allowed_payment_methods
-          : (typeof configuredItem.allowed_payment_methods === 'string'
-              ? (configuredItem.allowed_payment_methods.startsWith('[') ? JSON.parse(configuredItem.allowed_payment_methods) : configuredItem.allowed_payment_methods.split(','))
+    state.items.forEach((item) => {
+      if (item.allowed_payment_methods) {
+        const methods = Array.isArray(item.allowed_payment_methods)
+          ? item.allowed_payment_methods
+          : (typeof item.allowed_payment_methods === 'string'
+              ? (item.allowed_payment_methods.startsWith('[') ? JSON.parse(item.allowed_payment_methods) : item.allowed_payment_methods.split(','))
               : allowedMethods);
+        allowedMethods = hasMethodsConfigured ? allowedMethods.filter(m => methods.includes(m)) : methods;
+        hasMethodsConfigured = true;
       }
-      if (configuredItem.allowed_installments) {
-        allowedInstallments = Array.isArray(configuredItem.allowed_installments)
-          ? configuredItem.allowed_installments.map(Number)
-          : (typeof configuredItem.allowed_installments === 'string'
-              ? (configuredItem.allowed_installments.startsWith('[') ? JSON.parse(configuredItem.allowed_installments).map(Number) : configuredItem.allowed_installments.split(',').map(Number))
+      if (item.allowed_installments) {
+        const insts = Array.isArray(item.allowed_installments)
+          ? item.allowed_installments.map(Number)
+          : (typeof item.allowed_installments === 'string'
+              ? (item.allowed_installments.startsWith('[') ? JSON.parse(item.allowed_installments).map(Number) : item.allowed_installments.split(',').map(Number))
               : allowedInstallments);
+        allowedInstallments = hasInstallmentsConfigured ? allowedInstallments.filter(i => insts.includes(i)) : insts;
+        hasInstallmentsConfigured = true;
       }
-    }
+    });
+
+    const configuredItem = state.items.find((i) => (i.allowed_payment_methods && i.allowed_payment_methods.length) || (i.direct_discount_percent !== undefined && i.direct_discount_percent !== null)) || state.items[0];
 
     const allowsCard = allowedMethods.includes('tarjeta_credito') || allowedMethods.includes('tarjeta_debito');
     const allowsTransfer = allowedMethods.includes('transferencia');
@@ -942,15 +937,6 @@
       } else if (allowsCash) {
         state.selectedPaymentMethod = 'efectivo';
       }
-    }
-
-    let directCalloutHTML = '';
-    if (directItem) {
-      directCalloutHTML = `
-        <div class="checkout-direct-callout" style="margin-bottom:14px;padding:12px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.18);border-radius:6px;">
-          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--yellow,#fff);margin-bottom:4px;">⚡ COMPRA DIRECTA</div>
-          <p style="font-size:12px;color:#fff;margin:0;line-height:1.4;">Estás adquiriendo individualmente <strong>${escapeHtml(directItem.name)}</strong>${directItem.size ? ' (Talle ' + escapeHtml(directItem.size) + ')' : ''}.</p>
-        </div>`;
     }
 
     let paymentSubtitle = 'Cuotas disponibles según tarjeta y banco · Procesado de forma segura por Mercado Pago';
@@ -1037,7 +1023,6 @@
     paymentContent.innerHTML = `
       <form id="checkoutForm" class="checkout-form" novalidate>
         <div id="checkoutAlert" class="checkout-alert" role="alert" aria-live="assertive"></div>
-        ${directCalloutHTML}
         <fieldset class="checkout-fieldset">
           <legend>DATOS DEL COMPRADOR</legend>
           <div class="checkout-grid">
@@ -1236,25 +1221,40 @@
     cardEl.setAttribute('locale', state.publicConfig.MERCADO_PAGO_LOCALE || 'es-AR');
     cardEl.setAttribute('max-installments', '24');
 
-    const configuredItem = state.items.find((i) => i.direct_purchase) || state.items.find((i) => i.allowed_payment_methods || i.allowed_installments) || (state.isDirectPurchase ? state.items[0] : null);
-    if (configuredItem) {
-      if (configuredItem.allowed_payment_methods) {
-        const methodsStr = Array.isArray(configuredItem.allowed_payment_methods)
-          ? configuredItem.allowed_payment_methods.join(',')
-          : String(configuredItem.allowed_payment_methods);
-        cardEl.setAttribute('allowed-methods', methodsStr);
+    let allowedMethods = ['tarjeta_debito', 'tarjeta_credito', 'transferencia', 'efectivo'];
+    let allowedInstallments = [1, 3, 6];
+    let hasMethodsConfigured = false;
+    let hasInstallmentsConfigured = false;
+
+    state.items.forEach((item) => {
+      if (item.allowed_payment_methods) {
+        const methods = Array.isArray(item.allowed_payment_methods)
+          ? item.allowed_payment_methods
+          : (typeof item.allowed_payment_methods === 'string'
+              ? (item.allowed_payment_methods.startsWith('[') ? JSON.parse(item.allowed_payment_methods) : item.allowed_payment_methods.split(','))
+              : allowedMethods);
+        allowedMethods = hasMethodsConfigured ? allowedMethods.filter(m => methods.includes(m)) : methods;
+        hasMethodsConfigured = true;
       }
-      if (configuredItem.allowed_installments) {
-        const instList = Array.isArray(configuredItem.allowed_installments)
-          ? configuredItem.allowed_installments
-          : (typeof configuredItem.allowed_installments === 'string'
-              ? (configuredItem.allowed_installments.startsWith('[') ? JSON.parse(configuredItem.allowed_installments) : configuredItem.allowed_installments.split(','))
-              : [1, 3, 6]);
-        cardEl.setAttribute('allowed-installments', instList.join(','));
-        const maxI = Math.max(...instList.map(Number).filter(n => Number.isInteger(n) && n > 0));
-        if (Number.isFinite(maxI) && maxI > 0) {
-          cardEl.setAttribute('max-installments', String(maxI));
-        }
+      if (item.allowed_installments) {
+        const insts = Array.isArray(item.allowed_installments)
+          ? item.allowed_installments.map(Number)
+          : (typeof item.allowed_installments === 'string'
+              ? (item.allowed_installments.startsWith('[') ? JSON.parse(item.allowed_installments).map(Number) : item.allowed_installments.split(',').map(Number))
+              : allowedInstallments);
+        allowedInstallments = hasInstallmentsConfigured ? allowedInstallments.filter(i => insts.includes(i)) : insts;
+        hasInstallmentsConfigured = true;
+      }
+    });
+
+    if (hasMethodsConfigured) {
+      cardEl.setAttribute('allowed-methods', allowedMethods.join(','));
+    }
+    if (hasInstallmentsConfigured) {
+      cardEl.setAttribute('allowed-installments', allowedInstallments.join(','));
+      const maxI = Math.max(...allowedInstallments.map(Number).filter(n => Number.isInteger(n) && n > 0));
+      if (Number.isFinite(maxI) && maxI > 0) {
+        cardEl.setAttribute('max-installments', String(maxI));
       }
     }
 

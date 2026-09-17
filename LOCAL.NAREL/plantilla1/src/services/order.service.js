@@ -93,38 +93,11 @@ async function createOrderWithStock(payload, options = {}) {
         }
       }
 
-      // Validar COMPRA DIRECTA en el backend y calcular precio según el método de pago elegido
+      // Calcular precio según promociones y método de pago elegido
       let unitPrice = Number(product.price);
-      if (product.direct_purchase) {
-        if ((payload.items || []).length > 1) {
-          throw orderError(`El producto "${product.name}" utiliza compra directa y debe adquirirse de forma individual.`, 400);
-        }
-
-        const allowedMethods = Array.isArray(product.allowed_payment_methods)
-          ? product.allowed_payment_methods
-          : (typeof product.allowed_payment_methods === 'string'
-              ? JSON.parse(product.allowed_payment_methods)
-              : ['tarjeta_credito', 'tarjeta_debito', 'transferencia', 'efectivo']);
-
-        const isCard = ['mercadopago_card', 'mercadopago'].includes(paymentMethod);
-        const cardAllowed = allowedMethods.includes('tarjeta_credito') || allowedMethods.includes('tarjeta_debito');
-        const transferAllowed = allowedMethods.includes('transferencia');
-        const cashAllowed = allowedMethods.includes('efectivo');
-
-        if (isCard && !cardAllowed) {
-          throw orderError(`El producto "${product.name}" no admite pago con tarjeta.`, 400);
-        }
-        if (paymentMethod === 'transferencia' && !transferAllowed) {
-          throw orderError(`El producto "${product.name}" no admite pago por transferencia bancaria.`, 400);
-        }
-        if (paymentMethod === 'efectivo' && !cashAllowed) {
-          throw orderError(`El producto "${product.name}" no admite pago en efectivo.`, 400);
-        }
-      } else {
-        const promoPrice = await resolvePromoPrice(client, item.banner_id, item.product_id);
-        if (promoPrice != null) {
-          unitPrice = promoPrice;
-        }
+      const promoPrice = await resolvePromoPrice(client, item.banner_id, item.product_id);
+      if (promoPrice != null) {
+        unitPrice = promoPrice;
       }
 
       if (paymentMethod === 'transferencia') {
@@ -134,8 +107,6 @@ async function createOrderWithStock(payload, options = {}) {
           const discountPercent = product.direct_discount_percent !== undefined && product.direct_discount_percent !== null ? Number(product.direct_discount_percent) : 0;
           if (discountPercent > 0 && discountPercent <= 100) {
             unitPrice = Math.round(Number(product.price) * (1 - (discountPercent / 100)) * 100) / 100;
-          } else {
-            unitPrice = Number(product.price);
           }
         }
       } else if (paymentMethod === 'efectivo') {
@@ -145,8 +116,6 @@ async function createOrderWithStock(payload, options = {}) {
           const discountPercent = product.cash_discount_percent !== undefined && product.cash_discount_percent !== null ? Number(product.cash_discount_percent) : 0;
           if (discountPercent > 0 && discountPercent <= 100) {
             unitPrice = Math.round(Number(product.price) * (1 - (discountPercent / 100)) * 100) / 100;
-          } else {
-            unitPrice = Number(product.price);
           }
         }
       }

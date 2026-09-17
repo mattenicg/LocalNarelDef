@@ -146,37 +146,32 @@ async function handleMercadoPagoProcess(req, res) {
     return res.status(400).json({ ok: false, message: 'Método de pago no admitido.' });
   }
 
-  // Validar restricciones de Compra Directa (cuotas y métodos) antes de procesar el pago
+  // Validar restricciones (cuotas y métodos) antes de procesar el pago
   for (const item of payload.items || []) {
     try {
       const prodRes = await query('SELECT name, direct_purchase, allowed_payment_methods, allowed_installments FROM products WHERE id=$1', [item.product_id]);
       const prod = prodRes.rows[0];
-      if (prod && prod.direct_purchase) {
-        if ((payload.items || []).length > 1) {
-          return res.status(400).json({
-            ok: false,
-            message: `El producto "${prod.name}" es de Compra Directa individual y no puede combinarse con otros artículos.`,
-          });
-        }
-
+      if (prod) {
         const allowedMethods = Array.isArray(prod.allowed_payment_methods)
           ? prod.allowed_payment_methods
           : (typeof prod.allowed_payment_methods === 'string' ? JSON.parse(prod.allowed_payment_methods) : []);
 
-        const cardAllowed = allowedMethods.includes('tarjeta_credito') || allowedMethods.includes('tarjeta_debito');
-        if (!cardAllowed) {
-          return res.status(400).json({
-            ok: false,
-            message: `El producto "${prod.name}" no admite pago con tarjeta.`,
-          });
+        if (allowedMethods.length > 0) {
+          const cardAllowed = allowedMethods.includes('tarjeta_credito') || allowedMethods.includes('tarjeta_debito');
+          if (!cardAllowed) {
+            return res.status(400).json({
+              ok: false,
+              message: `El producto "${prod.name}" no admite pago con tarjeta.`,
+            });
+          }
         }
 
         const allowedInst = Array.isArray(prod.allowed_installments)
           ? prod.allowed_installments.map(Number)
-          : (typeof prod.allowed_installments === 'string' ? JSON.parse(prod.allowed_installments).map(Number) : [1, 3, 6]);
+          : (typeof prod.allowed_installments === 'string' ? JSON.parse(prod.allowed_installments).map(Number) : []);
 
         const selectedInst = Number(paymentData.installments) || 1;
-        if (!allowedInst.includes(selectedInst)) {
+        if (allowedInst.length > 0 && !allowedInst.includes(selectedInst)) {
           return res.status(400).json({
             ok: false,
             message: `La cantidad de cuotas seleccionada (${selectedInst}) no está permitida para "${prod.name}". Cuotas permitidas: ${allowedInst.join(', ')}.`,
@@ -184,7 +179,7 @@ async function handleMercadoPagoProcess(req, res) {
         }
       }
     } catch (err) {
-      logger.error('[mercadopago] error validando producto de compra directa:', err);
+      logger.error('[mercadopago] error validando producto:', err);
     }
   }
 
