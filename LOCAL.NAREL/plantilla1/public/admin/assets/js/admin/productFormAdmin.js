@@ -856,7 +856,7 @@
           body: fd,
         });
 
-        if (!upRes.ok) throw new Error(upRes.message || 'Error al subir las nuevas imágenes');
+        if (!upRes.ok) throw new Error(upRes.message || upRes.error || 'Error al subir las nuevas imágenes');
 
         let returnedUrls = [];
         if (Array.isArray(upRes.images)) {
@@ -870,16 +870,26 @@
         }
 
         newItems.forEach((item, idx) => {
-          if (returnedUrls[idx]) {
-            uploadedUrlsMap.set(item.id, returnedUrls[idx]);
+          const uploadedUrl = returnedUrls[idx];
+          if (uploadedUrl) {
+            uploadedUrlsMap.set(item.id, uploadedUrl);
+            if (item.url && item.url.startsWith('blob:')) {
+              try { URL.revokeObjectURL(item.url); } catch (_) {}
+            }
+            item.url = uploadedUrl;
+            item.type = 'existing';
+            delete item.file;
           }
         });
       }
 
       // 2. Compute final image URLs array preserving precise gallery order
       const finalImageUrls = allImages.map((item) => {
-        if (item.type === 'existing') return item.url;
-        return uploadedUrlsMap.get(item.id) || item.url;
+        if (item.type === 'existing' && item.url && !item.url.startsWith('blob:')) return item.url;
+        const uploaded = uploadedUrlsMap.get(item.id);
+        if (uploaded && !uploaded.startsWith('blob:')) return uploaded;
+        if (item.url && !item.url.startsWith('blob:')) return item.url;
+        return null;
       }).filter(Boolean);
 
       const primaryImageUrl = finalImageUrls[0] || null;
@@ -932,7 +942,10 @@
       }
 
       console.log('handleSubmit: Save response', saveRes);
-      if (!saveRes.ok) throw new Error(saveRes.message || 'Error al guardar el producto');
+      if (!saveRes.ok) {
+        const errorDetail = saveRes.message || saveRes.error || (saveRes.__status === 413 ? 'El contenido enviado supera el límite del servidor (413). Verificá las imágenes.' : 'Error al guardar el producto');
+        throw new Error(errorDetail);
+      }
 
       const actionText = isEditMode ? 'actualizado' : 'creado';
       window.auth.setMessage(msgId, `Producto ${actionText} correctamente. Redirigiendo...`, 'success');
