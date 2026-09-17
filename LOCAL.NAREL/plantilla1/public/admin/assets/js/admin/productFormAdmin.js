@@ -298,6 +298,14 @@
 
     if (prevImg && prevPlaceholder) {
       if (imageUrl) {
+        prevImg.onerror = () => {
+          prevImg.style.display = 'none';
+          prevPlaceholder.style.display = 'flex';
+        };
+        prevImg.onload = () => {
+          prevImg.style.display = 'block';
+          prevPlaceholder.style.display = 'none';
+        };
         prevImg.src = imageUrl;
         prevImg.style.objectFit = 'cover';
         prevImg.style.objectPosition = 'center';

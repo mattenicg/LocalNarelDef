@@ -37,6 +37,7 @@ publicRouter.post('/', [
   body('items').isArray({ min: 1, max: 50 }).withMessage('El carrito está vacío.'),
   body('items.*.product_id').isUUID().withMessage('Producto inválido.'),
   body('items.*.quantity').isInt({ min: 1, max: 99 }).withMessage('Cantidad inválida.'),
+  body('items.*.size').optional({ nullable: true }).isString().trim(),
   body('items.*.banner_id').optional({ nullable: true }).isUUID().withMessage('Promoción inválida.'),
   body('customer.name').isString().trim().isLength({ min: 2, max: 120 }).withMessage('Nombre inválido.'),
   body('customer.email').isEmail().normalizeEmail().withMessage('Email inválido.'),

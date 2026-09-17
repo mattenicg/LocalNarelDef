@@ -77,16 +77,51 @@
     return cartEmptyNode;
   }
 
+  function resolveVariantStock(item) {
+    if (!item) return null;
+    const productId = String(item.id || item.product_id || '');
+    const sizeName = String(item.size || '').trim();
+    const catalog = Array.isArray(window.__CATALOG_PRODUCTS__) ? window.__CATALOG_PRODUCTS__ : [];
+    const prod = catalog.find((p) => String(p.id) === productId);
+    if (prod) {
+      if (sizeName && Array.isArray(prod.size_stock) && prod.size_stock.length > 0) {
+        const match = prod.size_stock.find(
+          (s) => s && String(s.size_name || '').trim().toLowerCase() === sizeName.toLowerCase()
+        );
+        if (match && match.stock !== undefined && match.stock !== null) {
+          return Math.max(0, Number(match.stock) || 0);
+        }
+      }
+      const rawSizes = String(prod.sizes || '').split(/\s*[-|/,]\s*/).map((s) => s.trim()).filter(Boolean);
+      if (rawSizes.length <= 1 && prod.stock !== undefined && prod.stock !== null) {
+        return Math.max(0, Number(prod.stock) || 0);
+      }
+    }
+    if (item.stock !== undefined && item.stock !== null && Number.isFinite(Number(item.stock))) {
+      return Math.max(0, Number(item.stock));
+    }
+    return null;
+  }
+
   function normalizeItem(item) {
-    const rawStock = item && item.stock;
-    const stock = rawStock === null || rawStock === undefined || rawStock === '' ? null : Number(rawStock);
     const id = String(item && (item.id || item.product_id) || '');
     const bannerId = String(item && (item.banner_id || item.bannerId) || '').trim();
     const listPrice = Number(item && (item.list_price || item.listPrice)) || 0;
     const price = Math.max(0, Number(item && item.price) || 0);
     const promoType = String(item && (item.promo_type || item.promoType) || '').toLowerCase();
+    const size = String(item && item.size || '').trim().slice(0, 40);
+    const sizeKey = size.toLowerCase();
+    const baseKey = bannerId ? `${bannerId}::${id}` : id;
+    const key = sizeKey ? `${baseKey}::${sizeKey}` : baseKey;
+
+    const resolvedStock = resolveVariantStock({ ...item, id, size });
+    const rawStock = item && item.stock;
+    const stock = resolvedStock !== null
+      ? resolvedStock
+      : (rawStock === null || rawStock === undefined || rawStock === '' ? null : Number(rawStock));
+
     return {
-      key: bannerId ? `${bannerId}::${id}` : id,
+      key,
       id,
       banner_id: bannerId,
       promo_type: promoType === 'combo' ? 'combo' : promoType === 'oferta' ? 'oferta' : '',
@@ -98,7 +133,7 @@
       sizes: String(item && item.sizes || '').trim(),
       stock: Number.isFinite(stock) ? Math.max(0, stock) : null,
       qty: Math.max(1, Math.min(99, Number(item && (item.qty || item.quantity)) || 1)),
-      size: String(item && item.size || '').trim().slice(0, 40),
+      size,
       direct_purchase: false,
       direct_discount_percent: item && item.direct_discount_percent !== undefined && item.direct_discount_percent !== null ? Number(item.direct_discount_percent) : (item && item.directDiscountPercent !== undefined && item.directDiscountPercent !== null ? Number(item.directDiscountPercent) : 0),
       direct_discount_text: (item && (item.direct_discount_text || item.directDiscountText)) || 'con transferencia',
@@ -222,15 +257,25 @@
       const sizeControl = sizeOptions.length
         ? `<label class="cart-size">TALLE<select data-shop-size="${escapeHtml(item.key)}" aria-label="Talle de ${escapeHtml(item.name)}"><option value="">Elegir</option>${sizeOptions.map((size) => `<option value="${escapeHtml(size)}" ${item.size === size ? 'selected' : ''}>${escapeHtml(size)}</option>`).join('')}</select></label>`
         : '';
-      const image = item.image
-        ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" loading="lazy">`
-        : escapeHtml(item.id.slice(0, 2).toUpperCase());
+      const fallbackLogo = '/assets/img/logo-ngl-diamond.jpeg';
+      const imageSrc = item.image && String(item.image).trim() ? String(item.image).trim() : fallbackLogo;
+      const initials = escapeHtml(String(item.id || 'NL').slice(0, 2).toUpperCase());
+      const image = `<img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(item.name)}" loading="lazy" class="cart-item-thumb-img" onerror="this.onerror=null;if(this.src!=='${fallbackLogo}' && !this.src.endsWith('${fallbackLogo}')){this.src='${fallbackLogo}';}else{this.style.display='none';if(this.parentElement){this.parentElement.innerHTML='<span class=\\'cart-item-placeholder-text\\'>${initials}</span>';}}">`;
       const promoTag = item.promo_label
         ? `<span class="cart-item-tag">${escapeHtml(item.promo_label)}</span>`
         : '';
       const priceLine = item.list_price
         ? `<s>${formatCurrency(item.list_price)}</s> <b>${formatCurrency(item.price)}</b>${sizeText}`
         : `${formatCurrency(item.price)}${sizeText}`;
+
+      const realStock = resolveVariantStock(item);
+      const maxStock = realStock !== null ? realStock : (item.stock == null ? 99 : item.stock);
+      const isMaxReached = item.qty >= maxStock;
+      const incDisabled = isMaxReached ? ' disabled style="opacity:0.35;cursor:not-allowed;"' : '';
+      const stockBadge = maxStock <= 5
+        ? `<div style="font-size:10px;color:#f59e0b;font-family:'DM Mono',monospace;margin-top:2px;">Stock disp.: ${maxStock}</div>`
+        : '';
+
       const row = document.createElement('div');
       row.className = 'cart-item';
       row.innerHTML = `
@@ -241,9 +286,10 @@
           ${sizeControl}
           <div class="qty" aria-label="Cantidad de ${escapeHtml(item.name)}">
             <button type="button" data-shop-dec="${escapeHtml(item.key)}" aria-label="Disminuir cantidad">−</button>
-            <span aria-live="polite">${item.qty}</span>
-            <button type="button" data-shop-inc="${escapeHtml(item.key)}" aria-label="Aumentar cantidad">+</button>
+            <input type="number" class="cart-drawer-qty-input" data-shop-qty-input="${escapeHtml(item.key)}" min="1" max="${maxStock}" value="${item.qty}" aria-label="Cantidad de ${escapeHtml(item.name)}" style="width:36px;height:24px;text-align:center;background:transparent;border:1px solid rgba(255,255,255,0.25);color:#fff;font-family:'DM Mono',monospace;font-size:12px;font-weight:700;border-radius:3px;padding:0;">
+            <button type="button" data-shop-inc="${escapeHtml(item.key)}" aria-label="Aumentar cantidad"${incDisabled}>+</button>
           </div>
+          ${stockBadge}
         </div>
         <div class="cart-item-right">
           <span class="cart-item-price">${formatCurrency(item.qty * item.price)}</span>
@@ -252,6 +298,30 @@
           </button>
         </div>`;
       container.appendChild(row);
+    });
+
+    // Wire numeric inputs for drawer
+    container.querySelectorAll('[data-shop-qty-input]').forEach((input) => {
+      const key = input.dataset.shopQtyInput;
+      const applyVal = () => {
+        const item = state.items.find((entry) => entry.key === key);
+        if (!item) return;
+        const max = resolveVariantStock(item) ?? (item.stock == null ? 99 : item.stock);
+        let val = parseInt(input.value, 10);
+        if (isNaN(val) || val < 1) val = 1;
+        if (val > max) {
+          val = max;
+          showAlert(`El stock máximo disponible para este talle es ${max}.`);
+        }
+        item.qty = val;
+        input.value = String(val);
+        saveCart();
+        renderCart();
+      };
+      input.addEventListener('change', applyVal);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') input.blur();
+      });
     });
 
     renderCartCrossSell(state.items);
@@ -335,10 +405,11 @@
     }
 
     csRoot.style.display = 'block';
+    const fallbackLogo = '/assets/img/logo-ngl-diamond.jpeg';
     csItems.innerHTML = recs.map((p) => {
-      const img = p.image_url
-        ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy">`
-        : `<span>${escapeHtml(String(p.id || 'NL').slice(0, 2).toUpperCase())}</span>`;
+      const imgSrc = p.image_url && String(p.image_url).trim() ? String(p.image_url).trim() : fallbackLogo;
+      const initials = escapeHtml(String(p.id || 'NL').slice(0, 2).toUpperCase());
+      const img = `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(p.name)}" loading="lazy" class="cart-cs-thumb-img" onerror="this.onerror=null;if(this.src!=='${fallbackLogo}' && !this.src.endsWith('${fallbackLogo}')){this.src='${fallbackLogo}';}else{this.style.display='none';if(this.parentElement){this.parentElement.innerHTML='<span>${initials}</span>';}}">`;
       return `
         <div class="cart-cs-item" data-rec-id="${escapeHtml(p.id)}">
           <div class="cart-cs-img">${img}</div>
@@ -373,13 +444,31 @@
 
   function pushItem(item) {
     const normalized = normalizeItem(item);
-    if (!normalized.id || normalized.stock === 0) return false;
+    if (!normalized.id) return false;
+
+    const realStock = resolveVariantStock(normalized);
+    const maxStock = realStock !== null ? realStock : (normalized.stock == null ? 99 : normalized.stock);
+    normalized.stock = maxStock;
+
+    if (maxStock <= 0) {
+      showAlert(`El talle "${normalized.size || 'seleccionado'}" de "${normalized.name}" no tiene stock disponible.`);
+      return false;
+    }
 
     const current = state.items.find((entry) => entry.key === normalized.key);
     if (current) {
-      const requested = current.qty + normalized.qty;
-      current.qty = current.stock == null ? Math.min(99, requested) : Math.min(current.stock, requested);
-      current.stock = normalized.stock == null ? current.stock : normalized.stock;
+      const existingQty = current.qty;
+      if (existingQty >= maxStock) {
+        showAlert(`Ya tenés el máximo disponible (${maxStock} unid.) de este talle en tu carrito.`);
+        return false;
+      }
+      const allowableAdd = Math.min(normalized.qty, maxStock - existingQty);
+      if (allowableAdd <= 0) {
+        showAlert(`No podés agregar más unidades: stock máximo (${maxStock}) alcanzado.`);
+        return false;
+      }
+      current.qty = existingQty + allowableAdd;
+      current.stock = maxStock;
       current.price = normalized.price;
       current.list_price = normalized.list_price;
       current.promo_label = normalized.promo_label;
@@ -392,7 +481,15 @@
       current.cash_discount_text = normalized.cash_discount_text;
       current.cash_custom_price = normalized.cash_custom_price;
       current.cash_text = normalized.cash_text;
+
+      if (allowableAdd < normalized.qty) {
+        showAlert(`Se agregaron ${allowableAdd} unidades (máximo disponible de este talle: ${maxStock}).`);
+      }
     } else {
+      if (normalized.qty > maxStock) {
+        normalized.qty = maxStock;
+        showAlert(`Se agregaron ${maxStock} unidades (máximo disponible de este talle).`);
+      }
       state.items.push(normalized);
     }
     return true;
@@ -441,10 +538,75 @@
       removeFromCart(key);
       return;
     }
+    if (delta > 0) {
+      for (const entry of group) {
+        const realStock = resolveVariantStock(entry);
+        const max = realStock !== null ? realStock : (entry.stock == null ? 99 : entry.stock);
+        entry.stock = max;
+        if (entry.qty >= max) {
+          showAlert(`Stock máximo alcanzado: solo hay ${max} unidades disponibles para el talle "${entry.size || 'seleccionado'}".`);
+          return;
+        }
+      }
+    }
     group.forEach((entry) => {
-      const max = entry.stock == null ? 99 : entry.stock;
+      const realStock = resolveVariantStock(entry);
+      const max = realStock !== null ? realStock : (entry.stock == null ? 99 : entry.stock);
+      entry.stock = max;
       entry.qty = Math.max(1, Math.min(max, nextQty));
     });
+    saveCart();
+    renderCart();
+  }
+
+  function handleCartSizeChange(oldKey, newSize) {
+    const itemIndex = state.items.findIndex((entry) => entry.key === oldKey);
+    if (itemIndex === -1) return;
+    const item = state.items[itemIndex];
+    const cleanNewSize = String(newSize || '').trim();
+    if (item.size === cleanNewSize) return;
+
+    if (!cleanNewSize) {
+      item.size = '';
+      saveCart();
+      renderCart();
+      return;
+    }
+
+    const testItem = { ...item, size: cleanNewSize };
+    const newVariantStock = resolveVariantStock(testItem);
+
+    if (newVariantStock !== null && newVariantStock <= 0) {
+      showAlert(`El talle "${cleanNewSize}" no tiene stock disponible.`);
+      renderCart();
+      return;
+    }
+
+    const maxStock = newVariantStock !== null ? newVariantStock : (item.stock == null ? 99 : item.stock);
+    const bannerId = item.banner_id || '';
+    const sizeKey = cleanNewSize.toLowerCase();
+    const baseKey = bannerId ? `${bannerId}::${item.id}` : item.id;
+    const newKey = sizeKey ? `${baseKey}::${sizeKey}` : baseKey;
+
+    const existingMatch = state.items.find((entry) => entry.key === newKey && entry !== item);
+    if (existingMatch) {
+      const combined = existingMatch.qty + item.qty;
+      existingMatch.qty = Math.min(maxStock, combined);
+      existingMatch.stock = maxStock;
+      state.items.splice(itemIndex, 1);
+      if (combined > maxStock) {
+        showAlert(`Se unificaron al stock máximo disponible (${maxStock} unid.) para el talle "${cleanNewSize}".`);
+      }
+    } else {
+      item.size = cleanNewSize;
+      item.key = newKey;
+      item.stock = maxStock;
+      if (item.qty > maxStock) {
+        item.qty = maxStock;
+        showAlert(`Se ajustó la cantidad al stock disponible de talle "${cleanNewSize}" (${maxStock} unid.).`);
+      }
+    }
+
     saveCart();
     renderCart();
   }
@@ -1366,11 +1528,7 @@
     itemsContainer?.addEventListener('change', (event) => {
       const select = event.target.closest('[data-shop-size]');
       if (!select) return;
-      const item = state.items.find((entry) => entry.key === select.dataset.shopSize);
-      if (!item) return;
-      item.size = select.value;
-      saveCart();
-      renderCart();
+      handleCartSizeChange(select.dataset.shopSize, select.value);
     });
 
     window.shop = Object.assign(window.shop || {}, {
@@ -1378,6 +1536,16 @@
       addManyToCart,
       startDirectCheckout,
       renderCart,
+      getItems: () => state.items.map((i) => ({ ...i })),
+      resolveVariantStock,
+      getVariantStock: (productId, sizeName) => resolveVariantStock({ id: productId, size: sizeName }),
+      getCartVariantQty: (productId, sizeName) => {
+        const sz = String(sizeName || '').trim().toLowerCase();
+        const pid = String(productId || '').trim();
+        return state.items
+          .filter((i) => String(i.id) === pid && String(i.size || '').trim().toLowerCase() === sz)
+          .reduce((sum, i) => sum + (Number(i.qty) || 0), 0);
+      },
       openCart: () => {
         if (!window.location.pathname.endsWith('carrito.html') && !window.location.pathname.endsWith('/carrito')) {
           window.location.href = '/carrito.html';

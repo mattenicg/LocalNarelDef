@@ -345,6 +345,38 @@ app.get('/api/products/public', async (req, res) => {
   }
 });
 
+// ================= STOCK EN TIEMPO REAL POR VARIANTE =================
+app.get('/api/products/:id/stock', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const prodRes = await query('SELECT id, name, stock, sizes FROM products WHERE id = $1 AND active = true', [id]);
+    if (!prodRes.rows[0]) {
+      return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
+    }
+    const sizeStockRes = await query(
+      'SELECT product_id, size_name, stock FROM product_size_stock WHERE product_id = $1 ORDER BY size_name ASC',
+      [id]
+    );
+    return res.status(200).json({
+      ok: true,
+      data: {
+        id,
+        name: prodRes.rows[0].name,
+        stock: Number(prodRes.rows[0].stock) || 0,
+        sizes: prodRes.rows[0].sizes || '',
+        size_stock: (sizeStockRes.rows || []).map((r) => ({
+          product_id: r.product_id,
+          size_name: r.size_name,
+          stock: Number(r.stock) || 0,
+        })),
+      },
+    });
+  } catch (err) {
+    console.error('[product-stock] error:', err.message || err);
+    return res.status(500).json({ ok: false, message: 'Error al consultar stock' });
+  }
+});
+
 // ================= CATEGORIAS PÚBLICO (tienda - sin login) =================
 async function getCategoriesHierarchy() {
   const catsRes = await query('SELECT id, name, slug, sort_order, COALESCE(subtitle, \'CARGADO DESDE PANEL ADMIN\') AS subtitle FROM categories ORDER BY sort_order ASC, name ASC');
