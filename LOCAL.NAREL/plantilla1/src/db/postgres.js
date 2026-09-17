@@ -110,14 +110,19 @@ async function migrateLegacyProducts() {
         const sizeStock = isSingleSize ? Number(p.stock || 0) : 0;
         
         await pool.query(
-          'INSERT INTO product_size_stock (product_id, size_name, stock) VALUES ($1, $2, $3)',
+          'INSERT INTO product_size_stock (product_id, size_name, stock) VALUES ($1, $2, $3) ON CONFLICT (product_id, size_name) DO NOTHING',
           [p.id, sizeName, sizeStock]
         );
 
-        await pool.query(
-          'INSERT INTO sizes_master (name, active) VALUES ($1, true) ON CONFLICT (LOWER(name)) DO NOTHING',
-          [sizeName]
-        );
+        try {
+          const existing = await pool.query('SELECT id FROM sizes_master WHERE LOWER(name) = LOWER($1)', [sizeName]);
+          if (!existing.rows || existing.rows.length === 0) {
+            await pool.query(
+              'INSERT INTO sizes_master (name, active) VALUES ($1, true) ON CONFLICT (name) DO NOTHING',
+              [sizeName]
+            );
+          }
+        } catch (_) {}
       }
     }
     logger.info('[migration] Legacy products migration completed successfully.');

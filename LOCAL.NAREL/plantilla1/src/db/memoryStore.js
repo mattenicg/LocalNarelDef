@@ -14,6 +14,16 @@ const data = {
   subcategories: [],
   products: [],
   product_images: [],
+  sizes_master: [
+    { id: '1', name: 'XS', active: true, created_at: new Date().toISOString() },
+    { id: '2', name: 'S', active: true, created_at: new Date().toISOString() },
+    { id: '3', name: 'M', active: true, created_at: new Date().toISOString() },
+    { id: '4', name: 'L', active: true, created_at: new Date().toISOString() },
+    { id: '5', name: 'XL', active: true, created_at: new Date().toISOString() },
+    { id: '6', name: 'XXL', active: true, created_at: new Date().toISOString() },
+    { id: '7', name: 'Único', active: true, created_at: new Date().toISOString() },
+  ],
+  product_size_stock: [],
   promo_banners: [],
   promo_banner_items: [],
   promotions: [],
@@ -50,6 +60,8 @@ function saveMemoryDbToFile() {
     const payload = {
       products: data.products,
       product_images: data.product_images,
+      sizes_master: data.sizes_master,
+      product_size_stock: data.product_size_stock,
       categories: data.categories,
       subcategories: data.subcategories,
       promotions: data.promotions,
@@ -75,6 +87,8 @@ function loadMemoryDbFromFile() {
     if (parsed && typeof parsed === 'object') {
       if (Array.isArray(parsed.products) && parsed.products.length > 0) data.products = parsed.products;
       if (Array.isArray(parsed.product_images)) data.product_images = parsed.product_images;
+      if (Array.isArray(parsed.sizes_master) && parsed.sizes_master.length > 0) data.sizes_master = parsed.sizes_master;
+      if (Array.isArray(parsed.product_size_stock)) data.product_size_stock = parsed.product_size_stock;
       if (Array.isArray(parsed.categories) && parsed.categories.length > 0) data.categories = parsed.categories;
       if (Array.isArray(parsed.subcategories) && parsed.subcategories.length > 0) data.subcategories = parsed.subcategories;
       if (Array.isArray(parsed.promotions)) data.promotions = parsed.promotions;
@@ -757,6 +771,17 @@ function executeMemoryQuery(rawText, params = []) {
       const found = list.find((s) => s.id === id);
       return { rows: found ? [{ ...found }] : [], rowCount: found ? 1 : 0 };
     }
+    if (lowerSql.includes('where category_slug = $1 and (slug = $2 or id::text = $3)')) {
+      const catSlug = String(params[0] || '').toLowerCase().trim();
+      const subSlug = String(params[1] || '').toLowerCase().trim();
+      const subId = String(params[2] || '').trim();
+      const found = list.find(
+        (s) =>
+          s.category_slug.toLowerCase() === catSlug &&
+          ((subSlug && s.slug.toLowerCase() === subSlug) || (subId && String(s.id) === subId))
+      );
+      return { rows: found ? [{ ...found }] : [], rowCount: found ? 1 : 0 };
+    }
     if (/where\s+category_id\s*=\s*\$1\s+and\s+slug\s*=\s*\$2/.test(lowerSql)) {
       const catId = String(params[0] || '');
       const subSlug = String(params[1] || '').toLowerCase().trim();
@@ -1257,6 +1282,17 @@ function executeMemoryQuery(rawText, params = []) {
       }
       return { rows: [], rowCount: p ? 1 : 0 };
     }
+    if (lowerSql.includes('set stock = $1, sizes = $2 where id = $3') || lowerSql.includes('set stock=$1, sizes=$2 where id=$3')) {
+      const p = data.products.find((x) => x.id === params[2]);
+      if (p) {
+        p.stock = Number(params[0]) || 0;
+        p.sizes = String(params[1] || '');
+        p.updated_at = nowIso();
+        saveMemoryDbToFile();
+        return { rows: [{ ...p }], rowCount: 1 };
+      }
+      return { rows: [], rowCount: 0 };
+    }
     return { rows: [], rowCount: 0 };
   }
 
@@ -1266,10 +1302,127 @@ function executeMemoryQuery(rawText, params = []) {
     if (idx >= 0) {
       const removed = data.products.splice(idx, 1)[0];
       data.product_images = data.product_images.filter((img) => img.product_id !== pId);
+      data.product_size_stock = (data.product_size_stock || []).filter((s) => s.product_id !== pId);
       saveMemoryDbToFile();
       return { rows: [{ id: removed.id }], rowCount: 1 };
     }
     return { rows: [], rowCount: 0 };
+  }
+
+  // SIZES MASTER & PRODUCT SIZE STOCK
+  if (lowerSql.startsWith('select') && lowerSql.includes('from sizes_master')) {
+    const list = [...(data.sizes_master || [])];
+    if (lowerSql.includes('where lower(name) = lower($1)')) {
+      const target = String(params[0] || '').toLowerCase().trim();
+      const found = list.find((s) => s.name.toLowerCase().trim() === target);
+      return { rows: found ? [{ ...found }] : [], rowCount: found ? 1 : 0 };
+    }
+    if (lowerSql.includes('where id = $1')) {
+      const found = list.find((s) => s.id === params[0]);
+      return { rows: found ? [{ ...found }] : [], rowCount: found ? 1 : 0 };
+    }
+    list.sort((a, b) => a.name.localeCompare(b.name));
+    return { rows: list.map((s) => ({ ...s })), rowCount: list.length };
+  }
+
+  if (lowerSql.startsWith('insert into sizes_master')) {
+    const name = String(params[0] || '').trim();
+    data.sizes_master = data.sizes_master || [];
+    let existing = data.sizes_master.find((s) => s.name.toLowerCase() === name.toLowerCase());
+    if (!existing) {
+      existing = {
+        id: uuid(),
+        name,
+        active: true,
+        created_at: nowIso(),
+      };
+      data.sizes_master.push(existing);
+      saveMemoryDbToFile();
+    }
+    return { rows: [{ ...existing }], rowCount: 1 };
+  }
+
+  if (lowerSql.startsWith('update sizes_master')) {
+    data.sizes_master = data.sizes_master || [];
+    if (lowerSql.includes('set active = true where id = $1')) {
+      const s = data.sizes_master.find((x) => x.id === params[0]);
+      if (s) {
+        s.active = true;
+        saveMemoryDbToFile();
+        return { rows: [{ ...s }], rowCount: 1 };
+      }
+    }
+    if (lowerSql.includes('set active = $1 where id = $2')) {
+      const s = data.sizes_master.find((x) => x.id === params[1]);
+      if (s) {
+        s.active = params[0] === true;
+        saveMemoryDbToFile();
+        return { rows: [{ ...s }], rowCount: 1 };
+      }
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  if (lowerSql.startsWith('delete from sizes_master where id = $1')) {
+    data.sizes_master = data.sizes_master || [];
+    const idx = data.sizes_master.findIndex((x) => x.id === params[0]);
+    if (idx >= 0) {
+      data.sizes_master.splice(idx, 1);
+      saveMemoryDbToFile();
+      return { rows: [], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  }
+
+  if (lowerSql.startsWith('select') && lowerSql.includes('from product_size_stock')) {
+    data.product_size_stock = data.product_size_stock || [];
+    if (lowerSql.includes('where product_id = $1')) {
+      const pId = params[0];
+      const rows = data.product_size_stock.filter((x) => x.product_id === pId);
+      return { rows: rows.map((r) => ({ ...r })), rowCount: rows.length };
+    }
+    if (lowerSql.includes('where product_id = any($1)')) {
+      const pIds = Array.isArray(params[0]) ? params[0] : [];
+      const rows = data.product_size_stock.filter((x) => pIds.includes(x.product_id));
+      return { rows: rows.map((r) => ({ ...r })), rowCount: rows.length };
+    }
+    return { rows: data.product_size_stock.map((r) => ({ ...r })), rowCount: data.product_size_stock.length };
+  }
+
+  if (lowerSql.startsWith('delete from product_size_stock where product_id = $1')) {
+    data.product_size_stock = data.product_size_stock || [];
+    const pId = params[0];
+    const beforeLen = data.product_size_stock.length;
+    data.product_size_stock = data.product_size_stock.filter((x) => x.product_id !== pId);
+    saveMemoryDbToFile();
+    return { rows: [], rowCount: beforeLen - data.product_size_stock.length };
+  }
+
+  if (lowerSql.startsWith('insert into product_size_stock')) {
+    data.product_size_stock = data.product_size_stock || [];
+    const pId = params[0];
+    const sizeName = String(params[1] || '').trim();
+    const stock = Math.max(0, parseInt(params[2], 10) || 0);
+
+    let existing = data.product_size_stock.find(
+      (x) => x.product_id === pId && x.size_name.toLowerCase() === sizeName.toLowerCase()
+    );
+    if (existing) {
+      existing.stock = stock;
+      existing.updated_at = nowIso();
+    } else {
+      existing = {
+        id: uuid(),
+        product_id: pId,
+        size_name: sizeName,
+        stock,
+        created_at: nowIso(),
+        updated_at: nowIso(),
+      };
+      data.product_size_stock.push(existing);
+    }
+    saveMemoryDbToFile();
+    return { rows: [{ ...existing }], rowCount: 1 };
   }
 
   // 4. PROMO BANNERS & ITEMS

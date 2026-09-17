@@ -394,6 +394,8 @@ CREATE TABLE IF NOT EXISTS sizes_master (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sizes_master_lower_name ON sizes_master (LOWER(name));
+
 INSERT INTO sizes_master (name) VALUES 
   ('XS'), ('S'), ('M'), ('L'), ('XL'), ('XXL'), ('Único')
 ON CONFLICT (name) DO NOTHING;

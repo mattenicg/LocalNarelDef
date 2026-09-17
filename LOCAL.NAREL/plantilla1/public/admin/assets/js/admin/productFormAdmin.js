@@ -8,6 +8,7 @@
   let currentProduct = null;
   let categoriesList = [];
   let allImages = []; // Array of { type: 'existing' | 'new', url: string, file?: File, id: string }
+  let activeSizeStocks = []; // Array of { size_name: string, stock: number }
 
   const DEFAULT_CATEGORIES = [
     { name: 'Remeras', slug: 'remeras', subcategories: [] },

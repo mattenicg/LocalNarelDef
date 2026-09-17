@@ -29,38 +29,62 @@ function fail(req, res) {
 }
 
 async function saveProductSizeStock(productId, sizeStocks) {
-  const sizeStocksArray = Array.isArray(sizeStocks) ? sizeStocks : [];
-  const valid = sizeStocksArray.filter(item => item && typeof item.size_name === 'string' && item.size_name.trim() !== '');
-
-  await query('DELETE FROM product_size_stock WHERE product_id = $1', [productId]);
-
-  let totalStock = 0;
-  const sizeNamesList = [];
-
-  for (const item of valid) {
-    const sizeName = item.size_name.trim();
-    const stock = Math.max(0, parseInt(item.stock, 10) || 0);
-    totalStock += stock;
-    sizeNamesList.push(sizeName);
-
-    await query(
-      'INSERT INTO product_size_stock (product_id, size_name, stock) VALUES ($1, $2, $3)',
-      [productId, sizeName, stock]
+  if (!productId) return { totalStock: 0, sizesString: 'Único' };
+  try {
+    const sizeStocksArray = Array.isArray(sizeStocks) ? sizeStocks : [];
+    const valid = sizeStocksArray.filter(
+      (item) => item && typeof item.size_name === 'string' && item.size_name.trim() !== ''
     );
 
+    await query('DELETE FROM product_size_stock WHERE product_id = $1', [productId]);
+
+    let totalStock = 0;
+    const sizeNamesList = [];
+    const seenSizes = new Set();
+
+    for (const item of valid) {
+      const sizeName = item.size_name.trim();
+      const lowerKey = sizeName.toLowerCase();
+      if (seenSizes.has(lowerKey)) continue;
+      seenSizes.add(lowerKey);
+
+      const stock = Math.max(0, parseInt(item.stock, 10) || 0);
+      totalStock += stock;
+      sizeNamesList.push(sizeName);
+
+      try {
+        await query(
+          'INSERT INTO product_size_stock (product_id, size_name, stock) VALUES ($1, $2, $3) ON CONFLICT (product_id, size_name) DO UPDATE SET stock = EXCLUDED.stock, updated_at = now()',
+          [productId, sizeName, stock]
+        );
+      } catch (pssErr) {
+        console.warn('[saveProductSizeStock] product_size_stock warning:', pssErr.message);
+      }
+
+      try {
+        const existing = await query('SELECT id FROM sizes_master WHERE LOWER(name) = LOWER($1)', [sizeName]);
+        if (!existing.rows || existing.rows.length === 0) {
+          await query(
+            'INSERT INTO sizes_master (name, active) VALUES ($1, true) ON CONFLICT (name) DO NOTHING',
+            [sizeName]
+          );
+        }
+      } catch (smErr) {
+        console.warn('[saveProductSizeStock] sizes_master warning:', smErr.message);
+      }
+    }
+
+    const sizesString = sizeNamesList.length > 0 ? sizeNamesList.join(', ') : 'Único';
     await query(
-      'INSERT INTO sizes_master (name, active) VALUES ($1, true) ON CONFLICT (LOWER(name)) DO NOTHING',
-      [sizeName]
+      'UPDATE products SET stock = $1, sizes = $2 WHERE id = $3',
+      [totalStock, sizesString, productId]
     );
+
+    return { totalStock, sizesString };
+  } catch (err) {
+    console.error('[saveProductSizeStock] unexpected error:', err);
+    return { totalStock: 0, sizesString: 'Único' };
   }
-
-  const sizesString = sizeNamesList.join(', ');
-  await query(
-    'UPDATE products SET stock = $1, sizes = $2 WHERE id = $3',
-    [totalStock, sizesString, productId]
-  );
-
-  return { totalStock, sizesString };
 }
 
 const fields = 'id,name,description,price,sizes,size_guide,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,cash_discount_percent,cash_discount_text,cash_custom_price,cash_text,created_at,updated_at';
@@ -423,7 +447,7 @@ router.post('/', rules, async (req, res) => {
     res.status(201).json({ ok: true, message: 'Producto creado correctamente', data: createdProduct });
   } catch (err) {
     console.error('[admin/product-create] error:', err);
-    res.status(500).json({ ok: false, message: 'Error al crear producto' });
+    res.status(500).json({ ok: false, message: err.message || 'Error al crear producto' });
   }
 });
 
@@ -621,7 +645,7 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
     res.json({ ok: true, message: 'Producto actualizado correctamente', data: updatedProd });
   } catch (err) {
     console.error('[admin/product-update] error:', err);
-    res.status(500).json({ ok: false, message: 'Error al actualizar producto' });
+    res.status(500).json({ ok: false, message: err.message || 'Error al actualizar producto' });
   }
 });
 
