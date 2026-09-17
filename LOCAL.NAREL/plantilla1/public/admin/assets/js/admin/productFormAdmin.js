@@ -804,6 +804,7 @@
 
     window.auth.setButtonLoading(btnId, true, 'GUARDANDO...');
     window.auth.setMessage(msgId, 'Procesando...', 'info');
+    console.log('handleSubmit: Starting save process', { isEditMode, productId });
 
     try {
       const discEnabledEl = document.getElementById('direct_discount_enabled');
@@ -844,6 +845,7 @@
 
       if (newItems.length > 0) {
         window.auth.setMessage(msgId, `Subiendo ${newItems.length} imagen${newItems.length > 1 ? 'es' : ''} nueva${newItems.length > 1 ? 's' : ''}...`, 'info');
+        console.log('handleSubmit: Uploading images', newItems.length);
         const fd = new FormData();
         newItems.forEach((item) => {
           fd.append('images', item.file);
@@ -915,6 +917,7 @@
         size_stock: activeSizeStocks,
       };
 
+      console.log('handleSubmit: Payload prepared', payload);
       let saveRes;
       if (isEditMode) {
         saveRes = await window.auth.apiFetch(`/api/admin/products/${encodeURIComponent(productId)}`, {
@@ -928,12 +931,14 @@
         });
       }
 
+      console.log('handleSubmit: Save response', saveRes);
       if (!saveRes.ok) throw new Error(saveRes.message || 'Error al guardar el producto');
 
       const actionText = isEditMode ? 'actualizado' : 'creado';
       window.auth.setMessage(msgId, `Producto ${actionText} correctamente. Redirigiendo...`, 'success');
       setTimeout(() => window.location.replace('/admin/products.html'), 800);
     } catch (err) {
+      console.error('handleSubmit: Error', err);
       window.auth.setMessage(msgId, err.message || 'Error inesperado al guardar', 'error');
     } finally {
       window.auth.setButtonLoading(btnId, false);
