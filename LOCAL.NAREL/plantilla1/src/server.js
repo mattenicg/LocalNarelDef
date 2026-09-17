@@ -1,3 +1,4 @@
+console.log('[BOOT 1] server.js comenzó a ejecutarse');
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -58,6 +59,7 @@ app.set('trust proxy', 1);
 app.use(cookieParser());
 
 let dbIsReady = false;
+console.log('[BOOT 2] Llegó antes de initPostgres');
 const dbReady = initPostgres()
   .then(() => {
     dbIsReady = true;
@@ -66,7 +68,7 @@ const dbReady = initPostgres()
     logger.error('PostgreSQL no disponible, inicializando almacenamiento en memoria:', err.message);
     dbIsReady = true;
   });
-
+console.log('[BOOT 3] dbReady fue creado');
 app.use(async (_req, _res, next) => {
   try {
     await dbReady;
