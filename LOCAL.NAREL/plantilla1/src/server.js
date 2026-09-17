@@ -92,16 +92,13 @@ const {
 } = require('./routes/shippingPromo.pg.routes');
 console.log('[TEST] shippingPromo OK');
 
-console.log('[TEST] antes de freeShipping');
-const {
-  freeShippingPublicRoutes,
-  freeShippingAdminRoutes,
-} = require('./routes/freeShipping.pg.routes');
-console.log('[TEST] freeShipping OK');
+console.log('[TEST] freeShipping DESACTIVADO');
 
 console.log('[TEST] antes de shipping');
 const shippingRoutes = require('./routes/shipping.pg.routes');
 console.log('[TEST] shipping OK');
+
+console.log('[TEST] antes de notifications');
 
 console.log('[TEST] antes de notifications');
 const notificationsAdminRoutes = require('./routes/notifications.pg.routes');
