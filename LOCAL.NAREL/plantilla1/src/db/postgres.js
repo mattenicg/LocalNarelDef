@@ -132,28 +132,61 @@ async function migrateLegacyProducts() {
 }
 
 async function initPostgres() {
+  console.log('[PG TEST] initPostgres comenzó');
+
   if (useMock) {
+    console.log('[PG TEST] useMock ya estaba activo');
     logger.info('[postgres] Almacenamiento en memoria activo.');
     return;
   }
+
   try {
-    // Probe database connection with a fast test
+    console.log('[PG TEST] intentando pool.connect()');
+
     const client = await pool.connect();
+
+    console.log('[PG TEST] pool.connect() OK');
+
     client.release();
+
+    console.log('[PG TEST] leyendo postgres-schema.sql');
 
     const schemaPath = path.join(__dirname, 'postgres-schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
+
+    console.log('[PG TEST] schema leído. Ejecutando pool.query(schema)');
+
     await pool.query(schema);
+
+    console.log('[PG TEST] schema ejecutado OK');
+
     logger.info('[postgres] Esquema PostgreSQL verificado correctamente en base de datos externa.');
-    
-    // Execute legacy sizes/stock migration
+
+    console.log('[PG TEST] comenzando migrateLegacyProducts');
+
     await migrateLegacyProducts();
+
+    console.log('[PG TEST] migrateLegacyProducts OK');
+
   } catch (err) {
-    logger.warn(`[postgres] PostgreSQL no disponible (${err.message}). Activando almacenamiento en memoria para vista previa.`);
+    console.log('[PG TEST] ERROR:', err.message);
+
+    logger.warn(
+      `[postgres] PostgreSQL no disponible (${err.message}). Activando almacenamiento en memoria para vista previa.`
+    );
+
     useMock = true;
-    initMemoryDb(env.ADMIN_DEFAULT_EMAIL, env.ADMIN_DEFAULT_PASSWORD);
-    logger.info('[postgres] Almacenamiento en memoria inicializado con catálogo y usuario admin.');
+
+    initMemoryDb(
+      env.ADMIN_DEFAULT_EMAIL,
+      env.ADMIN_DEFAULT_PASSWORD
+    );
+
+    logger.info(
+      '[postgres] Almacenamiento en memoria inicializado con catálogo y usuario admin.'
+    );
+
+    console.log('[PG TEST] fallback a memoria completado');
   }
 }
-
 module.exports = { pool, query, withTransaction, initPostgres };
