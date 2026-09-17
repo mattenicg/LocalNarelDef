@@ -45,30 +45,71 @@ if (LEGACY_SQLITE_ENABLED) {
   adminRoutes = require('./routes/admin.routes');
 }
 
-// ============================================================
-// NUEVAS RUTAS SUPABASE (auth + admin products + storage)
-// ============================================================
+console.log('[TEST] antes de auth');
 const supabaseAuthRoutes = require('./routes/auth.pg.routes');
+console.log('[TEST] auth OK');
+
+console.log('[TEST] antes de categories');
 const supabaseCategoriesRoutes = require('./routes/categories.pg.routes');
+console.log('[TEST] categories OK');
+
+console.log('[TEST] antes de products');
 const supabaseProductsRoutes = require('./routes/products.pg.routes');
+console.log('[TEST] products OK');
+
+console.log('[TEST] antes de sizes');
 const supabaseSizesRoutes = require('./routes/sizes.pg.routes');
+console.log('[TEST] sizes OK');
+
+console.log('[TEST] antes de banners');
 const supabaseBannersRoutes = require('./routes/banners.pg.routes');
+console.log('[TEST] banners OK');
+
+console.log('[TEST] antes de promotions');
 const supabasePromotionsRoutes = require('./routes/promotions.pg.routes');
+console.log('[TEST] promotions OK');
+
+console.log('[TEST] antes de storage');
 const supabaseStorageRoutes = require('./routes/storage.pg.routes');
-const { publicRouter: supabaseOrdersPublicRoutes, adminRouter: supabaseOrdersAdminRoutes } = require('./routes/orders.pg.routes');
+console.log('[TEST] storage OK');
+
+console.log('[TEST] antes de orders');
+const {
+  publicRouter: supabaseOrdersPublicRoutes,
+  adminRouter: supabaseOrdersAdminRoutes
+} = require('./routes/orders.pg.routes');
+console.log('[TEST] orders OK');
+
+console.log('[TEST] antes de payments');
 const paymentsRoutes = require('./routes/payments.pg.routes');
+console.log('[TEST] payments OK');
+
+console.log('[TEST] antes de shippingPromo');
 const {
   shippingPromoPublicRoutes,
   shippingPromoAdminRoutes,
   getShippingPromoConfig,
 } = require('./routes/shippingPromo.pg.routes');
+console.log('[TEST] shippingPromo OK');
+
+console.log('[TEST] antes de freeShipping');
 const {
   freeShippingPublicRoutes,
   freeShippingAdminRoutes,
 } = require('./routes/freeShipping.pg.routes');
+console.log('[TEST] freeShipping OK');
+
+console.log('[TEST] antes de shipping');
 const shippingRoutes = require('./routes/shipping.pg.routes');
+console.log('[TEST] shipping OK');
+
+console.log('[TEST] antes de notifications');
 const notificationsAdminRoutes = require('./routes/notifications.pg.routes');
+console.log('[TEST] notifications OK');
+
+console.log('[TEST] antes de env');
 const env = require('./config/env');
+console.log('[TEST] env OK');
 
 const app = express();
 
