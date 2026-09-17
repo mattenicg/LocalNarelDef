@@ -452,8 +452,8 @@ app.use('/api/admin/products', supabaseProductsRoutes);
 app.use('/api/shipping-promo', shippingPromoPublicRoutes);
 app.use('/api/admin/shipping-promo', shippingPromoAdminRoutes);
 // Configuración de Envío Gratis configurable (público y admin)
-app.use('/api/free-shipping', freeShippingPublicRoutes);
-app.use('/api/admin/free-shipping', freeShippingAdminRoutes);
+// app.use('/api/free-shipping', freeShippingPublicRoutes);
+// app.use('/api/admin/free-shipping', freeShippingAdminRoutes);
 // Cálculo de costos de envío con Correo Argentino
 app.use('/api/shipping', shippingRoutes);
 // Notificaciones de pedidos (admin)
