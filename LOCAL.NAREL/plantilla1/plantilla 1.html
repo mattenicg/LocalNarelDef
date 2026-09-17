@@ -8540,7 +8540,7 @@
 
           if (variantStock <= 0) {
             if (stockPill) {
-              stockPill.textContent = `SIN STOCK (${selectedModalSize})`;
+              stockPill.textContent = `SIN STOCK (Talle ${selectedModalSize})`;
               stockPill.style.color = '#ef4444';
               stockPill.style.borderColor = 'rgba(239,68,68,0.4)';
             }
@@ -8549,10 +8549,10 @@
               mainAdd.style.opacity = '0.4';
               mainAdd.style.cursor = 'not-allowed';
             }
-            if (mainAddSpan) mainAddSpan.textContent = 'TALLES AGOTADO';
+            if (mainAddSpan) mainAddSpan.textContent = `TALLES ${selectedModalSize} AGOTADO`;
           } else if (remainingStock <= 0) {
             if (stockPill) {
-              stockPill.textContent = `Stock disponible: ${variantStock} (tenés ${cartQty} en carrito)`;
+              stockPill.textContent = `Stock talle ${selectedModalSize}: ${variantStock} (tenés ${cartQty} en carrito)`;
               stockPill.style.color = '#f59e0b';
               stockPill.style.borderColor = 'rgba(245,158,11,0.4)';
             }
@@ -8561,10 +8561,10 @@
               mainAdd.style.opacity = '0.4';
               mainAdd.style.cursor = 'not-allowed';
             }
-            if (mainAddSpan) mainAddSpan.textContent = 'MÁXIMO EN CARRITO';
+            if (mainAddSpan) mainAddSpan.textContent = `MÁXIMO EN CARRITO (${variantStock})`;
           } else {
             if (stockPill) {
-              stockPill.textContent = `Stock disponible: ${variantStock}`;
+              stockPill.textContent = `Stock disponible (Talle ${selectedModalSize}): ${variantStock}`;
               stockPill.style.color = variantStock <= 3 ? '#f59e0b' : '#22c55e';
               stockPill.style.borderColor = variantStock <= 3 ? 'rgba(245,158,11,0.4)' : 'rgba(34,197,94,0.4)';
             }
@@ -8849,13 +8849,26 @@
 
               if (window.shop && typeof window.shop.addToCart === 'function') {
                 const pricing = getProductPricing(currentModalProduct);
+                let exactSizeStock = null;
+                if (selectedModalSize && Array.isArray(currentModalProduct.size_stock) && currentModalProduct.size_stock.length > 0) {
+                  const match = currentModalProduct.size_stock.find(
+                    (s) => s && String(s.size_name || '').trim().toLowerCase() === selectedModalSize.toLowerCase()
+                  );
+                  if (match && match.stock !== undefined && match.stock !== null) {
+                    exactSizeStock = Math.max(0, Number(match.stock) || 0);
+                  }
+                }
+                if (exactSizeStock === null) {
+                  exactSizeStock = Number(currentModalProduct.stock) || 0;
+                }
                 window.shop.addToCart({
                   ...currentModalProduct,
                   id: currentModalProduct.id,
                   name: currentModalProduct.name,
                   price: Number(currentModalProduct.price) || 0,
                   image: currentModalProduct.image_url || '',
-                  stock: Number(currentModalProduct.stock) || 0,
+                  stock: exactSizeStock,
+                  size_stock: currentModalProduct.size_stock,
                   sizes: currentModalProduct.sizes || '',
                   size: selectedModalSize || '',
                   qty: 1,
@@ -8984,16 +8997,30 @@
               } catch (_) {}
 
               const prod = (window.__CATALOG_PRODUCTS__ || []).find(p => String(p.id) === String(card.dataset.id));
+              const selectedDirectSize = sizeList.length === 1 ? sizeList[0] : '';
+              let exactDirectSizeStock = null;
+              if (selectedDirectSize && prod && Array.isArray(prod.size_stock) && prod.size_stock.length > 0) {
+                const match = prod.size_stock.find(
+                  (s) => s && String(s.size_name || '').trim().toLowerCase() === selectedDirectSize.toLowerCase()
+                );
+                if (match && match.stock !== undefined && match.stock !== null) {
+                  exactDirectSizeStock = Math.max(0, Number(match.stock) || 0);
+                }
+              }
+              if (exactDirectSizeStock === null) {
+                exactDirectSizeStock = prod ? Number(prod.stock) : Number(card.dataset.stock) || 0;
+              }
               const item = prod ? {
                 ...prod,
                 id: prod.id,
                 name: prod.name,
                 price: Number(prod.price) || 0,
                 image: prod.image_url || card.dataset.image || (card.querySelector('.product-image img') ? card.querySelector('.product-image img').src : '') || '',
-                stock: Number(prod.stock) || 0,
+                stock: exactDirectSizeStock,
+                size_stock: prod.size_stock,
                 sizes: prod.sizes || card.dataset.sizes || '',
                 qty: 1,
-                size: sizeList.length === 1 ? sizeList[0] : '',
+                size: selectedDirectSize,
                 direct_purchase: false,
                 direct_discount_percent: prod.direct_discount_percent !== undefined ? prod.direct_discount_percent : 25,
                 direct_discount_text: prod.direct_discount_text || 'con transferencia',

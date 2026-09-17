@@ -15,10 +15,202 @@
     }
 
     bindImages();
+    bindSizeStockManager();
     bindForm();
     bindDirectPurchase();
     await loadCategories();
     bindCategoryEvents();
+  }
+
+  let sizeStockItems = [
+    { size_name: 'S', stock: 5 },
+    { size_name: 'M', stock: 5 },
+    { size_name: 'L', stock: 5 },
+    { size_name: 'XL', stock: 5 },
+  ];
+
+  function bindSizeStockManager() {
+    renderSizeStockList();
+
+    const addBtn = document.getElementById('addNewSizeBtn');
+    const nameInput = document.getElementById('newSizeNameInput');
+    const stockInput = document.getElementById('newSizeStockInput');
+
+    if (addBtn && nameInput) {
+      addBtn.addEventListener('click', () => {
+        const rawName = (nameInput.value || '').trim();
+        const rawStock = Math.max(0, parseInt(stockInput?.value, 10) || 0);
+        if (!rawName) {
+          nameInput.focus();
+          return;
+        }
+
+        const existing = sizeStockItems.find((s) => s.size_name.toLowerCase() === rawName.toLowerCase());
+        if (existing) {
+          existing.stock += rawStock;
+        } else {
+          sizeStockItems.push({ size_name: rawName, stock: rawStock });
+        }
+
+        nameInput.value = '';
+        if (stockInput) stockInput.value = '5';
+        renderSizeStockList();
+      });
+
+      nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addBtn.click();
+        }
+      });
+    }
+
+    document.querySelectorAll('.size-preset-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const preset = btn.dataset.preset;
+        if (preset === 's_m_l_xl') {
+          sizeStockItems = [
+            { size_name: 'S', stock: 5 },
+            { size_name: 'M', stock: 5 },
+            { size_name: 'L', stock: 5 },
+            { size_name: 'XL', stock: 5 },
+          ];
+        } else if (preset === 'xs_s_m_l_xl_xxl') {
+          sizeStockItems = [
+            { size_name: 'XS', stock: 3 },
+            { size_name: 'S', stock: 5 },
+            { size_name: 'M', stock: 8 },
+            { size_name: 'L', stock: 8 },
+            { size_name: 'XL', stock: 5 },
+            { size_name: 'XXL', stock: 2 },
+          ];
+        } else if (preset === 'jeans_38_46') {
+          sizeStockItems = [
+            { size_name: '38', stock: 4 },
+            { size_name: '40', stock: 6 },
+            { size_name: '42', stock: 6 },
+            { size_name: '44', stock: 4 },
+            { size_name: '46', stock: 2 },
+          ];
+        } else if (preset === 'unico') {
+          sizeStockItems = [
+            { size_name: 'Único', stock: 10 },
+          ];
+        }
+        renderSizeStockList();
+      });
+    });
+  }
+
+  function renderSizeStockList() {
+    const listEl = document.getElementById('sizeStockList');
+    if (!listEl) return;
+
+    listEl.innerHTML = '';
+
+    if (sizeStockItems.length === 0) {
+      listEl.innerHTML = '<div style="padding:10px;text-align:center;color:#666;font-size:12px;font-family:\'DM Mono\',monospace;border:1px dashed #333;border-radius:4px;">No hay talles configurados. Agregá uno abajo o seleccioná una plantilla.</div>';
+    }
+
+    let total = 0;
+    const sizeNames = [];
+
+    sizeStockItems.forEach((item, idx) => {
+      const stockNum = Math.max(0, parseInt(item.stock, 10) || 0);
+      total += stockNum;
+      if (item.size_name && item.size_name.trim()) {
+        sizeNames.push(item.size_name.trim());
+      }
+
+      const row = document.createElement('div');
+      row.className = 'size-stock-row';
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;background:#18181b;padding:8px 12px;border:1px solid #27272a;border-radius:6px;flex-wrap:wrap;';
+
+      const isOut = stockNum === 0;
+
+      row.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:140px;">
+          <input type="text" class="size-name-input form-control" data-idx="${idx}" value="${escapeHtml(item.size_name || '')}" placeholder="Talle" maxlength="20" style="width:110px;background:#09090b;border-color:#3f3f46;color:#fff;font-weight:700;font-size:13px;padding:6px 10px;height:34px;">
+          <span style="font-size:11px;font-family:'DM Mono',monospace;color:${isOut ? '#ef4444' : '#22c55e'};padding:2px 8px;border-radius:3px;background:${isOut ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)'};border:1px solid ${isOut ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'};">
+            ${isOut ? 'AGOTADO (0 u.)' : `${stockNum} disp.`}
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:11px;font-family:'DM Mono',monospace;color:#aaa;margin:0;">Stock:</label>
+          <input type="number" class="size-stock-input form-control" data-idx="${idx}" min="0" step="1" value="${stockNum}" style="width:90px;background:#09090b;border-color:#3f3f46;color:#fff;font-size:13px;padding:6px 8px;height:34px;">
+          <button type="button" class="remove-size-btn button secondary" data-idx="${idx}" title="Eliminar talle" style="width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;color:#ef4444;border-color:#450a0a;background:#18181b;font-size:14px;cursor:pointer;">✕</button>
+        </div>
+      `;
+
+      listEl.appendChild(row);
+    });
+
+    const totalDisplay = document.getElementById('totalStockDisplay');
+    const sizesInput = document.getElementById('sizes');
+    const stockInput = document.getElementById('stock');
+    if (totalDisplay) totalDisplay.textContent = total;
+    if (sizesInput) sizesInput.value = sizeNames.join(' · ');
+    if (stockInput) stockInput.value = total;
+
+    listEl.querySelectorAll('.size-name-input').forEach((input) => {
+      input.addEventListener('input', (e) => {
+        const idx = parseInt(e.target.dataset.idx, 10);
+        if (sizeStockItems[idx]) {
+          sizeStockItems[idx].size_name = e.target.value.trim();
+          updateHiddenFields();
+        }
+      });
+    });
+
+    listEl.querySelectorAll('.size-stock-input').forEach((input) => {
+      input.addEventListener('input', (e) => {
+        const idx = parseInt(e.target.dataset.idx, 10);
+        if (sizeStockItems[idx]) {
+          sizeStockItems[idx].stock = Math.max(0, parseInt(e.target.value, 10) || 0);
+          updateHiddenFields();
+        }
+      });
+      input.addEventListener('change', () => {
+        renderSizeStockList();
+      });
+    });
+
+    listEl.querySelectorAll('.remove-size-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        if (!isNaN(idx) && sizeStockItems[idx]) {
+          sizeStockItems.splice(idx, 1);
+          renderSizeStockList();
+        }
+      });
+    });
+  }
+
+  function updateHiddenFields() {
+    let total = 0;
+    const sizeNames = [];
+    sizeStockItems.forEach((item) => {
+      const stockNum = Math.max(0, parseInt(item.stock, 10) || 0);
+      total += stockNum;
+      if (item.size_name && item.size_name.trim()) {
+        sizeNames.push(item.size_name.trim());
+      }
+    });
+    const totalDisplay = document.getElementById('totalStockDisplay');
+    const sizesInput = document.getElementById('sizes');
+    const stockInput = document.getElementById('stock');
+    if (totalDisplay) totalDisplay.textContent = total;
+    if (sizesInput) sizesInput.value = sizeNames.join(' · ');
+    if (stockInput) stockInput.value = total;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   function bindDirectPurchase() {
@@ -585,6 +777,7 @@
           price,
           sizes,
           stock,
+          size_stock: sizeStockItems,
           image_url: primaryImageUrl,
           images: uploadedImageUrls,
           category,

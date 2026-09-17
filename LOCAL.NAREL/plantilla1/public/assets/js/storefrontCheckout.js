@@ -83,20 +83,35 @@
     const sizeName = String(item.size || '').trim();
     const catalog = Array.isArray(window.__CATALOG_PRODUCTS__) ? window.__CATALOG_PRODUCTS__ : [];
     const prod = catalog.find((p) => String(p.id) === productId);
-    if (prod) {
-      if (sizeName && Array.isArray(prod.size_stock) && prod.size_stock.length > 0) {
-        const match = prod.size_stock.find(
-          (s) => s && String(s.size_name || '').trim().toLowerCase() === sizeName.toLowerCase()
-        );
-        if (match && match.stock !== undefined && match.stock !== null) {
-          return Math.max(0, Number(match.stock) || 0);
-        }
+    
+    // 1. Check in global catalog size_stock
+    if (prod && sizeName && Array.isArray(prod.size_stock) && prod.size_stock.length > 0) {
+      const match = prod.size_stock.find(
+        (s) => s && String(s.size_name || '').trim().toLowerCase() === sizeName.toLowerCase()
+      );
+      if (match && match.stock !== undefined && match.stock !== null) {
+        return Math.max(0, Number(match.stock) || 0);
       }
+    }
+
+    // 2. Check in item's own size_stock array
+    if (sizeName && Array.isArray(item.size_stock) && item.size_stock.length > 0) {
+      const match = item.size_stock.find(
+        (s) => s && String(s.size_name || '').trim().toLowerCase() === sizeName.toLowerCase()
+      );
+      if (match && match.stock !== undefined && match.stock !== null) {
+        return Math.max(0, Number(match.stock) || 0);
+      }
+    }
+
+    // 3. Fallback for products without size variants
+    if (prod) {
       const rawSizes = String(prod.sizes || '').split(/\s*[-|/,]\s*/).map((s) => s.trim()).filter(Boolean);
       if (rawSizes.length <= 1 && prod.stock !== undefined && prod.stock !== null) {
         return Math.max(0, Number(prod.stock) || 0);
       }
     }
+
     if (item.stock !== undefined && item.stock !== null && Number.isFinite(Number(item.stock))) {
       return Math.max(0, Number(item.stock));
     }
@@ -131,6 +146,7 @@
       list_price: listPrice > price ? listPrice : 0,
       image: String(item && (item.image || item.image_url) || ''),
       sizes: String(item && item.sizes || '').trim(),
+      size_stock: Array.isArray(item && item.size_stock) ? item.size_stock : null,
       stock: Number.isFinite(stock) ? Math.max(0, stock) : null,
       qty: Math.max(1, Math.min(99, Number(item && (item.qty || item.quantity)) || 1)),
       size,

@@ -1662,7 +1662,7 @@
             const maxStock = item.stock !== undefined && item.stock !== null ? Number(item.stock) : 99;
             const isMaxReached = qty >= maxStock;
             const incDisabled = isMaxReached ? ' disabled style="opacity:0.35;cursor:not-allowed;"' : '';
-            const stockNote = maxStock <= 5 ? `<div style="font-size:10px;color:#f59e0b;font-family:'DM Mono',monospace;margin-top:2px;">Stock disp.: ${maxStock}</div>` : '';
+            const stockNote = `<div style="font-size:10.5px;color:${maxStock <= 3 ? '#f59e0b' : '#22c55e'};font-family:'DM Mono',monospace;margin-top:2px;">Stock disponible${item.size ? ` (Talle ${item.size})` : ''}: <strong>${maxStock}</strong></div>`;
 
             const row = document.createElement('div');
             row.className = 'cart-item-row';
@@ -1986,10 +1986,55 @@
         });
       }
 
+      // Sincroniza en tiempo real el stock exacto por talle con la base de datos
+      async function syncCartStockWithBackend() {
+        const items = getCart();
+        if (!items || !items.length) return;
+        let changed = false;
+
+        for (const item of items) {
+          if (!item.id) continue;
+          try {
+            const res = await fetch(`/api/products/${item.id}/stock`, { cache: 'no-store' });
+            if (!res.ok) continue;
+            const data = await res.json();
+            if (data && data.ok && data.data) {
+              const pInfo = data.data;
+              let exactStock = null;
+              if (item.size && Array.isArray(pInfo.size_stock) && pInfo.size_stock.length > 0) {
+                const match = pInfo.size_stock.find(
+                  (s) => s && String(s.size_name || '').trim().toLowerCase() === String(item.size).trim().toLowerCase()
+                );
+                if (match && match.stock !== undefined && match.stock !== null) {
+                  exactStock = Math.max(0, Number(match.stock) || 0);
+                }
+              }
+              if (exactStock === null) {
+                exactStock = Math.max(0, Number(pInfo.stock) || 0);
+              }
+
+              item.stock = exactStock;
+              item.size_stock = pInfo.size_stock;
+              if (item.qty > exactStock) {
+                item.qty = Math.max(1, exactStock);
+                changed = true;
+              }
+              changed = true;
+            }
+          } catch (_e) {}
+        }
+
+        if (changed) {
+          saveCart(items);
+          renderCartPage();
+        }
+      }
+
       // Inicialización
       document.addEventListener('DOMContentLoaded', () => {
         loadFreeShippingRule();
         renderCartPage();
+        syncCartStockWithBackend();
         const items = getCart();
         if (items.length > 0) {
           // Cotizar para CP 3000 (Santa Fe) de inicio

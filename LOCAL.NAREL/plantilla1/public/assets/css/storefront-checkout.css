@@ -165,7 +165,7 @@
   height: 92px !important;
   min-height: 92px !important;
   max-height: 92px !important;
-  background: #18181b !important;
+  background: #141416 !important;
   border: 1px solid #27272a !important;
   border-radius: 6px !important;
   overflow: hidden !important;
@@ -177,6 +177,7 @@
   flex-shrink: 0 !important;
   position: relative !important;
   box-sizing: border-box !important;
+  padding: 2px !important;
 }
 
 .cart-item-img img,
@@ -185,10 +186,12 @@
   height: 100% !important;
   max-width: 100% !important;
   max-height: 100% !important;
-  object-fit: cover !important;
+  object-fit: contain !important;
   object-position: center !important;
   display: block !important;
   border: 0 !important;
+  background: #09090b !important;
+  border-radius: 4px !important;
 }
 
 .cart-item-placeholder-text {

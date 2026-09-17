@@ -169,7 +169,19 @@
       priceCell.innerHTML = `<span class="td-price">${escapeHtml(priceStr)}</span>`;
 
       const sizesCell = document.createElement('td');
-      sizesCell.innerHTML = `<span class="td-meta" style="margin-top:0;">${escapeHtml(p.sizes || '—')}</span>`;
+      if (Array.isArray(p.size_stock) && p.size_stock.length > 0) {
+        const badges = p.size_stock.map((st) => {
+          const sStock = Number(st.stock) || 0;
+          const isZero = sStock === 0;
+          const bg = isZero ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)';
+          const color = isZero ? '#ef4444' : '#fff';
+          const border = isZero ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.15)';
+          return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 5px;background:${bg};color:${color};border:1px solid ${border};border-radius:3px;margin:2px;font-family:'DM Mono',monospace;white-space:nowrap;"><strong>${escapeHtml(st.size_name)}:</strong> ${sStock}</span>`;
+        }).join('');
+        sizesCell.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:2px;">${badges}</div>`;
+      } else {
+        sizesCell.innerHTML = `<span class="td-meta" style="margin-top:0;">${escapeHtml(p.sizes || '—')}</span>`;
+      }
 
       const stockCell = document.createElement('td');
       stockCell.innerHTML = `<span class="td-stock ${stockClass}">${stockText}</span>`;
