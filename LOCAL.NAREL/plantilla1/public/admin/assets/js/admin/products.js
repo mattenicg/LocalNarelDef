@@ -166,7 +166,23 @@
       `;
 
       const priceCell = document.createElement('td');
-      priceCell.innerHTML = `<span class="td-price">${escapeHtml(priceStr)}</span>`;
+      let transferDiscountStr = '';
+      if (Number(p.direct_discount_percent) > 0) {
+        const transPrice = (p.direct_custom_transfer_price && Number(p.direct_custom_transfer_price) > 0)
+          ? Number(p.direct_custom_transfer_price)
+          : Math.round(priceN * (1 - (Number(p.direct_discount_percent) / 100)));
+        const transFmt = transPrice.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
+        transferDiscountStr = `<div style="font-size:11px;color:#f43f5e;font-weight:700;margin-top:2px;">Transf (${p.direct_discount_percent}%): ${transFmt}</div>`;
+      }
+      let cashDiscountStr = '';
+      if (Number(p.cash_discount_percent) > 0) {
+        const cashPrice = (p.cash_custom_price && Number(p.cash_custom_price) > 0)
+          ? Number(p.cash_custom_price)
+          : Math.round(priceN * (1 - (Number(p.cash_discount_percent) / 100)));
+        const cashFmt = cashPrice.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
+        cashDiscountStr = `<div style="font-size:11px;color:#10b981;font-weight:700;margin-top:2px;">Efec (${p.cash_discount_percent}%): ${cashFmt}</div>`;
+      }
+      priceCell.innerHTML = `<span class="td-price">${escapeHtml(priceStr)}</span>${transferDiscountStr}${cashDiscountStr}`;
 
       const sizesCell = document.createElement('td');
       sizesCell.innerHTML = `<span class="td-meta" style="margin-top:0;">${escapeHtml(p.sizes || '—')}</span>`;

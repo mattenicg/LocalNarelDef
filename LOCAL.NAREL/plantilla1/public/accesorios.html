@@ -8172,7 +8172,7 @@
         const basePrice = Number(p.price) || 0;
         const discountPercent = (p.direct_discount_percent !== undefined && p.direct_discount_percent !== null && p.direct_discount_percent !== '')
           ? Number(p.direct_discount_percent)
-          : 25;
+          : 0;
         const hasDiscount = discountPercent > 0;
         const discountText = htmlEscape(p.direct_discount_text || 'con transferencia');
         const showPromoBadge = p.direct_show_promo_badge !== false && String(p.direct_show_promo_badge) !== 'false';
@@ -8186,6 +8186,17 @@
           transferPrice = Number(p.direct_custom_transfer_price);
         }
         const transferText = htmlEscape(p.direct_transfer_text || 'con Transferencia');
+
+        const cashDiscountPercent = (p.cash_discount_percent !== undefined && p.cash_discount_percent !== null && p.cash_discount_percent !== '')
+          ? Number(p.cash_discount_percent)
+          : 0;
+        const hasCashDiscount = cashDiscountPercent > 0;
+        const cashDiscountText = htmlEscape(p.cash_discount_text || 'en efectivo');
+        let cashPrice = hasCashDiscount ? (basePrice * (1 - (cashDiscountPercent / 100))) : basePrice;
+        if (p.cash_custom_price !== undefined && p.cash_custom_price !== null && p.cash_custom_price !== '' && Number(p.cash_custom_price) > 0) {
+          cashPrice = Number(p.cash_custom_price);
+        }
+        const cashText = htmlEscape(p.cash_text || 'en Efectivo');
 
         return {
           basePrice,
@@ -8202,6 +8213,12 @@
           transferPrice,
           transferPriceStr: fmtPriceAR(transferPrice),
           transferText,
+          cashDiscountPercent,
+          hasCashDiscount,
+          cashDiscountText,
+          cashPrice,
+          cashPriceStr: fmtPriceAR(cashPrice),
+          cashText,
         };
       }
 
@@ -8223,7 +8240,7 @@
 
         const pricing = getProductPricing(p);
 
-        const directAttrs = ` data-direct="${isDirect ? '1' : '0'}" data-allowed-methods="${htmlEscape(JSON.stringify(p.allowed_payment_methods || []))}" data-allowed-installments="${htmlEscape(JSON.stringify(p.allowed_installments || []))}" data-discount-percent="${pricing.discountPercent}" data-discount-text="${pricing.discountText}" data-custom-transfer="${p.direct_custom_transfer_price || ''}" data-installments-count="${pricing.installmentsCount}" data-installments-text="${pricing.installmentsText}"`;
+        const directAttrs = ` data-direct="${isDirect ? '1' : '0'}" data-allowed-methods="${htmlEscape(JSON.stringify(p.allowed_payment_methods || []))}" data-allowed-installments="${htmlEscape(JSON.stringify(p.allowed_installments || []))}" data-discount-percent="${pricing.discountPercent}" data-discount-text="${pricing.discountText}" data-custom-transfer="${p.direct_custom_transfer_price || ''}" data-cash-discount-percent="${pricing.cashDiscountPercent}" data-cash-discount-text="${pricing.cashDiscountText}" data-custom-cash="${p.cash_custom_price || ''}" data-installments-count="${pricing.installmentsCount}" data-installments-text="${pricing.installmentsText}"`;
 
         const promoBadgeHTML = (pricing.showPromoBadge && pricing.promoBadgeText)
           ? `<div class="direct-promo-pill" style="background:#e50914;color:#fff;font-size:10px;font-weight:800;padding:4px 9px;border-radius:12px;letter-spacing:.05em;text-transform:uppercase;line-height:1.1;text-align:center;box-shadow:0 2px 8px rgba(229,9,20,0.3);white-space:nowrap;">${pricing.promoBadgeText}</div>`
@@ -8258,6 +8275,7 @@
           `</div>` +
           `<div class="direct-installments-line" style="font-size:12.5px;color:#9ca3af;letter-spacing:.01em;margin-top:2px;">${pricing.installmentsCount} x ${pricing.installmentPriceStr} ${pricing.installmentsText}</div>` +
           `<div class="direct-transfer-line" style="font-size:14px;font-weight:700;color:#f43f5e;letter-spacing:.01em;margin-top:1px;">${pricing.transferPriceStr} ${pricing.transferText}</div>` +
+          ((pricing.hasCashDiscount || pricing.cashPrice < pricing.basePrice) ? `<div class="direct-cash-line" style="font-size:14px;font-weight:700;color:#10b981;letter-spacing:.01em;margin-top:1px;">${pricing.cashPriceStr} ${pricing.cashText}</div>` : '') +
           `<div class="product-bottom" style="margin-top:8px;padding-top:4px;border:none;">` +
           buttonHTML +
           `</div>` +
@@ -8525,6 +8543,7 @@
             </div>
             <div style="font-size:13px;color:#9ca3af;letter-spacing:.01em;margin-top:2px;">${pricing.installmentsCount} x ${pricing.installmentPriceStr} ${pricing.installmentsText}</div>
             <div style="font-size:15px;font-weight:700;color:#f43f5e;letter-spacing:.01em;margin-top:2px;">${pricing.transferPriceStr} ${pricing.transferText}</div>
+            ${(pricing.hasCashDiscount || pricing.cashPrice < pricing.basePrice) ? `<div style="font-size:15px;font-weight:700;color:#10b981;letter-spacing:.01em;margin-top:2px;">${pricing.cashPriceStr} ${pricing.cashText}</div>` : ''}
           </div>
         `;
 
@@ -8605,6 +8624,10 @@
                     direct_discount_text: currentModalProduct.direct_discount_text,
                     direct_custom_transfer_price: currentModalProduct.direct_custom_transfer_price,
                     direct_transfer_price: currentModalProduct.direct_transfer_price,
+                    cash_discount_percent: currentModalProduct.cash_discount_percent,
+                    cash_discount_text: currentModalProduct.cash_discount_text,
+                    cash_custom_price: currentModalProduct.cash_custom_price,
+                    cash_text: currentModalProduct.cash_text,
                     direct_installments_count: currentModalProduct.direct_installments_count,
                     direct_installments_text: currentModalProduct.direct_installments_text,
                   });
@@ -8631,6 +8654,10 @@
                   direct_discount_text: pricing.discountText,
                   direct_custom_transfer_price: currentModalProduct.direct_custom_transfer_price,
                   direct_transfer_price: pricing.transferPrice,
+                  cash_discount_percent: pricing.cashDiscountPercent,
+                  cash_discount_text: pricing.cashDiscountText,
+                  cash_custom_price: currentModalProduct.cash_custom_price,
+                  cash_text: pricing.cashText,
                   direct_installments_count: pricing.installmentsCount,
                   direct_installments_text: pricing.installmentsText,
                 });
@@ -8760,9 +8787,13 @@
                 qty: 1,
                 size: sizeList.length === 1 ? sizeList[0] : '',
                 direct_purchase: isDirect,
-                direct_discount_percent: prod.direct_discount_percent !== undefined ? prod.direct_discount_percent : 25,
+                direct_discount_percent: prod.direct_discount_percent !== undefined ? prod.direct_discount_percent : 0,
                 direct_discount_text: prod.direct_discount_text || 'con transferencia',
                 direct_custom_transfer_price: prod.direct_custom_transfer_price || null,
+                cash_discount_percent: prod.cash_discount_percent !== undefined ? prod.cash_discount_percent : 0,
+                cash_discount_text: prod.cash_discount_text || 'en efectivo',
+                cash_custom_price: prod.cash_custom_price || null,
+                cash_text: prod.cash_text || 'en Efectivo',
               } : {
                 id: card.dataset.id || ('local-' + Math.random().toString(36).slice(2, 10)),
                 name: card.dataset.name || 'Producto',
@@ -8778,6 +8809,9 @@
                 direct_discount_percent: Number(card.dataset.discountPercent || 25),
                 direct_discount_text: card.dataset.discountText || 'con transferencia',
                 direct_custom_transfer_price: card.dataset.customTransfer ? Number(card.dataset.customTransfer) : null,
+                cash_discount_percent: Number(card.dataset.cashDiscountPercent || 0),
+                cash_discount_text: card.dataset.cashDiscountText || 'en efectivo',
+                cash_custom_price: card.dataset.customCash ? Number(card.dataset.customCash) : null,
                 direct_installments_count: Number(card.dataset.installmentsCount || 6),
                 direct_installments_text: card.dataset.installmentsText || 'sin interés',
               };

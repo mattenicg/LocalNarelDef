@@ -178,29 +178,94 @@
                   </span>
                 </div>
 
-                <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#fff;font-weight:600;">
-                    <input type="checkbox" id="direct_discount_enabled" checked style="accent-color:#fff;">
-                    Activar descuento por transferencia
-                  </label>
+                <!-- DESCUENTO POR TRANSFERENCIA -->
+                <div style="margin-bottom:18px;padding:12px;background:#111;border:1px solid #222;border-radius:6px;">
+                  <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#fff;font-weight:700;">
+                      <input type="checkbox" id="direct_discount_enabled" checked style="accent-color:#fff;">
+                      💳 Descuento por Transferencia
+                    </label>
+                    <span style="font-size:11px;color:#888;font-family:'DM Mono',monospace;">Configuración independiente</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;">
+                    <div>
+                      <label for="direct_discount_percent" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                        % Descuento Transferencia:
+                      </label>
+                      <input type="number" id="direct_discount_percent" name="direct_discount_percent" class="form-control" value="25" min="0" max="100" step="0.5" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                    </div>
+
+                    <div>
+                      <label for="direct_discount_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                        Texto Descuento:
+                      </label>
+                      <input type="text" id="direct_discount_text" name="direct_discount_text" class="form-control" value="con transferencia" placeholder="con transferencia" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                      <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "25% OFF con transferencia"</span>
+                    </div>
+
+                    <div>
+                      <label for="direct_custom_transfer_price" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                        Precio Transferencia Manual (Opcional):
+                      </label>
+                      <input type="number" id="direct_custom_transfer_price" name="direct_custom_transfer_price" class="form-control" placeholder="Dejar vacío para calcular auto" step="0.01" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                    </div>
+
+                    <div>
+                      <label for="direct_transfer_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                        Texto Final Transferencia:
+                      </label>
+                      <input type="text" id="direct_transfer_text" name="direct_transfer_text" class="form-control" value="con Transferencia" placeholder="con Transferencia" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                      <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "$31.875,00 con Transferencia"</span>
+                    </div>
+                  </div>
                 </div>
 
+                <!-- DESCUENTO POR EFECTIVO -->
+                <div style="margin-bottom:18px;padding:12px;background:#111;border:1px solid #222;border-radius:6px;">
+                  <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#fff;font-weight:700;">
+                      <input type="checkbox" id="cash_discount_enabled" checked style="accent-color:#fff;">
+                      💵 Descuento por Efectivo
+                    </label>
+                    <span style="font-size:11px;color:#888;font-family:'DM Mono',monospace;">Configuración independiente</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;">
+                    <div>
+                      <label for="cash_discount_percent" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                        % Descuento Efectivo:
+                      </label>
+                      <input type="number" id="cash_discount_percent" name="cash_discount_percent" class="form-control" value="15" min="0" max="100" step="0.5" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                    </div>
+
+                    <div>
+                      <label for="cash_discount_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                        Texto Descuento Efectivo:
+                      </label>
+                      <input type="text" id="cash_discount_text" name="cash_discount_text" class="form-control" value="en efectivo" placeholder="en efectivo" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                      <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "15% OFF en efectivo"</span>
+                    </div>
+
+                    <div>
+                      <label for="cash_custom_price" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                        Precio Efectivo Manual (Opcional):
+                      </label>
+                      <input type="number" id="cash_custom_price" name="cash_custom_price" class="form-control" placeholder="Dejar vacío para calcular auto" step="0.01" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                    </div>
+
+                    <div>
+                      <label for="cash_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
+                        Texto Final Efectivo:
+                      </label>
+                      <input type="text" id="cash_text" name="cash_text" class="form-control" value="en Efectivo" placeholder="en Efectivo" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
+                      <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "$36.125,00 en Efectivo"</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CUOTAS Y BADGE -->
                 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:14px;margin-bottom:16px;">
-                  <div>
-                    <label for="direct_discount_percent" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
-                      % Descuento Transferencia:
-                    </label>
-                    <input type="number" id="direct_discount_percent" name="direct_discount_percent" class="form-control" value="25" min="0" max="100" step="0.5" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
-                  </div>
-
-                  <div>
-                    <label for="direct_discount_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
-                      Texto Descuento:
-                    </label>
-                    <input type="text" id="direct_discount_text" name="direct_discount_text" class="form-control" value="con transferencia" placeholder="con transferencia" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
-                    <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "25% OFF con transferencia"</span>
-                  </div>
-
                   <div>
                     <label for="direct_installments_count" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
                       Cuotas a mostrar:
@@ -213,22 +278,7 @@
                       Texto de Cuotas:
                     </label>
                     <input type="text" id="direct_installments_text" name="direct_installments_text" class="form-control" value="sin interés" placeholder="sin interés" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
-                    <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "6 x $18.750,00 sin interés"</span>
-                  </div>
-
-                  <div>
-                    <label for="direct_custom_transfer_price" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
-                      Precio Transferencia Manual (Opcional):
-                    </label>
-                    <input type="number" id="direct_custom_transfer_price" name="direct_custom_transfer_price" class="form-control" placeholder="Dejar vacío para calcular auto" step="0.01" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
-                  </div>
-
-                  <div>
-                    <label for="direct_transfer_text" style="display:block;font-size:11px;font-family:'DM Mono',monospace;color:#ccc;margin-bottom:4px;">
-                      Texto Final Transferencia:
-                    </label>
-                    <input type="text" id="direct_transfer_text" name="direct_transfer_text" class="form-control" value="con Transferencia" placeholder="con Transferencia" style="background:#1a1a1a;border-color:#333;color:#fff;padding:8px 10px;font-size:13px;">
-                    <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "$84.375,00 con Transferencia"</span>
+                    <span style="font-size:10px;color:#666;font-family:'DM Mono',monospace;">Ej: "6 x $7.083,33 sin interés"</span>
                   </div>
                 </div>
 
@@ -280,8 +330,11 @@
                       <div id="previewInstallmentsLine" style="font-size:12px;color:#999;margin-bottom:6px;">
                         6 x $18.750,00 sin interés
                       </div>
-                      <div id="previewTransferLine" style="font-size:14px;font-weight:700;color:#ff3366;margin-bottom:12px;">
-                        $84.375,00 con Transferencia
+                      <div id="previewTransferLine" style="font-size:13px;font-weight:700;color:#00e5ff;margin-bottom:4px;">
+                        $31.875,00 con Transferencia
+                      </div>
+                      <div id="previewCashLine" style="font-size:13px;font-weight:700;color:#00ff88;margin-bottom:12px;">
+                        $36.125,00 en Efectivo
                       </div>
                       <button type="button" id="previewActionBtn" style="width:100%;padding:10px;background:#232733;color:#fff;border:1px solid #3d4354;border-radius:20px;font-size:13px;font-weight:700;cursor:default;display:flex;align-items:center;justify-content:center;gap:8px;">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>

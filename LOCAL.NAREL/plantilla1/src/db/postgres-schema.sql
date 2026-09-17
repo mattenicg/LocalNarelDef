@@ -108,6 +108,10 @@ CREATE TABLE IF NOT EXISTS products (
   direct_installments_text VARCHAR(60) NOT NULL DEFAULT 'sin interés',
   direct_custom_transfer_price NUMERIC(12,2) DEFAULT NULL,
   direct_transfer_text VARCHAR(60) NOT NULL DEFAULT 'con Transferencia',
+  cash_discount_percent NUMERIC(5,2) NOT NULL DEFAULT 15.00,
+  cash_discount_text VARCHAR(100) NOT NULL DEFAULT 'en efectivo',
+  cash_custom_price NUMERIC(12,2) DEFAULT NULL,
+  cash_text VARCHAR(60) NOT NULL DEFAULT 'en Efectivo',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -125,6 +129,10 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_installments_count INTEGER 
 ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_installments_text VARCHAR(60) NOT NULL DEFAULT 'sin interés';
 ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_custom_transfer_price NUMERIC(12,2) DEFAULT NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS direct_transfer_text VARCHAR(60) NOT NULL DEFAULT 'con Transferencia';
+ALTER TABLE products ADD COLUMN IF NOT EXISTS cash_discount_percent NUMERIC(5,2) NOT NULL DEFAULT 15.00;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS cash_discount_text VARCHAR(100) NOT NULL DEFAULT 'en efectivo';
+ALTER TABLE products ADD COLUMN IF NOT EXISTS cash_custom_price NUMERIC(12,2) DEFAULT NULL;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS cash_text VARCHAR(60) NOT NULL DEFAULT 'en Efectivo';
 ALTER TABLE products ADD COLUMN IF NOT EXISTS size_guide TEXT DEFAULT NULL;
 UPDATE products SET images = jsonb_build_array(image_url) WHERE (images IS NULL OR images = '[]'::jsonb) AND image_url IS NOT NULL AND image_url <> '';
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);

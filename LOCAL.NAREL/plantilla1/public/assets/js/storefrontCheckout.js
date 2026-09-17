@@ -108,6 +108,10 @@
       direct_installments_text: (item && (item.direct_installments_text || item.directInstallmentsText)) || 'sin interés',
       direct_show_promo_badge: item && item.direct_show_promo_badge !== undefined ? Boolean(item.direct_show_promo_badge) : true,
       direct_promo_badge_text: (item && item.direct_promo_badge_text) || 'PROMO ACTIVA',
+      cash_discount_percent: item && item.cash_discount_percent !== undefined && item.cash_discount_percent !== null ? Number(item.cash_discount_percent) : (item && item.cashDiscountPercent !== undefined && item.cashDiscountPercent !== null ? Number(item.cashDiscountPercent) : 0),
+      cash_discount_text: (item && (item.cash_discount_text || item.cashDiscountText)) || 'en efectivo',
+      cash_custom_price: item && item.cash_custom_price !== undefined && item.cash_custom_price !== null && Number(item.cash_custom_price) > 0 ? Number(item.cash_custom_price) : (item && item.cashCustomPrice !== undefined && item.cashCustomPrice !== null && Number(item.cashCustomPrice) > 0 ? Number(item.cashCustomPrice) : null),
+      cash_text: (item && (item.cash_text || item.cashText)) || 'en Efectivo',
       allowed_payment_methods: (item && (item.allowed_payment_methods || item.allowedPaymentMethods)) || null,
       allowed_installments: (item && (item.allowed_installments || item.allowedInstallments)) || null,
     };
@@ -121,7 +125,19 @@
     if (item.direct_transfer_price !== null && item.direct_transfer_price !== undefined && Number(item.direct_transfer_price) > 0) {
       return Number(item.direct_transfer_price);
     }
-    const discountPercent = item.direct_discount_percent !== null && item.direct_discount_percent !== undefined ? Number(item.direct_discount_percent) : 25;
+    const discountPercent = item.direct_discount_percent !== null && item.direct_discount_percent !== undefined ? Number(item.direct_discount_percent) : 0;
+    if (discountPercent > 0) {
+      return Math.round(item.price * (1 - (discountPercent / 100)) * 100) / 100;
+    }
+    return item.price;
+  }
+
+  function getItemCashPrice(item) {
+    if (!item) return 0;
+    if (item.cash_custom_price !== null && item.cash_custom_price !== undefined && Number(item.cash_custom_price) > 0) {
+      return Number(item.cash_custom_price);
+    }
+    const discountPercent = item.cash_discount_percent !== null && item.cash_discount_percent !== undefined ? Number(item.cash_discount_percent) : 0;
     if (discountPercent > 0) {
       return Math.round(item.price * (1 - (discountPercent / 100)) * 100) / 100;
     }
@@ -136,8 +152,10 @@
     const effectiveMethod = method || state.selectedPaymentMethod || 'tarjeta';
     return state.items.reduce((sum, item) => {
       let p = item.price;
-      if (effectiveMethod === 'transferencia' && (item.direct_purchase || state.isDirectPurchase || item.direct_discount_percent !== undefined)) {
+      if (effectiveMethod === 'transferencia') {
         p = getItemTransferPrice(item);
+      } else if (effectiveMethod === 'efectivo') {
+        p = getItemCashPrice(item);
       }
       return sum + item.qty * p;
     }, 0);
@@ -555,6 +573,15 @@
       if (totalTransferDiscount > 0) {
         discountRows += `<div class="row" style="color:#f43f5e;font-weight:700;"><span>Descuento Transferencia</span><strong>- ${formatCurrency(totalTransferDiscount)}</strong></div>`;
       }
+    } else if (method === 'efectivo') {
+      let totalCashDiscount = 0;
+      state.items.forEach(it => {
+        const disc = (it.price - getItemCashPrice(it)) * it.qty;
+        if (disc > 0) totalCashDiscount += disc;
+      });
+      if (totalCashDiscount > 0) {
+        discountRows += `<div class="row" style="color:#10b981;font-weight:700;"><span>Descuento Efectivo</span><strong>- ${formatCurrency(totalCashDiscount)}</strong></div>`;
+      }
     }
 
     let shippingRowHtml = '';
@@ -588,7 +615,7 @@
     }
 
     const methodLabel = method === 'transferencia' ? 'TRANSFERENCIA' : method === 'efectivo' ? 'EFECTIVO' : 'TARJETA';
-    const totalColor = method === 'transferencia' ? '#f43f5e' : 'var(--yellow,#fff)';
+    const totalColor = method === 'transferencia' ? '#f43f5e' : method === 'efectivo' ? '#10b981' : 'var(--yellow,#fff)';
 
     summary.innerHTML = `
       <div class="row"><span>Productos</span><strong>${totalQuantity()}</strong></div>
@@ -957,10 +984,10 @@
           </button>
         ` : ''}
         ${allowsCash ? `
-          <button type="button" class="btn-pay-tab ${tabCashActive ? 'active' : ''}" data-method="efectivo" style="padding:10px 8px;border-radius:8px;border:2px solid ${tabCashActive ? '#fff' : '#333'};background:${tabCashActive ? '#27272a' : '#18181b'};color:${tabCashActive ? '#fff' : '#aaa'};cursor:pointer;text-align:center;transition:all .15s ease;">
+          <button type="button" class="btn-pay-tab ${tabCashActive ? 'active' : ''}" data-method="efectivo" style="padding:10px 8px;border-radius:8px;border:2px solid ${tabCashActive ? '#10b981' : '#333'};background:${tabCashActive ? 'rgba(16,185,129,0.15)' : '#18181b'};color:${tabCashActive ? '#fff' : '#aaa'};cursor:pointer;text-align:center;transition:all .15s ease;">
             <div style="font-size:12px;font-weight:800;color:${tabCashActive ? '#fff' : '#eee'};">💵 EFECTIVO</div>
-            <div style="font-size:13px;font-weight:800;color:#fff;margin-top:2px;">${cashPriceFormatted}</div>
-            <div style="font-size:10px;color:#9ca3af;margin-top:1px;">en local</div>
+            <div style="font-size:13px;font-weight:800;color:#10b981;margin-top:2px;">${cashPriceFormatted}</div>
+            ${configuredItem && configuredItem.cash_discount_percent > 0 ? `<div style="font-size:10px;font-weight:700;color:#10b981;margin-top:1px;">${configuredItem.cash_discount_percent}% OFF</div>` : '<div style="font-size:10px;color:#9ca3af;margin-top:1px;">en local</div>'}
           </button>
         ` : ''}
       </div>`;
@@ -1000,10 +1027,10 @@
     }
     if (allowsCash) {
       offlineSectionHTML += `
-        <div id="payMethodCashBox" class="checkout-pay-box ${tabCashActive ? '' : 'checkout-hidden'}" style="padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.18);border-radius:8px;margin-top:6px;${tabCashActive ? '' : 'display:none;'}">
-          <div style="font-weight:800;font-size:13px;letter-spacing:.04em;color:#fff;margin-bottom:4px;">PAGO EN EFECTIVO EN EL LOCAL</div>
-          <p style="font-size:12.5px;color:#aaa;margin-bottom:8px;line-height:1.4;">Total a abonar: <strong style="color:#fff;">${cashPriceFormatted}</strong>. Reservá tu prenda y aboná en efectivo al retirar en LA PEATONAL San Martín 2029.</p>
-          <button type="button" class="btn" id="btnConfirmEfectivo" style="width:100%;font-weight:800;padding:12px;font-size:13.5px;">CONFIRMAR PAGO EN EFECTIVO (${cashPriceFormatted})</button>
+        <div id="payMethodCashBox" class="checkout-pay-box ${tabCashActive ? '' : 'checkout-hidden'}" style="padding:14px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.3);border-radius:8px;margin-top:6px;${tabCashActive ? '' : 'display:none;'}">
+          <div style="font-weight:800;font-size:13px;letter-spacing:.04em;color:#10b981;margin-bottom:4px;">PAGO EN EFECTIVO EN EL LOCAL</div>
+          <p style="font-size:12.5px;color:#eee;margin-bottom:8px;line-height:1.4;">Abonás el precio especial en efectivo de <strong style="color:#10b981;">${cashPriceFormatted}</strong>. Reservá tu prenda y aboná al retirar en LA PEATONAL San Martín 2029.</p>
+          <button type="button" class="btn" id="btnConfirmEfectivo" style="width:100%;font-weight:800;background:#10b981;border-color:#10b981;color:#fff;padding:12px;font-size:13.5px;letter-spacing:.02em;">CONFIRMAR PAGO EN EFECTIVO (${cashPriceFormatted})</button>
         </div>`;
     }
 
@@ -1135,6 +1162,10 @@
           if (b.dataset.method === 'transferencia') {
             b.style.border = isAct ? '2px solid #f43f5e' : '2px solid #333';
             b.style.background = isAct ? 'rgba(244,63,94,0.15)' : '#18181b';
+            b.style.color = isAct ? '#fff' : '#aaa';
+          } else if (b.dataset.method === 'efectivo') {
+            b.style.border = isAct ? '2px solid #10b981' : '2px solid #333';
+            b.style.background = isAct ? 'rgba(16,185,129,0.15)' : '#18181b';
             b.style.color = isAct ? '#fff' : '#aaa';
           } else {
             b.style.border = isAct ? '2px solid #fff' : '2px solid #333';

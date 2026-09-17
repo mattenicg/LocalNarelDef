@@ -120,21 +120,34 @@ async function createOrderWithStock(payload, options = {}) {
         if (paymentMethod === 'efectivo' && !cashAllowed) {
           throw orderError(`El producto "${product.name}" no admite pago en efectivo.`, 400);
         }
-
-        if (paymentMethod === 'transferencia') {
-          if (product.direct_custom_transfer_price !== undefined && product.direct_custom_transfer_price !== null && Number(product.direct_custom_transfer_price) > 0) {
-            unitPrice = Number(product.direct_custom_transfer_price);
-          } else {
-            const discountPercent = product.direct_discount_percent !== undefined && product.direct_discount_percent !== null ? Number(product.direct_discount_percent) : 25;
-            if (discountPercent > 0) {
-              unitPrice = Math.round(Number(product.price) * (1 - (discountPercent / 100)) * 100) / 100;
-            }
-          }
-        }
       } else {
         const promoPrice = await resolvePromoPrice(client, item.banner_id, item.product_id);
         if (promoPrice != null) {
           unitPrice = promoPrice;
+        }
+      }
+
+      if (paymentMethod === 'transferencia') {
+        if (product.direct_custom_transfer_price !== undefined && product.direct_custom_transfer_price !== null && Number(product.direct_custom_transfer_price) > 0) {
+          unitPrice = Number(product.direct_custom_transfer_price);
+        } else {
+          const discountPercent = product.direct_discount_percent !== undefined && product.direct_discount_percent !== null ? Number(product.direct_discount_percent) : 0;
+          if (discountPercent > 0 && discountPercent <= 100) {
+            unitPrice = Math.round(Number(product.price) * (1 - (discountPercent / 100)) * 100) / 100;
+          } else {
+            unitPrice = Number(product.price);
+          }
+        }
+      } else if (paymentMethod === 'efectivo') {
+        if (product.cash_custom_price !== undefined && product.cash_custom_price !== null && Number(product.cash_custom_price) > 0) {
+          unitPrice = Number(product.cash_custom_price);
+        } else {
+          const discountPercent = product.cash_discount_percent !== undefined && product.cash_discount_percent !== null ? Number(product.cash_discount_percent) : 0;
+          if (discountPercent > 0 && discountPercent <= 100) {
+            unitPrice = Math.round(Number(product.price) * (1 - (discountPercent / 100)) * 100) / 100;
+          } else {
+            unitPrice = Number(product.price);
+          }
         }
       }
 

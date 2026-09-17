@@ -63,7 +63,7 @@ async function saveProductSizeStock(productId, sizeStocks) {
   return { totalStock, sizesString };
 }
 
-const fields = 'id,name,description,price,sizes,size_guide,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,created_at,updated_at';
+const fields = 'id,name,description,price,sizes,size_guide,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,cash_discount_percent,cash_discount_text,cash_custom_price,cash_text,created_at,updated_at';
 
 router.use(authenticate, requireAdmin);
 
@@ -274,6 +274,10 @@ const rules = [
   body('direct_installments_text').optional({ nullable: true, checkFalsy: true }).isString(),
   body('direct_custom_transfer_price').optional({ nullable: true, checkFalsy: true }),
   body('direct_transfer_text').optional({ nullable: true, checkFalsy: true }).isString(),
+  body('cash_discount_percent').optional({ nullable: true, checkFalsy: true }),
+  body('cash_discount_text').optional({ nullable: true, checkFalsy: true }).isString(),
+  body('cash_custom_price').optional({ nullable: true, checkFalsy: true }),
+  body('cash_text').optional({ nullable: true, checkFalsy: true }).isString(),
   body('size_stock').optional().isArray(),
 ];
 
@@ -309,7 +313,7 @@ router.post('/', rules, async (req, res) => {
       : JSON.stringify([1, 3, 6]);
 
     const directDiscountPercent = req.body.direct_discount_percent !== undefined && req.body.direct_discount_percent !== '' && req.body.direct_discount_percent !== null
-      ? Number(req.body.direct_discount_percent)
+      ? Math.min(100, Math.max(0, Number(req.body.direct_discount_percent)))
       : 25.00;
     const directDiscountText = req.body.direct_discount_text ? String(req.body.direct_discount_text).trim() : 'con transferencia';
     const directShowPromoBadge = req.body.direct_show_promo_badge !== false;
@@ -320,6 +324,15 @@ router.post('/', rules, async (req, res) => {
       ? Number(req.body.direct_custom_transfer_price)
       : null;
     const directTransferText = req.body.direct_transfer_text ? String(req.body.direct_transfer_text).trim() : 'con Transferencia';
+
+    const cashDiscountPercent = req.body.cash_discount_percent !== undefined && req.body.cash_discount_percent !== '' && req.body.cash_discount_percent !== null
+      ? Math.min(100, Math.max(0, Number(req.body.cash_discount_percent)))
+      : 15.00;
+    const cashDiscountText = req.body.cash_discount_text ? String(req.body.cash_discount_text).trim() : 'en efectivo';
+    const cashCustomPrice = req.body.cash_custom_price !== undefined && req.body.cash_custom_price !== '' && req.body.cash_custom_price !== null && Number(req.body.cash_custom_price) > 0
+      ? Number(req.body.cash_custom_price)
+      : null;
+    const cashText = req.body.cash_text ? String(req.body.cash_text).trim() : 'en Efectivo';
 
     let images = [];
     if (Array.isArray(req.body.images)) {
@@ -342,7 +355,7 @@ router.post('/', rules, async (req, res) => {
     const sizeGuide = req.body.size_guide ? String(req.body.size_guide).trim() : null;
 
     const r = await query(
-      `INSERT INTO products(name,description,price,sizes,size_guide,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24) RETURNING ${fields}`,
+      `INSERT INTO products(name,description,price,sizes,size_guide,stock,image_url,images,category,subcategory,subcategory_id,active,featured,direct_purchase,allowed_payment_methods,allowed_installments,direct_discount_percent,direct_discount_text,direct_show_promo_badge,direct_promo_badge_text,direct_installments_count,direct_installments_text,direct_custom_transfer_price,direct_transfer_text,cash_discount_percent,cash_discount_text,cash_custom_price,cash_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28) RETURNING ${fields}`,
       [
         req.body.name.trim(),
         req.body.description || '',
@@ -368,6 +381,10 @@ router.post('/', rules, async (req, res) => {
         directInstallmentsText,
         directCustomTransferPrice,
         directTransferText,
+        cashDiscountPercent,
+        cashDiscountText,
+        cashCustomPrice,
+        cashText,
       ]
     );
     const createdProduct = r.rows[0];
@@ -413,7 +430,7 @@ router.post('/', rules, async (req, res) => {
 router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
   if (fail(req, res)) return;
   try {
-    const existing = await query('SELECT id, category, subcategory, subcategory_id, image_url, images, direct_purchase, allowed_payment_methods, allowed_installments, direct_discount_percent, direct_discount_text, direct_show_promo_badge, direct_promo_badge_text, direct_installments_count, direct_installments_text, direct_custom_transfer_price, direct_transfer_text FROM products WHERE id=$1', [req.params.id]);
+    const existing = await query('SELECT id, category, subcategory, subcategory_id, image_url, images, direct_purchase, allowed_payment_methods, allowed_installments, direct_discount_percent, direct_discount_text, direct_show_promo_badge, direct_promo_badge_text, direct_installments_count, direct_installments_text, direct_custom_transfer_price, direct_transfer_text, cash_discount_percent, cash_discount_text, cash_custom_price, cash_text FROM products WHERE id=$1', [req.params.id]);
     if (!existing.rows[0]) return res.status(404).json({ ok: false, message: 'Producto no encontrado' });
 
     const currentProd = existing.rows[0];
@@ -450,7 +467,7 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
       : (currentProd.allowed_installments ? JSON.stringify(currentProd.allowed_installments) : JSON.stringify([1, 3, 6]));
 
     const directDiscountPercent = req.body.direct_discount_percent !== undefined && req.body.direct_discount_percent !== '' && req.body.direct_discount_percent !== null
-      ? Number(req.body.direct_discount_percent)
+      ? Math.min(100, Math.max(0, Number(req.body.direct_discount_percent)))
       : (currentProd.direct_discount_percent !== undefined && currentProd.direct_discount_percent !== null ? Number(currentProd.direct_discount_percent) : 25.00);
     const directDiscountText = req.body.direct_discount_text !== undefined
       ? String(req.body.direct_discount_text).trim()
@@ -473,6 +490,19 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
     const directTransferText = req.body.direct_transfer_text !== undefined
       ? String(req.body.direct_transfer_text).trim()
       : (currentProd.direct_transfer_text || 'con Transferencia');
+
+    const cashDiscountPercent = req.body.cash_discount_percent !== undefined && req.body.cash_discount_percent !== '' && req.body.cash_discount_percent !== null
+      ? Math.min(100, Math.max(0, Number(req.body.cash_discount_percent)))
+      : (currentProd.cash_discount_percent !== undefined && currentProd.cash_discount_percent !== null ? Number(currentProd.cash_discount_percent) : 15.00);
+    const cashDiscountText = req.body.cash_discount_text !== undefined
+      ? String(req.body.cash_discount_text).trim()
+      : (currentProd.cash_discount_text || 'en efectivo');
+    const cashCustomPrice = req.body.cash_custom_price !== undefined
+      ? (req.body.cash_custom_price !== '' && req.body.cash_custom_price !== null && Number(req.body.cash_custom_price) > 0 ? Number(req.body.cash_custom_price) : null)
+      : (currentProd.cash_custom_price ? Number(currentProd.cash_custom_price) : null);
+    const cashText = req.body.cash_text !== undefined
+      ? String(req.body.cash_text).trim()
+      : (currentProd.cash_text || 'en Efectivo');
 
     const sizeGuide = req.body.size_guide !== undefined ? (req.body.size_guide ? String(req.body.size_guide).trim() : null) : (currentProd.size_guide || null);
 
@@ -501,7 +531,7 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
     }
 
     const r = await query(
-      `UPDATE products SET name=$1,description=$2,price=$3,sizes=$4,size_guide=$5,stock=$6,image_url=$7,images=COALESCE($8::jsonb,images),category=$9,subcategory=$10,subcategory_id=$11,active=COALESCE($12,active),featured=COALESCE($13,featured),direct_purchase=$14,allowed_payment_methods=$15,allowed_installments=$16,direct_discount_percent=$17,direct_discount_text=$18,direct_show_promo_badge=$19,direct_promo_badge_text=$20,direct_installments_count=$21,direct_installments_text=$22,direct_custom_transfer_price=$23,direct_transfer_text=$24,updated_at=now() WHERE id=$25 RETURNING ${fields}`,
+      `UPDATE products SET name=$1,description=$2,price=$3,sizes=$4,size_guide=$5,stock=$6,image_url=$7,images=COALESCE($8::jsonb,images),category=$9,subcategory=$10,subcategory_id=$11,active=COALESCE($12,active),featured=COALESCE($13,featured),direct_purchase=$14,allowed_payment_methods=$15,allowed_installments=$16,direct_discount_percent=$17,direct_discount_text=$18,direct_show_promo_badge=$19,direct_promo_badge_text=$20,direct_installments_count=$21,direct_installments_text=$22,direct_custom_transfer_price=$23,direct_transfer_text=$24,cash_discount_percent=$25,cash_discount_text=$26,cash_custom_price=$27,cash_text=$28,updated_at=now() WHERE id=$29 RETURNING ${fields}`,
       [
         req.body.name.trim(),
         req.body.description || '',
@@ -527,6 +557,10 @@ router.put('/:id', [param('id').isUUID(), ...rules], async (req, res) => {
         directInstallmentsText,
         directCustomTransferPrice,
         directTransferText,
+        cashDiscountPercent,
+        cashDiscountText,
+        cashCustomPrice,
+        cashText,
         req.params.id,
       ]
     );

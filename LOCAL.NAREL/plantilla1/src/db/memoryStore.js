@@ -927,6 +927,10 @@ function executeMemoryQuery(rawText, params = []) {
       direct_installments_text: hasDirect && params[19 + imgOffset] ? String(params[19 + imgOffset]) : 'sin interés',
       direct_custom_transfer_price: hasDirect && params[20 + imgOffset] !== undefined && params[20 + imgOffset] !== null && params[20 + imgOffset] !== '' ? Number(params[20 + imgOffset]) : null,
       direct_transfer_text: hasDirect && params[21 + imgOffset] ? String(params[21 + imgOffset]) : 'con Transferencia',
+      cash_discount_percent: hasDirect && params[22 + imgOffset] !== undefined && params[22 + imgOffset] !== null ? Number(params[22 + imgOffset]) : 0,
+      cash_discount_text: hasDirect && params[23 + imgOffset] ? String(params[23 + imgOffset]) : 'en efectivo',
+      cash_custom_price: hasDirect && params[24 + imgOffset] !== undefined && params[24 + imgOffset] !== null && params[24 + imgOffset] !== '' ? Number(params[24 + imgOffset]) : null,
+      cash_text: hasDirect && params[25 + imgOffset] ? String(params[25 + imgOffset]) : 'en Efectivo',
       created_at: now,
       updated_at: now,
     };
@@ -1016,6 +1020,43 @@ function executeMemoryQuery(rawText, params = []) {
   }
 
   if (lowerSql.startsWith('update products')) {
+    if (lowerSql.includes('where id=$29')) {
+      const p = data.products.find((x) => x.id === params[28]);
+      if (!p) return { rows: [], rowCount: 0 };
+      p.name = params[0];
+      p.description = params[1] || '';
+      p.price = Number(params[2]) || 0;
+      p.sizes = params[3] || '';
+      p.size_guide = params[4] || null;
+      p.stock = Number(params[5]) || 0;
+      if (params[6] !== null && params[6] !== undefined) p.image_url = params[6];
+      if (params[7] !== null && params[7] !== undefined) {
+        try { p.images = typeof params[7] === 'string' ? JSON.parse(params[7]) : params[7]; } catch (_) { p.images = [params[7]]; }
+      }
+      if (params[8]) p.category = params[8];
+      p.subcategory = params[9] || null;
+      p.subcategory_id = params[10] || null;
+      if (params[11] !== null && params[11] !== undefined) p.active = params[11];
+      if (params[12] !== null && params[12] !== undefined) p.featured = params[12];
+      if (params[13] !== null && params[13] !== undefined) p.direct_purchase = params[13] === true;
+      if (params[14]) p.allowed_payment_methods = typeof params[14] === 'string' ? JSON.parse(params[14]) : params[14];
+      if (params[15]) p.allowed_installments = typeof params[15] === 'string' ? JSON.parse(params[15]) : params[15];
+      if (params[16] !== undefined && params[16] !== null) p.direct_discount_percent = Number(params[16]);
+      if (params[17] !== undefined) p.direct_discount_text = String(params[17] || 'con transferencia');
+      if (params[18] !== undefined) p.direct_show_promo_badge = params[18] === true;
+      if (params[19] !== undefined) p.direct_promo_badge_text = String(params[19] || 'PROMO ACTIVA');
+      if (params[20] !== undefined) p.direct_installments_count = Number(params[20]) || 6;
+      if (params[21] !== undefined) p.direct_installments_text = String(params[21] || 'sin interés');
+      if (params[22] !== undefined) p.direct_custom_transfer_price = params[22] ? Number(params[22]) : null;
+      if (params[23] !== undefined) p.direct_transfer_text = String(params[23] || 'con Transferencia');
+      if (params[24] !== undefined && params[24] !== null) p.cash_discount_percent = Number(params[24]);
+      if (params[25] !== undefined) p.cash_discount_text = String(params[25] || 'en efectivo');
+      if (params[26] !== undefined) p.cash_custom_price = params[26] ? Number(params[26]) : null;
+      if (params[27] !== undefined) p.cash_text = String(params[27] || 'en Efectivo');
+      p.updated_at = nowIso();
+      saveMemoryDbToFile();
+      return { rows: [{ ...p }], rowCount: 1 };
+    }
     if (lowerSql.includes('where id=$25')) {
       const p = data.products.find((x) => x.id === params[24]);
       if (!p) return { rows: [], rowCount: 0 };

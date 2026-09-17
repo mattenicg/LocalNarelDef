@@ -236,6 +236,8 @@
     const inputsToWatch = [
       'name', 'price', 'description', 'direct_purchase',
       'direct_discount_enabled', 'direct_discount_percent', 'direct_discount_text',
+      'cash_discount_enabled', 'cash_discount_percent', 'cash_discount_text',
+      'cash_custom_price', 'cash_text',
       'direct_show_promo_badge', 'direct_promo_badge_text',
       'direct_installments_count', 'direct_installments_text',
       'direct_custom_transfer_price', 'direct_transfer_text'
@@ -303,6 +305,17 @@
     const discPct = discEnabled && discPctVal !== '' && discPctVal !== null && !isNaN(discPctVal) ? Number(discPctVal) : 0;
     const discTxtInput = document.getElementById('direct_discount_text')?.value;
     const discTxt = discTxtInput !== undefined && discTxtInput !== null ? discTxtInput.trim() : 'con transferencia';
+
+    const cashDiscEnabledEl = document.getElementById('cash_discount_enabled');
+    const cashDiscEnabled = cashDiscEnabledEl ? cashDiscEnabledEl.checked : true;
+    const cashDiscPctVal = document.getElementById('cash_discount_percent')?.value;
+    const cashDiscPct = cashDiscEnabled && cashDiscPctVal !== '' && cashDiscPctVal !== null && !isNaN(cashDiscPctVal) ? Number(cashDiscPctVal) : 0;
+    const cashDiscTxtInput = document.getElementById('cash_discount_text')?.value;
+    const cashDiscTxt = cashDiscTxtInput !== undefined && cashDiscTxtInput !== null ? cashDiscTxtInput.trim() : 'en efectivo';
+    const cashCustomPriceVal = document.getElementById('cash_custom_price')?.value;
+    const cashCustomPrice = cashCustomPriceVal !== '' && cashCustomPriceVal !== null && !isNaN(cashCustomPriceVal) && Number(cashCustomPriceVal) > 0 ? Number(cashCustomPriceVal) : null;
+    const cashTxtInput = document.getElementById('cash_text')?.value;
+    const cashTxt = cashTxtInput !== undefined && cashTxtInput !== null ? cashTxtInput.trim() : 'en Efectivo';
 
     const showPromoEl = document.getElementById('direct_show_promo_badge');
     const showPromo = showPromoEl ? showPromoEl.checked : true;
@@ -378,6 +391,18 @@
         transferPrice = priceVal * (1 - discPct / 100);
       }
       prevTransLine.textContent = `${formatMoney(transferPrice)} ${transTxt || 'con Transferencia'}`;
+    }
+
+    // 7. Cash line
+    const prevCashLine = document.getElementById('previewCashLine');
+    if (prevCashLine) {
+      let cashPrice = priceVal;
+      if (cashCustomPrice !== null && cashCustomPrice > 0) {
+        cashPrice = cashCustomPrice;
+      } else if (cashDiscEnabled && cashDiscPct > 0) {
+        cashPrice = priceVal * (1 - cashDiscPct / 100);
+      }
+      prevCashLine.textContent = `${formatMoney(cashPrice)} ${cashTxt || 'en Efectivo'}`;
     }
   }
 
@@ -481,6 +506,25 @@
 
       const transTxtEl = document.getElementById('direct_transfer_text');
       if (transTxtEl) transTxtEl.value = p.direct_transfer_text || 'con Transferencia';
+
+      // Cash discount
+      const hasCashDiscount = p.cash_discount_percent !== undefined && p.cash_discount_percent !== null ? Number(p.cash_discount_percent) > 0 : (p.cash_custom_price ? true : false);
+      const cashDiscEnabledEl = document.getElementById('cash_discount_enabled');
+      if (cashDiscEnabledEl) cashDiscEnabledEl.checked = hasCashDiscount;
+
+      const cashDiscPctEl = document.getElementById('cash_discount_percent');
+      if (cashDiscPctEl) {
+        cashDiscPctEl.value = p.cash_discount_percent !== undefined && p.cash_discount_percent !== null ? p.cash_discount_percent : 15;
+      }
+
+      const cashDiscTxtEl = document.getElementById('cash_discount_text');
+      if (cashDiscTxtEl) cashDiscTxtEl.value = p.cash_discount_text || 'en efectivo';
+
+      const cashCustomEl = document.getElementById('cash_custom_price');
+      if (cashCustomEl) cashCustomEl.value = p.cash_custom_price !== undefined && p.cash_custom_price !== null ? p.cash_custom_price : '';
+
+      const cashTxtEl = document.getElementById('cash_text');
+      if (cashTxtEl) cashTxtEl.value = p.cash_text || 'en Efectivo';
 
       // Payment Methods
       let allowedMethods = ['tarjeta_debito', 'tarjeta_credito', 'transferencia', 'efectivo'];
@@ -772,6 +816,12 @@
       const custTransEl = document.getElementById('direct_custom_transfer_price');
       const transTxtEl = document.getElementById('direct_transfer_text');
 
+      const cashDiscEnabledEl = document.getElementById('cash_discount_enabled');
+      const cashDiscPctEl = document.getElementById('cash_discount_percent');
+      const cashDiscTxtEl = document.getElementById('cash_discount_text');
+      const cashCustomEl = document.getElementById('cash_custom_price');
+      const cashTxtEl = document.getElementById('cash_text');
+
       const isDiscEnabled = discEnabledEl ? discEnabledEl.checked : true;
       const direct_discount_percent = isDiscEnabled && discPctEl && discPctEl.value !== '' ? Number(discPctEl.value) : 0;
       const direct_discount_text = discTxtEl && discTxtEl.value ? discTxtEl.value.trim() : 'con transferencia';
@@ -781,6 +831,12 @@
       const direct_installments_text = instTxtEl && instTxtEl.value ? instTxtEl.value.trim() : 'sin interés';
       const direct_custom_transfer_price = custTransEl && custTransEl.value !== '' && custTransEl.value !== null ? Number(custTransEl.value) : null;
       const direct_transfer_text = transTxtEl && transTxtEl.value ? transTxtEl.value.trim() : 'con Transferencia';
+
+      const isCashDiscEnabled = cashDiscEnabledEl ? cashDiscEnabledEl.checked : true;
+      const cash_discount_percent = isCashDiscEnabled && cashDiscPctEl && cashDiscPctEl.value !== '' ? Number(cashDiscPctEl.value) : 0;
+      const cash_discount_text = cashDiscTxtEl && cashDiscTxtEl.value ? cashDiscTxtEl.value.trim() : 'en efectivo';
+      const cash_custom_price = cashCustomEl && cashCustomEl.value !== '' && cashCustomEl.value !== null ? Number(cashCustomEl.value) : null;
+      const cash_text = cashTxtEl && cashTxtEl.value ? cashTxtEl.value.trim() : 'en Efectivo';
 
       // 1. Upload new image files if any
       const newItems = allImages.filter((item) => item.type === 'new' && item.file);
@@ -849,6 +905,10 @@
         direct_installments_text,
         direct_custom_transfer_price,
         direct_transfer_text,
+        cash_discount_percent,
+        cash_discount_text,
+        cash_custom_price,
+        cash_text,
         image_url: primaryImageUrl,
         images: finalImageUrls,
         product_images: finalImageUrls,
