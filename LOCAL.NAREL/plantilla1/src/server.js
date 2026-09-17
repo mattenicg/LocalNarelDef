@@ -1,5 +1,6 @@
 console.log('[BOOT 1] server.js comenzó a ejecutarse');
 require('dotenv').config();
+console.log('[TEST] dotenv OK');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
