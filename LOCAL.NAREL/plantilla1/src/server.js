@@ -28,10 +28,9 @@ console.log('[TEST] logger OK');
 const { limiterGeneral } = require('./middleware/rateLimit');
 console.log('[TEST] rateLimit OK');
 
+console.log('[TEST] antes de postgres');
 const { initPostgres, query } = require('./db/postgres');
 console.log('[TEST] postgres OK');
-
-const { initPostgres, query } = require('./db/postgres');
 // SQLite y sus rutas legacy quedan deshabilitadas.
 const LEGACY_SQLITE_ENABLED = String(process.env.LEGACY_SQLITE_ENABLED || 'false').toLowerCase() === 'true';
 let initDB = Promise.resolve();
