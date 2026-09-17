@@ -1282,7 +1282,7 @@
 
     .services-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 18px;
     }
 
@@ -2948,11 +2948,13 @@
       display: block !important;
     }
     body.is-category-page #como-comprar,
-    body.is-category-page #politicas-cambio {
+    body.is-category-page #politicas-cambio,
+    body.is-category-page #otros-servicios {
       display: block !important;
     }
     body.is-category-page #como-comprar .scroll-reveal,
-    body.is-category-page #politicas-cambio .scroll-reveal {
+    body.is-category-page #politicas-cambio .scroll-reveal,
+    body.is-category-page #otros-servicios .scroll-reveal {
       opacity: 1 !important;
       transform: none !important;
       transition: none !important;
@@ -4225,7 +4227,7 @@
 
     .services-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 18px;
     }
 
@@ -7342,6 +7344,66 @@
         </a>
       </div>
     </section>
+  
+    <!-- ===== SECCIÓN: OTROS SERVICIOS ===== -->
+    <section class="catalog-section services-section" id="otros-servicios">
+      <div class="section-label scroll-reveal">
+        <span class="bar"></span>
+        <div>
+          <h3>OTROS SERVICIOS</h3>
+          <small>· BARBERÍA · PIERCING · TATUAJES · MÁS</small>
+        </div>
+      </div>
+      <p class="services-intro scroll-reveal">
+        ✦ El <b>único espacio</b> en Santa Fe Capital que combina indumentaria con experiencia completa de estilo y
+        cuidado personal. Reservá tu turno por WhatsApp. ✦
+      </p>
+            <div class="services-grid">
+        <a href="https://wa.me/543425285118" target="_blank" rel="noopener" class="service-card scroll-reveal">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M12 2a4 4 0 0 0-4 4v1a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2V6a4 4 0 0 0-4-4z" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+              <line x1="8" y1="16" x2="16" y2="16" />
+            </svg>
+          </div>
+          <span class="service-num">01 · BARBERSHOP</span>
+          <h4>BARBERÍA</h4>
+          <p>Cortes de pelo modernos, fade, perfilado de barba y asesoramiento de imagen profesional adaptado a tu estilo urbano.</p>
+          <span class="service-cta">RESERVAR TURNO <span>↗</span></span>
+        </a>
+
+        <a href="https://wa.me/543425285118" target="_blank" rel="noopener" class="service-card scroll-reveal">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="8" />
+              <circle cx="12" cy="4" r="2" />
+              <path d="M12 6v12" />
+            </svg>
+          </div>
+          <span class="service-num">02 · PIERCING</span>
+          <h4>PIERCING</h4>
+          <p>Colocación profesional con máxima higiene, materiales de titanio y acero quirúrgico, y amplia variedad de joyería exclusiva.</p>
+          <span class="service-cta">RESERVAR TURNO <span>↗</span></span>
+        </a>
+
+        <a href="https://wa.me/543425285118" target="_blank" rel="noopener" class="service-card scroll-reveal">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="m18 2 4 4-14 14H4v-4L18 2z" />
+              <path d="m14.5 5.5 4 4" />
+            </svg>
+          </div>
+          <span class="service-num">03 · TATTOO</span>
+          <h4>TATUAJES</h4>
+          <p>Diseños personalizados, estilo blackout, fineline, lettering y piezas exclusivas de la mano de artistas residentes.</p>
+          <span class="service-cta">CONSULTAR DISEÑO <span>↗</span></span>
+        </a>
+      </div>
+    </section>
   </main>
 
   <!-- ===== CART PANEL ===== -->
@@ -9013,7 +9075,7 @@
         const validSlugs = new Set(categories.map(c => c.slug.toLowerCase()));
         document.querySelectorAll('.catalog-section').forEach((sec) => {
           const id = sec.id.toLowerCase();
-          if (id && !validSlugs.has(id)) {
+          if (id && !validSlugs.has(id) && id !== 'otros-servicios' && id !== 'como-comprar' && id !== 'politicas-cambio') {
             sec.remove();
           }
         });
@@ -9110,7 +9172,7 @@
           // Show target category section and general sections
           document.querySelectorAll('.catalog-section').forEach((sec) => {
             const secId = sec.id.toLowerCase();
-            if (secId === catSlug || secId === 'como-comprar' || secId === 'politicas-cambio') {
+            if (secId === catSlug || secId === 'como-comprar' || secId === 'politicas-cambio' || secId === 'otros-servicios') {
               sec.style.display = 'block';
               if (secId === catSlug) {
                 const label = sec.querySelector('.section-label');
@@ -9247,10 +9309,10 @@
           });
 
           // Bind smooth scroll for hash section links (como-comprar, politicas-cambio)
-          document.querySelectorAll('a[href*="#como-comprar"], a[href*="#politicas-cambio"]').forEach((a) => {
+          document.querySelectorAll('a[href*="#como-comprar"], a[href*="#politicas-cambio"], a[href*="#otros-servicios"]').forEach((a) => {
             a.addEventListener('click', (e) => {
               const href = a.getAttribute('href') || '';
-              const hashMatch = href.match(/#(como-comprar|politicas-cambio)/);
+              const hashMatch = href.match(/#(como-comprar|politicas-cambio|otros-servicios)/);
               if (hashMatch && hashMatch[1]) {
                 const targetId = hashMatch[1];
                 const targetEl = document.getElementById(targetId);

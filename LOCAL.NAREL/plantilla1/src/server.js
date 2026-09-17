@@ -488,6 +488,9 @@ function escapeHtml(s) {
 
 const storefrontFile = path.join(__dirname, '..', 'plantilla 1.html');
 async function servirTienda(_req, res) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   if (!fs.existsSync(storefrontFile)) {
     return res.status(404).send('Tienda no disponible');
   }
@@ -598,6 +601,10 @@ async function servirCategoriaOTienda(req, res, next) {
       }
     }
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     if (!fs.existsSync(storefrontFile)) {
       return res.status(404).send('Tienda no disponible');
     }
@@ -641,11 +648,13 @@ async function servirCategoriaOTienda(req, res, next) {
         display: block !important;
       }
       body.is-category-page #como-comprar,
-      body.is-category-page #politicas-cambio {
+      body.is-category-page #politicas-cambio,
+      body.is-category-page #otros-servicios {
         display: block !important;
       }
       body.is-category-page #como-comprar .scroll-reveal,
-      body.is-category-page #politicas-cambio .scroll-reveal {
+      body.is-category-page #politicas-cambio .scroll-reveal,
+      body.is-category-page #otros-servicios .scroll-reveal {
         opacity: 1 !important;
         transform: none !important;
         transition: none !important;
